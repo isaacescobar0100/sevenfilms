@@ -1,0 +1,355 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { supabase } from '../lib/supabase'
+import { useAuthStore } from '../store/authStore'
+
+// Obtener todas las películas
+export function useMovies(filters = {}) {
+  return useQuery({
+    queryKey: ['movies', filters],
+    queryFn: async () => {
+      let query = supabase
+        .from('movies')
+        .select('*')
+
+      // Aplicar ordenamiento
+      const sortBy = filters.sortBy || 'popular'
+      switch (sortBy) {
+        case 'rating':
+          query = query.order('average_rating', { ascending: false, nullsLast: true })
+          query = query.order('ratings_count', { ascending: false })
+          break
+        case 'views':
+          query = query.order('views', { ascending: false })
+          break
+        case 'recent':
+          query = query.order('created_at', { ascending: false })
+          break
+        case 'comments':
+          query = query.order('comments_count', { ascending: false })
+          break
+        case 'popular':
+        default:
+          query = query.order('engagement_score', { ascending: false })
+          query = query.order('created_at', { ascending: false })
+          break
+      }
+
+      // Aplicar filtros
+      if (filters.genre) {
+        query = query.eq('genre', filters.genre)
+      }
+      if (filters.userId) {
+        query = query.eq('user_id', filters.userId)
+      }
+      if (filters.search) {
+        query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`)
+      }
+
+      const { data: movies, error } = await query
+
+      if (error) throw error
+
+      // Obtener perfiles de los usuarios
+      const moviesWithProfiles = await Promise.all(
+        movies.map(async (movie) => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('id, username, full_name, avatar_url')
+            .eq('id', movie.user_id)
+            .maybeSingle()
+
+          return {
+            ...movie,
+            profiles: profile || {
+              id: movie.user_id,
+              username: 'Usuario',
+              full_name: 'Usuario Sin Nombre',
+              avatar_url: null,
+            },
+          }
+        })
+      )
+
+      return moviesWithProfiles
+    },
+  })
+}
+
+// Obtener una película específica
+export function useMovie(movieId) {
+  return useQuery({
+    queryKey: ['movie', movieId],
+    queryFn: async () => {
+      const { data: movie, error } = await supabase
+        .from('movies')
+        .select('*')
+        .eq('id', movieId)
+        .single()
+
+      if (error) throw error
+
+      // Obtener perfil del usuario
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url')
+        .eq('id', movie.user_id)
+        .maybeSingle()
+
+      // Incrementar vistas
+      await supabase
+        .from('movies')
+        .update({ views: movie.views + 1 })
+        .eq('id', movieId)
+
+      return {
+        ...movie,
+        profiles: profile || {
+          id: movie.user_id,
+          username: 'Usuario',
+          full_name: 'Usuario Sin Nombre',
+          avatar_url: null,
+        },
+      }
+    },
+    enabled: !!movieId,
+  })
+}
+
+// Películas del usuario
+export function useUserMovies(userId) {
+  return useQuery({
+    queryKey: ['movies', 'user', userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('movies')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      return data
+    },
+    enabled: !!userId,
+  })
+}
+
+// Subir película
+export function useUploadMovie() {
+  const queryClient = useQueryClient()
+  const { user } = useAuthStore()
+
+  return useMutation({
+    mutationFn: async ({ title, description, genre, year, videoFile, videoQualities, thumbnailFile, subtitleFile, duration }) => {
+      // Subir video original
+      const videoExt = videoFile.name.split('.').pop()
+      const videoFileName = `${user.id}/${Date.now()}.${videoExt}`
+
+      const { error: videoError } = await supabase.storage
+        .from('movies')
+        .upload(videoFileName, videoFile)
+
+      if (videoError) throw videoError
+
+      const { data: videoUrlData } = supabase.storage
+        .from('movies')
+        .getPublicUrl(videoFileName)
+
+      let thumbnailUrl = null
+      let subtitleUrl = null
+      let video1080pUrl = null
+      let video720pUrl = null
+      let video480pUrl = null
+      let video360pUrl = null
+
+      // Subir diferentes calidades si existen
+      if (videoQualities) {
+        const timestamp = Date.now()
+
+        if (videoQualities['1080p']) {
+          const fileName1080p = `${user.id}/${timestamp}_1080p.mp4`
+          const { error } = await supabase.storage
+            .from('movies')
+            .upload(fileName1080p, videoQualities['1080p'])
+
+          if (!error) {
+            const { data } = supabase.storage.from('movies').getPublicUrl(fileName1080p)
+            video1080pUrl = data.publicUrl
+          }
+        }
+
+        if (videoQualities['720p']) {
+          const fileName720p = `${user.id}/${timestamp}_720p.mp4`
+          const { error } = await supabase.storage
+            .from('movies')
+            .upload(fileName720p, videoQualities['720p'])
+
+          if (!error) {
+            const { data } = supabase.storage.from('movies').getPublicUrl(fileName720p)
+            video720pUrl = data.publicUrl
+          }
+        }
+
+        if (videoQualities['480p']) {
+          const fileName480p = `${user.id}/${timestamp}_480p.mp4`
+          const { error } = await supabase.storage
+            .from('movies')
+            .upload(fileName480p, videoQualities['480p'])
+
+          if (!error) {
+            const { data } = supabase.storage.from('movies').getPublicUrl(fileName480p)
+            video480pUrl = data.publicUrl
+          }
+        }
+
+        if (videoQualities['360p']) {
+          const fileName360p = `${user.id}/${timestamp}_360p.mp4`
+          const { error } = await supabase.storage
+            .from('movies')
+            .upload(fileName360p, videoQualities['360p'])
+
+          if (!error) {
+            const { data } = supabase.storage.from('movies').getPublicUrl(fileName360p)
+            video360pUrl = data.publicUrl
+          }
+        }
+      }
+
+      // Subir thumbnail si existe
+      if (thumbnailFile) {
+        const thumbExt = thumbnailFile.name.split('.').pop()
+        const thumbFileName = `${user.id}/${Date.now()}.${thumbExt}`
+
+        const { error: thumbError } = await supabase.storage
+          .from('movie-thumbnails')
+          .upload(thumbFileName, thumbnailFile)
+
+        if (!thumbError) {
+          const { data: thumbUrlData } = supabase.storage
+            .from('movie-thumbnails')
+            .getPublicUrl(thumbFileName)
+          thumbnailUrl = thumbUrlData.publicUrl
+        }
+      }
+
+      // Subir subtítulos si existen
+      if (subtitleFile) {
+        const subExt = subtitleFile.name.split('.').pop()
+        const subFileName = `${user.id}/${Date.now()}.${subExt}`
+
+        const { error: subError } = await supabase.storage
+          .from('movie-subtitles')
+          .upload(subFileName, subtitleFile)
+
+        if (!subError) {
+          const { data: subUrlData } = supabase.storage
+            .from('movie-subtitles')
+            .getPublicUrl(subFileName)
+          subtitleUrl = subUrlData.publicUrl
+        }
+      }
+
+      // Crear registro en la base de datos
+      const { data, error } = await supabase
+        .from('movies')
+        .insert([
+          {
+            user_id: user.id,
+            title,
+            description,
+            genre,
+            year,
+            video_url: videoUrlData.publicUrl,
+            video_1080p_url: video1080pUrl,
+            video_720p_url: video720pUrl,
+            video_480p_url: video480pUrl,
+            video_360p_url: video360pUrl,
+            thumbnail_url: thumbnailUrl,
+            subtitle_url: subtitleUrl,
+            duration,
+          },
+        ])
+        .select()
+        .single()
+
+      if (error) throw error
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['movies'] })
+    },
+  })
+}
+
+// Actualizar película
+export function useUpdateMovie() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, title, description, genre, year }) => {
+      const { data, error } = await supabase
+        .from('movies')
+        .update({ title, description, genre, year })
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) throw error
+      return data
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['movies'] })
+      queryClient.invalidateQueries({ queryKey: ['movie', data.id] })
+    },
+  })
+}
+
+// Eliminar película
+export function useDeleteMovie() {
+  const queryClient = useQueryClient()
+  const { user } = useAuthStore()
+
+  return useMutation({
+    mutationFn: async (id) => {
+      // Primero obtener la información de la película para eliminar archivos
+      const { data: movie } = await supabase
+        .from('movies')
+        .select('*')
+        .eq('id', id)
+        .single()
+
+      // Eliminar el registro de la base de datos
+      const { error } = await supabase
+        .from('movies')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id) // Asegurar que solo el dueño pueda eliminar
+
+      if (error) throw error
+
+      // Opcionalmente, eliminar archivos de storage (opcional)
+      // Esto puede fallar si los archivos no existen, pero no es crítico
+      if (movie) {
+        try {
+          if (movie.video_url) {
+            const videoPath = movie.video_url.split('/movies/')[1]
+            if (videoPath) {
+              await supabase.storage.from('movies').remove([videoPath])
+            }
+          }
+          if (movie.thumbnail_url) {
+            const thumbPath = movie.thumbnail_url.split('/movie-thumbnails/')[1]
+            if (thumbPath) {
+              await supabase.storage.from('movie-thumbnails').remove([thumbPath])
+            }
+          }
+        } catch (storageError) {
+          console.warn('Error deleting storage files:', storageError)
+        }
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['movies'] })
+      queryClient.invalidateQueries({ queryKey: ['user-movies'] })
+    },
+  })
+}
