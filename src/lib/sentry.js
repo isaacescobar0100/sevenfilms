@@ -14,8 +14,8 @@ export function initSentry() {
     dsn,
     environment: import.meta.env.MODE, // 'development' o 'production'
 
-    // Solo enviar errores en producción (puedes cambiar a true para probar en desarrollo)
-    enabled: import.meta.env.PROD,
+    // TEMPORAL: Habilitar Sentry siempre para probar
+    enabled: true,
 
     // Tasa de errores a capturar (1.0 = 100%)
     tracesSampleRate: 1.0,
