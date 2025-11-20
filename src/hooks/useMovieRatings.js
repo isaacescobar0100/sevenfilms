@@ -68,7 +68,6 @@ export function useUpsertMovieRating() {
         p_movie_id: movieId,
         p_user_id: user.id,
         p_rating: rating,
-        p_review_text: review || null,
       })
 
       if (error) {

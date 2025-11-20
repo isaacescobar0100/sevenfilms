@@ -9,8 +9,7 @@
 CREATE OR REPLACE FUNCTION add_or_update_movie_rating(
   p_movie_id UUID,
   p_user_id UUID,
-  p_rating INTEGER,
-  p_review_text TEXT DEFAULT NULL
+  p_rating INTEGER
 )
 RETURNS JSON
 LANGUAGE plpgsql
@@ -52,15 +51,14 @@ BEGIN
 
   IF v_existing_rating IS NULL THEN
     -- Crear nuevo rating
-    INSERT INTO movie_ratings (movie_id, user_id, rating, review_text)
-    VALUES (p_movie_id, p_user_id, p_rating, p_review_text)
+    INSERT INTO movie_ratings (movie_id, user_id, rating)
+    VALUES (p_movie_id, p_user_id, p_rating)
     RETURNING * INTO v_existing_rating;
   ELSE
     -- Actualizar rating existente
     UPDATE movie_ratings
     SET
       rating = p_rating,
-      review_text = p_review_text,
       updated_at = NOW()
     WHERE movie_id = p_movie_id AND user_id = p_user_id
     RETURNING * INTO v_existing_rating;
