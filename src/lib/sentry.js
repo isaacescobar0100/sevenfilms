@@ -4,6 +4,15 @@ export function initSentry() {
   // Obtener DSN de variables de entorno o usar valor por defecto
   const dsn = import.meta.env.VITE_SENTRY_DSN || "TU_DSN_DE_SENTRY"
 
+  // DEBUG: Mostrar qué está pasando
+  console.log('🔍 Sentry Debug:', {
+    hasDsn: !!dsn,
+    dsnLength: dsn?.length,
+    isDefault: dsn === "TU_DSN_DE_SENTRY",
+    envMode: import.meta.env.MODE,
+    envProd: import.meta.env.PROD,
+  })
+
   // Solo inicializar si hay un DSN válido
   if (!dsn || dsn === "TU_DSN_DE_SENTRY") {
     console.warn('Sentry DSN no configurado. Los errores no se enviarán a Sentry.')
