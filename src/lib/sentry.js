@@ -1,8 +1,8 @@
 import * as Sentry from "@sentry/react"
 
 export function initSentry() {
-  // Obtener DSN de variables de entorno o usar valor por defecto
-  const dsn = import.meta.env.VITE_SENTRY_DSN || "TU_DSN_DE_SENTRY"
+  // TEMPORAL: Hardcodear DSN para probar
+  const dsn = import.meta.env.VITE_SENTRY_DSN || "https://ed92463eeeb23230d1c0292331b8fbb0@o4510391063871488.ingest.us.sentry.io/4510394196688896"
 
   // DEBUG: Mostrar qué está pasando con más detalle
   console.log('🔍 Sentry Debug:', {
@@ -15,7 +15,7 @@ export function initSentry() {
   })
 
   // Solo inicializar si hay un DSN válido
-  if (!dsn || dsn === "TU_DSN_DE_SENTRY") {
+  if (!dsn || dsn === "TU_DSN_DE_SENTRY" || !dsn.startsWith('https://')) {
     console.warn('Sentry DSN no configurado. Los errores no se enviarán a Sentry.')
     return
   }
