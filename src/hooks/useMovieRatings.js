@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import { useTranslation } from 'react-i18next'
+import { captureError } from '../lib/sentry'
 
 // Obtener rating de un usuario para una película específica
 export function useUserMovieRating(movieId) {
@@ -89,6 +90,16 @@ export function useUpsertMovieRating() {
       queryClient.invalidateQueries({ queryKey: ['movie-ratings', variables.movieId] })
       queryClient.invalidateQueries({ queryKey: ['movies'] })
       queryClient.invalidateQueries({ queryKey: ['featured-movies'] })
+    },
+    onError: (error, variables) => {
+      // Capturar error en Sentry con contexto
+      captureError(error, {
+        action: 'upsert_movie_rating',
+        movieId: variables.movieId,
+        rating: variables.rating,
+        userId: user?.id,
+      })
+      console.error('Error submitting rating:', error)
     },
   })
 }
