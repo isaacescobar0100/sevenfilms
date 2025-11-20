@@ -1,21 +1,11 @@
 import * as Sentry from "@sentry/react"
 
 export function initSentry() {
-  // TEMPORAL: Hardcodear DSN para probar
-  const dsn = import.meta.env.VITE_SENTRY_DSN || "https://ed92463eeeb23230d1c0292331b8fbb0@o4510391063871488.ingest.us.sentry.io/4510394196688896"
-
-  // DEBUG: Mostrar qué está pasando con más detalle
-  console.log('🔍 Sentry Debug:', {
-    hasDsn: !!dsn,
-    dsnLength: dsn?.length,
-    isDefault: dsn === "TU_DSN_DE_SENTRY",
-    dsnPreview: dsn?.substring(0, 30) + '...',
-    envMode: import.meta.env.MODE,
-    envProd: import.meta.env.PROD,
-  })
+  // Obtener DSN de variables de entorno
+  const dsn = import.meta.env.VITE_SENTRY_DSN
 
   // Solo inicializar si hay un DSN válido
-  if (!dsn || dsn === "TU_DSN_DE_SENTRY" || !dsn.startsWith('https://')) {
+  if (!dsn || !dsn.startsWith('https://')) {
     console.warn('Sentry DSN no configurado. Los errores no se enviarán a Sentry.')
     return
   }
@@ -24,8 +14,8 @@ export function initSentry() {
     dsn,
     environment: import.meta.env.MODE, // 'development' o 'production'
 
-    // TEMPORAL: Habilitar Sentry siempre para probar
-    enabled: true,
+    // Solo enviar errores en producción
+    enabled: import.meta.env.PROD,
 
     // Tasa de errores a capturar (1.0 = 100%)
     tracesSampleRate: 1.0,
