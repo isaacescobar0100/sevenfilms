@@ -36,16 +36,12 @@ export function initSentry() {
     // Grabar el 100% de las sesiones con errores
     replaysOnErrorSampleRate: 1.0,
 
-    // Integración con React
+    // Integración con React (simplificada)
     integrations: [
-      new Sentry.BrowserTracing({
-        // Rastrear navegación de React Router
-        routingInstrumentation: Sentry.reactRouterV6Instrumentation(
-          window.history,
-        ),
-      }),
-      new Sentry.Replay({
-        // Configuración de Replay
+      // BrowserTracing sin routingInstrumentation personalizado
+      Sentry.browserTracingIntegration(),
+      // Replay para grabar sesiones con errores
+      Sentry.replayIntegration({
         maskAllText: false,
         blockAllMedia: false,
       }),
