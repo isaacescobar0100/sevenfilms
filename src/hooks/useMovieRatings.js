@@ -71,7 +71,17 @@ export function useUpsertMovieRating() {
         p_review_text: review || null,
       })
 
-      if (error) throw error
+      if (error) {
+        // Capturar en Sentry INMEDIATAMENTE
+        captureError(new Error(error.message || JSON.stringify(error)), {
+          action: 'upsert_movie_rating',
+          movieId,
+          rating,
+          userId: user.id,
+          supabaseError: error,
+        })
+        throw error
+      }
 
       // Verificar si la respuesta indica error
       if (data && !data.success) {
