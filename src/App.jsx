@@ -20,6 +20,9 @@ const Movies = lazy(() => import('./pages/Movies'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 const PrivacyPolicy = lazy(() => import('./pages/legal/PrivacyPolicy'))
 const TermsOfService = lazy(() => import('./pages/legal/TermsOfService'))
+const AboutUs = lazy(() => import('./pages/legal/AboutUs'))
+const Contact = lazy(() => import('./pages/legal/Contact'))
+const MissionVision = lazy(() => import('./pages/legal/MissionVision'))
 
 function App() {
   const { user, loading } = useAuthStore()
@@ -58,6 +61,9 @@ function App() {
           {/* Legal pages - Public */}
           <Route path="privacy" element={<PrivacyPolicy />} />
           <Route path="terms" element={<TermsOfService />} />
+          <Route path="about" element={<AboutUs />} />
+          <Route path="contact" element={<Contact />} />
+          <Route path="mission" element={<MissionVision />} />
 
           {/* Protected routes - Red Social */}
           <Route element={<ProtectedRoute />}>
