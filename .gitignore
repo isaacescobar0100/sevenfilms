@@ -32,3 +32,16 @@ dist-ssr
 
 # Vercel
 .vercel
+
+# Capacitor
+android/app/build/
+android/app/.cxx/
+android/.gradle/
+android/build/
+android/local.properties
+android/key.properties
+android/app/*.keystore
+android/app/*.jks
+ios/App/Pods/
+ios/App/build/
+ios/App/*.ipa
