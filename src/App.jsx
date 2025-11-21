@@ -18,6 +18,8 @@ const Search = lazy(() => import('./pages/Search'))
 const Messages = lazy(() => import('./pages/Messages'))
 const Movies = lazy(() => import('./pages/Movies'))
 const NotFound = lazy(() => import('./pages/NotFound'))
+const PrivacyPolicy = lazy(() => import('./pages/legal/PrivacyPolicy'))
+const TermsOfService = lazy(() => import('./pages/legal/TermsOfService'))
 
 function App() {
   const { user, loading } = useAuthStore()
@@ -52,6 +54,10 @@ function App() {
             path="register"
             element={user ? <Navigate to="/feed" replace /> : <Register />}
           />
+
+          {/* Legal pages - Public */}
+          <Route path="privacy" element={<PrivacyPolicy />} />
+          <Route path="terms" element={<TermsOfService />} />
 
           {/* Protected routes - Red Social */}
           <Route element={<ProtectedRoute />}>
