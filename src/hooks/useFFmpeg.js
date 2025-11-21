@@ -14,23 +14,36 @@ export function useFFmpeg() {
 
   const loadFFmpeg = async () => {
     try {
+      console.log('[FFmpeg] 🚀 Iniciando carga de FFmpeg...')
       setLoading(true)
       const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd'
       const ffmpeg = ffmpegRef.current
 
       ffmpeg.on('log', ({ message }) => {
-        console.log('FFmpeg:', message)
+        console.log('[FFmpeg Log]:', message)
       })
 
+      console.log('[FFmpeg] Descargando core desde:', baseURL)
+      const coreURL = await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript')
+      console.log('[FFmpeg] ✅ Core descargado')
+
+      console.log('[FFmpeg] Descargando WASM...')
+      const wasmURL = await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm')
+      console.log('[FFmpeg] ✅ WASM descargado')
+
+      console.log('[FFmpeg] Cargando FFmpeg...')
       await ffmpeg.load({
-        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+        coreURL,
+        wasmURL,
       })
 
+      console.log('[FFmpeg] 🎉 FFmpeg cargado exitosamente!')
       setLoaded(true)
       setLoading(false)
     } catch (err) {
-      console.error('Error loading FFmpeg:', err)
+      console.error('[FFmpeg] ❌ Error loading FFmpeg:', err)
+      console.error('[FFmpeg] Error details:', err.message)
+      console.error('[FFmpeg] Error stack:', err.stack)
       setError(err.message)
       setLoading(false)
     }
@@ -232,11 +245,16 @@ export function useFFmpeg() {
     }
 
     try {
+      console.log('[FFmpeg] 🎬 Iniciando generación de múltiples calidades...')
+      console.log('[FFmpeg] Archivo:', videoFile.name, 'Tamaño:', (videoFile.size / 1024 / 1024).toFixed(2), 'MB')
+
       const ffmpeg = ffmpegRef.current
       const qualities = {}
 
       // Obtener resolución original del video
+      console.log('[FFmpeg] Obteniendo resolución del video...')
       const { width, height } = await getVideoResolution(videoFile)
+      console.log('[FFmpeg] Resolución original:', width, 'x', height)
 
       // Definir las calidades disponibles basadas en la resolución original
       const qualitySettings = []
@@ -252,12 +270,17 @@ export function useFFmpeg() {
       }
       qualitySettings.push({ name: '360p', height: 360, bitrate: '600k' })
 
+      console.log('[FFmpeg] 📊 Calidades a generar:', qualitySettings.map(q => q.name).join(', '))
+
       // Escribir el archivo original
+      console.log('[FFmpeg] Cargando video en sistema virtual...')
       await ffmpeg.writeFile('input.mp4', await fetchFile(videoFile))
+      console.log('[FFmpeg] ✅ Video cargado en sistema virtual')
 
       // Generar cada calidad
       for (let i = 0; i < qualitySettings.length; i++) {
         const { name, height: targetHeight, bitrate } = qualitySettings[i]
+        console.log(`[FFmpeg] 🔄 Procesando calidad ${name} (${i + 1}/${qualitySettings.length})...`)
 
         if (onProgress) {
           onProgress({ current: i + 1, total: qualitySettings.length, quality: name })
@@ -265,20 +288,25 @@ export function useFFmpeg() {
 
         const outputName = `output_${name}.mp4`
 
+        // IMPORTANTE: FFmpeg.wasm NO soporta libx264 ni aac
+        // Usar libx265 (o mpeg4) y copiar audio original
+        console.log(`[FFmpeg] Ejecutando FFmpeg con codec libx265 para ${name}...`)
         await ffmpeg.exec([
           '-i', 'input.mp4',
           '-vf', `scale=-2:${targetHeight}`,
-          '-c:v', 'libx264',
+          '-c:v', 'libx265',    // Usar libx265 (disponible en FFmpeg.wasm)
           '-b:v', bitrate,
-          '-preset', 'fast',
-          '-c:a', 'aac',
-          '-b:a', '128k',
+          '-preset', 'ultrafast', // ultrafast para procesar más rápido
+          '-c:a', 'copy',       // Copiar audio sin recodificar (más rápido)
+          '-movflags', '+faststart', // Optimizar para streaming web
           outputName
         ])
+        console.log(`[FFmpeg] ✅ Calidad ${name} procesada exitosamente`)
 
         const data = await ffmpeg.readFile(outputName)
         const blob = new Blob([data.buffer], { type: 'video/mp4' })
         qualities[name] = new File([blob], `video_${name}.mp4`, { type: 'video/mp4' })
+        console.log(`[FFmpeg] ✅ Archivo ${name} creado:`, (blob.size / 1024 / 1024).toFixed(2), 'MB')
 
         // Limpiar archivo temporal
         await ffmpeg.deleteFile(outputName)
@@ -287,9 +315,12 @@ export function useFFmpeg() {
       // Limpiar archivo de entrada
       await ffmpeg.deleteFile('input.mp4')
 
+      console.log('[FFmpeg] 🎉 ¡Todas las calidades generadas exitosamente!', Object.keys(qualities))
       return qualities
     } catch (err) {
-      console.error('Error generating multiple qualities:', err)
+      console.error('[FFmpeg] ❌ Error generating multiple qualities:', err)
+      console.error('[FFmpeg] Error details:', err.message)
+      console.error('[FFmpeg] Error stack:', err.stack)
       throw err
     }
   }

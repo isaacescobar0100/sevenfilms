@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react'
-import { X, Upload, Film, Wand2, Subtitles } from 'lucide-react'
+import { X, Upload, Film, Subtitles } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useUploadMovie } from '../../hooks/useMovies'
-import { useFFmpeg } from '../../hooks/useFFmpeg'
-import { useSubtitles } from '../../hooks/useSubtitles'
+// import { useFFmpeg } from '../../hooks/useFFmpeg' // DESHABILITADO: Se moverá a backend
+// import { useWhisperAI } from '../../hooks/useWhisperAI' // DESHABILITADO: Problema con transformers.js
 import LoadingSpinner from '../common/LoadingSpinner'
 import { useRateLimit } from '../../hooks/useRateLimit'
 import RateLimitMessage from '../common/RateLimitMessage'
+import { captureError } from '../../lib/sentry'
 
 const GENRES = [
   'Drama',
@@ -35,17 +36,14 @@ function UploadMovieModal({ onClose }) {
   const [thumbnailFile, setThumbnailFile] = useState(null)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [error, setError] = useState('')
-  const [processingVideo, setProcessingVideo] = useState(false)
   const [videoDuration, setVideoDuration] = useState(null)
-  const [videoResolution, setVideoResolution] = useState(null)
-  const [thumbnailResolution, setThumbnailResolution] = useState('1280')
   const [subtitleFile, setSubtitleFile] = useState(null)
   const [videoQualities, setVideoQualities] = useState(null)
-  const [qualityProgress, setQualityProgress] = useState(null)
 
   const uploadMovie = useUploadMovie()
-  const { loaded: ffmpegLoaded, loading: ffmpegLoading, generateThumbnail, getVideoDuration, getVideoResolution, generateMultipleQualities } = useFFmpeg()
-  const { generating: generatingSubtitles, progress: subtitleProgress, generateSubtitles } = useSubtitles()
+  // FFmpeg deshabilitado temporalmente - se moverá a backend
+  // const { loaded: ffmpegLoaded, loading: ffmpegLoading, generateThumbnail, getVideoDuration, getVideoResolution, generateMultipleQualities } = useFFmpeg()
+  // const { loading: generatingSubtitles, loadingModel, progress: subtitleProgress, error: subtitleError, generateSubtitles } = useWhisperAI() // DESHABILITADO
   const { canPerformAction, performAction, remaining, limit, resetTime, isLimited } = useRateLimit('movieUpload')
 
   const {
@@ -82,44 +80,15 @@ function UploadMovieModal({ onClose }) {
     setVideoQualities(null)
     setError('')
 
-    // Extraer duración y resolución del video si FFmpeg está cargado
-    if (ffmpegLoaded) {
-      setProcessingVideo(true)
-      try {
-        // Obtener duración y resolución en paralelo
-        const [duration, resolution] = await Promise.all([
-          getVideoDuration(file),
-          getVideoResolution(file)
-        ])
-        setVideoDuration(duration)
-        setVideoResolution(resolution)
-      } catch (err) {
-        console.error('Error processing video:', err)
-      }
-      setProcessingVideo(false)
-    }
+    // TODO: Extraer duración del video usando backend
+    // Por ahora subimos el video original sin procesamiento
   }
 
-  const handleGenerateQualities = async () => {
-    if (!videoFile || !ffmpegLoaded) return
-
-    setProcessingVideo(true)
-    setError('')
-    setQualityProgress(null)
-
-    try {
-      const qualities = await generateMultipleQualities(videoFile, (progress) => {
-        setQualityProgress(progress)
-      })
-      setVideoQualities(qualities)
-    } catch (err) {
-      console.error('Error generating qualities:', err)
-      setError('Error al generar las calidades de video. El video original se subirá sin múltiples calidades.')
-    }
-
-    setProcessingVideo(false)
-    setQualityProgress(null)
-  }
+  // DESHABILITADO: Generación de calidades se moverá al backend
+  // const handleGenerateQualities = async () => {
+  //   // Esta funcionalidad se implementará en el backend usando FFmpeg
+  //   // cuando tengamos un servidor Node.js o Cloud Function
+  // }
 
   const handleThumbnailChange = (e) => {
     const file = e.target.files?.[0]
@@ -141,22 +110,10 @@ function UploadMovieModal({ onClose }) {
     setError('')
   }
 
-  const handleAutoGenerateThumbnail = async () => {
-    if (!videoFile || !ffmpegLoaded) return
-
-    setProcessingVideo(true)
-    setError('')
-
-    try {
-      const thumbnail = await generateThumbnail(videoFile, 1, thumbnailResolution)
-      setThumbnailFile(thumbnail)
-    } catch (err) {
-      console.error('Error generating thumbnail:', err)
-      setError('Error al generar la miniatura. Intenta subirla manualmente.')
-    }
-
-    setProcessingVideo(false)
-  }
+  // DESHABILITADO: Generación de thumbnail se moverá al backend
+  // const handleAutoGenerateThumbnail = async () => {
+  //   // Esta funcionalidad se implementará en el backend
+  // }
 
   const handleSubtitleChange = (e) => {
     const file = e.target.files?.[0]
@@ -179,19 +136,24 @@ function UploadMovieModal({ onClose }) {
     setError('')
   }
 
-  const handleGenerateSubtitles = async () => {
-    if (!videoFile) return
-
-    setError('')
-
-    try {
-      const subtitles = await generateSubtitles(videoFile)
-      setSubtitleFile(subtitles)
-    } catch (err) {
-      console.error('Error generating subtitles:', err)
-      setError(err.message || 'Error al generar subtítulos. Intenta subirlos manualmente.')
-    }
-  }
+  // DESHABILITADO: Función para generar subtítulos automáticos con IA
+  // const handleGenerateSubtitles = async () => {
+  //   if (!videoFile) return
+  //   setError('')
+  //   try {
+  //     const subtitles = await generateSubtitles(videoFile, {
+  //       language: 'spanish',
+  //       chunkLengthSeconds: 30,
+  //       onChunkProgress: (data) => {
+  //         console.log('Whisper progress:', data)
+  //       }
+  //     })
+  //     setSubtitleFile(subtitles)
+  //   } catch (err) {
+  //     console.error('Error generating subtitles:', err)
+  //     setError(subtitleError || err.message || 'Error al generar subtítulos. Intenta subirlos manualmente.')
+  //   }
+  // }
 
   const onSubmit = async (data) => {
     if (!videoFile) {
@@ -295,11 +257,6 @@ function UploadMovieModal({ onClose }) {
                       <p className="text-sm text-gray-500">
                         {(videoFile.size / (1024 * 1024)).toFixed(2)} MB
                       </p>
-                      {videoResolution && (
-                        <p className="text-sm text-primary-600 mt-1">
-                          Resolución: {videoResolution.width}x{videoResolution.height}
-                        </p>
-                      )}
                       {videoDuration && (
                         <p className="text-sm text-gray-500">
                           Duración: {Math.floor(videoDuration / 60)}:{(videoDuration % 60).toString().padStart(2, '0')}
@@ -318,44 +275,15 @@ function UploadMovieModal({ onClose }) {
                 </label>
               </div>
 
-              {/* Generate Multiple Qualities Button */}
-              {videoFile && ffmpegLoaded && !videoQualities && (
-                <div className="mt-3">
-                  <button
-                    type="button"
-                    onClick={handleGenerateQualities}
-                    disabled={processingVideo || isSubmitting}
-                    className="w-full btn btn-secondary flex items-center justify-center space-x-2"
-                  >
-                    <Film className="h-4 w-4" />
-                    <span>Generar múltiples calidades (1080p, 720p, 480p, 360p)</span>
-                  </button>
-                  <p className="text-xs text-gray-500 mt-1 text-center">
-                    Recomendado para mejor experiencia de usuario
-                  </p>
-                </div>
-              )}
-
-              {/* Quality Generation Progress */}
-              {qualityProgress && (
+              {/* Informative message about upcoming features */}
+              {videoFile && (
                 <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-sm text-blue-800 mb-2">
-                    Generando calidad {qualityProgress.quality}... ({qualityProgress.current}/{qualityProgress.total})
+                  <p className="text-sm text-blue-800 font-medium">
+                    📹 Múltiples calidades de video - Próximamente
                   </p>
-                  <div className="w-full bg-blue-200 rounded-full h-2">
-                    <div
-                      className="bg-blue-600 h-2 rounded-full transition-all"
-                      style={{ width: `${(qualityProgress.current / qualityProgress.total) * 100}%` }}
-                    ></div>
-                  </div>
-                </div>
-              )}
-
-              {/* Qualities Generated Confirmation */}
-              {videoQualities && (
-                <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <p className="text-sm text-green-800 font-medium">
-                    ✓ Calidades generadas: {Object.keys(videoQualities).join(', ')}
+                  <p className="text-xs text-blue-600 mt-1">
+                    Pronto podrás generar automáticamente versiones en 1080p, 720p, 480p y 360p.
+                    Tu video se sube actualmente en calidad original.
                   </p>
                 </div>
               )}
@@ -367,40 +295,7 @@ function UploadMovieModal({ onClose }) {
                 <label className="block text-sm font-medium text-gray-700">
                   Miniatura (opcional)
                 </label>
-                {videoFile && ffmpegLoaded && !thumbnailFile && (
-                  <button
-                    type="button"
-                    onClick={handleAutoGenerateThumbnail}
-                    disabled={processingVideo || isSubmitting}
-                    className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center space-x-1"
-                  >
-                    <Wand2 className="h-4 w-4" />
-                    <span>Generar automáticamente</span>
-                  </button>
-                )}
               </div>
-
-              {/* Resolution selector for thumbnail */}
-              {videoFile && ffmpegLoaded && !thumbnailFile && (
-                <div className="mb-3">
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    Resolución del thumbnail
-                  </label>
-                  <select
-                    value={thumbnailResolution}
-                    onChange={(e) => setThumbnailResolution(e.target.value)}
-                    className="input text-sm"
-                    disabled={processingVideo || isSubmitting}
-                  >
-                    <option value="640">640px (baja calidad)</option>
-                    <option value="854">854px (SD)</option>
-                    <option value="1280">1280px (HD - recomendado)</option>
-                    <option value="1920">1920px (Full HD)</option>
-                    <option value="2560">2560px (2K)</option>
-                    <option value="3840">3840px (4K)</option>
-                  </select>
-                </div>
-              )}
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-primary-500 transition-colors">
                 <input
                   type="file"
@@ -408,7 +303,7 @@ function UploadMovieModal({ onClose }) {
                   onChange={handleThumbnailChange}
                   className="hidden"
                   id="thumbnail-upload"
-                  disabled={isSubmitting || processingVideo}
+                  disabled={isSubmitting}
                 />
                 <label
                   htmlFor="thumbnail-upload"
@@ -442,15 +337,6 @@ function UploadMovieModal({ onClose }) {
                   )}
                 </label>
               </div>
-              {ffmpegLoading && (
-                <p className="text-xs text-gray-500 mt-1">Cargando procesador de video...</p>
-              )}
-              {processingVideo && (
-                <div className="flex items-center justify-center space-x-2 mt-2">
-                  <LoadingSpinner size="sm" />
-                  <p className="text-sm text-gray-600">Procesando video...</p>
-                </div>
-              )}
             </div>
 
             {/* Subtitles Upload */}
@@ -459,7 +345,8 @@ function UploadMovieModal({ onClose }) {
                 <label className="block text-sm font-medium text-gray-700">
                   Subtítulos (opcional)
                 </label>
-                {videoFile && !subtitleFile && (
+                {/* TEMPORALMENTE DESHABILITADO - Problema con @xenova/transformers */}
+                {false && videoFile && !subtitleFile && (
                   <button
                     type="button"
                     onClick={handleGenerateSubtitles}
@@ -479,7 +366,7 @@ function UploadMovieModal({ onClose }) {
                   onChange={handleSubtitleChange}
                   className="hidden"
                   id="subtitle-upload"
-                  disabled={isSubmitting || generatingSubtitles}
+                  disabled={isSubmitting}
                 />
                 <label
                   htmlFor="subtitle-upload"
@@ -510,7 +397,19 @@ function UploadMovieModal({ onClose }) {
                 </label>
               </div>
 
-              {generatingSubtitles && (
+              {/* DESHABILITADO: Progress de generación de subtítulos */}
+              {/* {loadingModel && (
+                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center justify-center space-x-2">
+                    <LoadingSpinner size="sm" />
+                    <p className="text-sm text-blue-800">
+                      Descargando modelo de IA (~40MB, solo la primera vez)...
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {generatingSubtitles && !loadingModel && (
                 <div className="mt-2">
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
@@ -519,10 +418,19 @@ function UploadMovieModal({ onClose }) {
                     ></div>
                   </div>
                   <p className="text-xs text-gray-600 mt-1 text-center">
-                    Generando subtítulos... {Math.round(subtitleProgress)}%
+                    Generando subtítulos con IA... {Math.round(subtitleProgress)}%
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1 text-center">
+                    Esto puede tardar varios minutos dependiendo de la duración del video
                   </p>
                 </div>
               )}
+
+              {subtitleError && (
+                <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-800">{subtitleError}</p>
+                </div>
+              )} */}
             </div>
 
             {/* Title */}

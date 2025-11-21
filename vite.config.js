@@ -16,4 +16,17 @@ export default defineConfig({
     assetsDir: 'assets',
     sourcemap: false,
   },
+  // Comentado temporalmente - causa problemas con Supabase
+  // server: {
+  //   headers: {
+  //     'Cross-Origin-Opener-Policy': 'same-origin',
+  //     'Cross-Origin-Embedder-Policy': 'credentialless',
+  //   },
+  // },
+  // preview: {
+  //   headers: {
+  //     'Cross-Origin-Opener-Policy': 'same-origin',
+  //     'Cross-Origin-Embedder-Policy': 'credentialless',
+  //   },
+  // },
 })

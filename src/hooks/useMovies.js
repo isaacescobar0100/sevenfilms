@@ -217,15 +217,15 @@ export function useUploadMovie() {
       // Subir thumbnail si existe
       if (thumbnailFile) {
         const thumbExt = thumbnailFile.name.split('.').pop()
-        const thumbFileName = `${user.id}/${Date.now()}.${thumbExt}`
+        const thumbFileName = `${user.id}/${Date.now()}_thumb.${thumbExt}`
 
         const { error: thumbError } = await supabase.storage
-          .from('movie-thumbnails')
+          .from('movies') // Usar el mismo bucket 'movies'
           .upload(thumbFileName, thumbnailFile)
 
         if (!thumbError) {
           const { data: thumbUrlData } = supabase.storage
-            .from('movie-thumbnails')
+            .from('movies')
             .getPublicUrl(thumbFileName)
           thumbnailUrl = thumbUrlData.publicUrl
         }
@@ -234,15 +234,15 @@ export function useUploadMovie() {
       // Subir subtítulos si existen
       if (subtitleFile) {
         const subExt = subtitleFile.name.split('.').pop()
-        const subFileName = `${user.id}/${Date.now()}.${subExt}`
+        const subFileName = `${user.id}/${Date.now()}_sub.${subExt}`
 
         const { error: subError } = await supabase.storage
-          .from('movie-subtitles')
+          .from('movies') // Usar el mismo bucket 'movies'
           .upload(subFileName, subtitleFile)
 
         if (!subError) {
           const { data: subUrlData } = supabase.storage
-            .from('movie-subtitles')
+            .from('movies')
             .getPublicUrl(subFileName)
           subtitleUrl = subUrlData.publicUrl
         }
@@ -337,9 +337,15 @@ export function useDeleteMovie() {
             }
           }
           if (movie.thumbnail_url) {
-            const thumbPath = movie.thumbnail_url.split('/movie-thumbnails/')[1]
+            const thumbPath = movie.thumbnail_url.split('/movies/')[1]
             if (thumbPath) {
-              await supabase.storage.from('movie-thumbnails').remove([thumbPath])
+              await supabase.storage.from('movies').remove([thumbPath])
+            }
+          }
+          if (movie.subtitle_url) {
+            const subPath = movie.subtitle_url.split('/movies/')[1]
+            if (subPath) {
+              await supabase.storage.from('movies').remove([subPath])
             }
           }
         } catch (storageError) {
