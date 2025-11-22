@@ -396,6 +396,7 @@ function Messages() {
                     const content = message.content || ''
                     const firstLine = content.split('\n')[0]
                     const isMedia = firstLine.match(/\.(gif|jpg|jpeg|png|webp|mp4|webm|mov)/i) || firstLine.includes('giphy.com')
+                    const hasCaption = content.split('\n').length > 1 && content.split('\n').slice(1).join('').trim()
 
                     return (
                       <div
@@ -404,10 +405,12 @@ function Messages() {
                       >
                         <div className={`flex items-start gap-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
                           <div
-                            className={`max-w-[70%] rounded-lg ${isMedia ? 'p-1' : 'px-4 py-2'} ${
-                              isOwn
-                                ? 'bg-primary-600 text-white'
-                                : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700'
+                            className={`max-w-[70%] rounded-lg ${
+                              isMedia && !hasCaption
+                                ? '' // Sin fondo para media sin caption
+                                : isMedia
+                                  ? 'p-2 ' + (isOwn ? 'bg-primary-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700')
+                                  : 'px-4 py-2 ' + (isOwn ? 'bg-primary-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700')
                             }`}
                           >
                             {isEditing ? (
