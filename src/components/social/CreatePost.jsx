@@ -105,7 +105,7 @@ function CreatePost({ onSuccess }) {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
       <form onSubmit={handleSubmit}>
         <div className="flex space-x-3">
           {/* Avatar */}
@@ -129,7 +129,7 @@ function CreatePost({ onSuccess }) {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder={t('post.createPlaceholder')}
-              className="w-full border-0 focus:ring-0 resize-none text-lg placeholder-gray-500"
+              className="w-full border-0 focus:ring-0 resize-none text-lg placeholder-gray-500 dark:placeholder-gray-400 bg-transparent text-gray-900 dark:text-white"
               rows={3}
               disabled={uploading}
             />
@@ -173,13 +173,13 @@ function CreatePost({ onSuccess }) {
 
             {/* Remaining posts counter */}
             {!isLimited && remaining < 10 && (
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                 Publicaciones restantes hoy: {remaining}/{limit}
               </p>
             )}
 
             {/* Actions */}
-            <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
+            <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
               <div className="flex space-x-2">
                 {/* Image upload */}
                 <input
@@ -194,7 +194,7 @@ function CreatePost({ onSuccess }) {
                   type="button"
                   onClick={() => imageInputRef.current?.click()}
                   disabled={uploading || !!mediaFile}
-                  className="p-2 text-gray-600 hover:bg-gray-100 rounded-full disabled:opacity-50"
+                  className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full disabled:opacity-50"
                   title={t('post.attachImage')}
                 >
                   <Image className="h-5 w-5" />
@@ -213,7 +213,7 @@ function CreatePost({ onSuccess }) {
                   type="button"
                   onClick={() => videoInputRef.current?.click()}
                   disabled={uploading || !!mediaFile}
-                  className="p-2 text-gray-600 hover:bg-gray-100 rounded-full disabled:opacity-50"
+                  className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full disabled:opacity-50"
                   title={t('post.attachVideo')}
                 >
                   <Video className="h-5 w-5" />

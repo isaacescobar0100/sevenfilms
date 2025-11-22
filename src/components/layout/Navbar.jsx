@@ -1,10 +1,11 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Home, Search, Film, User, LogOut, Bell, Mail, Clapperboard, Globe } from 'lucide-react'
+import { Home, Search, Film, User, LogOut, Bell, Mail, Clapperboard, Globe, Moon, Sun } from 'lucide-react'
 import { useState } from 'react'
 import { useAuthStore } from '../../store/authStore'
 import { useUnreadMessagesCount } from '../../hooks/useMessages'
 import { useUnreadNotificationsCount } from '../../hooks/useNotifications'
+import { useThemeStore } from '../../store/themeStore'
 import NotificationsPanel from '../notifications/NotificationsPanel'
 
 function Navbar() {
@@ -28,6 +29,8 @@ function Navbar() {
     }
   }
 
+  const { toggleTheme } = useThemeStore()
+
   const toggleLanguage = () => {
     const newLang = i18n.language === 'es' ? 'en' : 'es'
     i18n.changeLanguage(newLang)
@@ -36,17 +39,25 @@ function Navbar() {
   // Si el usuario no está logueado, mostrar navbar simple
   if (!user) {
     return (
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50" role="navigation" aria-label={t('nav.main')}>
+      <nav className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50" role="navigation" aria-label={t('nav.main')}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <Link to="/" className="flex items-center space-x-2" aria-label="CineAmateur - Ir al inicio">
                 <Clapperboard className="h-8 w-8 text-primary-600" aria-hidden="true" />
-                <span className="text-xl font-bold text-gray-900">CineAmateur</span>
+                <span className="text-xl font-bold text-gray-900 dark:text-white">CineAmateur</span>
               </Link>
             </div>
             <div className="flex items-center space-x-4">
-              <Link to="/login" className="text-gray-700 hover:text-primary-600 font-medium">
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                aria-label={t('settings.toggleTheme')}
+              >
+                <Sun className="h-5 w-5 text-gray-600 dark:text-gray-400 hidden dark:block" />
+                <Moon className="h-5 w-5 text-gray-600 dark:text-gray-400 block dark:hidden" />
+              </button>
+              <Link to="/login" className="text-gray-700 dark:text-gray-300 hover:text-primary-600 font-medium">
                 {t('nav.login')}
               </Link>
               <Link to="/register" className="btn btn-primary">
@@ -68,14 +79,14 @@ function Navbar() {
   const isActive = (path) => location.pathname === path
 
   return (
-    <nav className="bg-white border-b border-gray-200 sticky top-0 z-50" role="navigation" aria-label={t('nav.main')}>
+    <nav className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50" role="navigation" aria-label={t('nav.main')}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           {/* Logo */}
           <div className="flex items-center">
             <Link to="/feed" className="flex items-center space-x-2" aria-label="CineAmateur - Ir al feed">
               <Clapperboard className="h-8 w-8 text-primary-600" aria-hidden="true" />
-              <span className="text-xl font-bold text-gray-900 hidden sm:block">CineAmateur</span>
+              <span className="text-xl font-bold text-gray-900 dark:text-white hidden sm:block">CineAmateur</span>
             </Link>
           </div>
 
@@ -88,7 +99,7 @@ function Navbar() {
                 className={`flex flex-col items-center transition-colors ${
                   isActive(item.path)
                     ? 'text-primary-600'
-                    : 'text-gray-600 hover:text-primary-600'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-primary-600'
                 }`}
                 title={item.label}
               >
@@ -106,7 +117,7 @@ function Navbar() {
                 className={`flex flex-col items-center transition-colors ${
                   showNotifications
                     ? 'text-primary-600'
-                    : 'text-gray-600 hover:text-primary-600'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-primary-600'
                 }`}
                 aria-label={`${t('nav.notifications')}${unreadNotifications > 0 ? ` (${unreadNotifications} ${t('nav.unread')})` : ''}`}
                 aria-expanded={showNotifications}
@@ -142,7 +153,7 @@ function Navbar() {
               className={`flex flex-col items-center transition-colors ${
                 isActive('/messages')
                   ? 'text-primary-600'
-                  : 'text-gray-600 hover:text-primary-600'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-primary-600'
               }`}
             >
               <div className="relative">
@@ -187,18 +198,18 @@ function Navbar() {
                     className="fixed inset-0 z-10"
                     onClick={() => setShowUserMenu(false)}
                   ></div>
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg py-2 z-20 border border-gray-200">
-                    <div className="px-4 py-3 border-b border-gray-200">
-                      <p className="text-sm font-semibold text-gray-900">
+                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 z-20 border border-gray-200 dark:border-gray-700">
+                    <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">
                         {user?.user_metadata?.name || 'Usuario'}
                       </p>
-                      <p className="text-xs text-gray-500 truncate">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                         @{user?.user_metadata?.username || user?.email?.split('@')[0]}
                       </p>
                     </div>
                     <Link
                       to="/profile"
-                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                       onClick={() => setShowUserMenu(false)}
                     >
                       <User className="h-4 w-4 mr-3" />
@@ -206,18 +217,26 @@ function Navbar() {
                     </Link>
                     <button
                       onClick={toggleLanguage}
-                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                     >
                       <Globe className="h-4 w-4 mr-3" />
                       {i18n.language === 'es' ? 'English' : 'Español'}
                     </button>
-                    <div className="border-t border-gray-200 my-1"></div>
+                    <button
+                      onClick={toggleTheme}
+                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      <Sun className="h-4 w-4 mr-3 hidden dark:block" />
+                      <Moon className="h-4 w-4 mr-3 block dark:hidden" />
+                      {t('settings.theme', 'Tema')}
+                    </button>
+                    <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
                     <button
                       onClick={() => {
                         handleLogout()
                         setShowUserMenu(false)
                       }}
-                      className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                      className="flex items-center w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                     >
                       <LogOut className="h-4 w-4 mr-3" />
                       {t('nav.logout')}
@@ -280,18 +299,18 @@ function Navbar() {
                     className="fixed inset-0 z-10"
                     onClick={() => setShowUserMenu(false)}
                   ></div>
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg py-2 z-20 border border-gray-200">
-                    <div className="px-4 py-3 border-b border-gray-200">
-                      <p className="text-sm font-semibold text-gray-900">
+                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 z-20 border border-gray-200 dark:border-gray-700">
+                    <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">
                         {user?.user_metadata?.name || 'Usuario'}
                       </p>
-                      <p className="text-xs text-gray-500 truncate">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                         @{user?.user_metadata?.username || user?.email?.split('@')[0]}
                       </p>
                     </div>
                     <Link
                       to="/profile"
-                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                       onClick={() => setShowUserMenu(false)}
                     >
                       <User className="h-4 w-4 mr-3" />
@@ -299,18 +318,26 @@ function Navbar() {
                     </Link>
                     <button
                       onClick={toggleLanguage}
-                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                     >
                       <Globe className="h-4 w-4 mr-3" />
                       {i18n.language === 'es' ? 'English' : 'Español'}
                     </button>
-                    <div className="border-t border-gray-200 my-1"></div>
+                    <button
+                      onClick={toggleTheme}
+                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      <Sun className="h-4 w-4 mr-3 hidden dark:block" />
+                      <Moon className="h-4 w-4 mr-3 block dark:hidden" />
+                      {t('settings.theme', 'Tema')}
+                    </button>
+                    <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
                     <button
                       onClick={() => {
                         handleLogout()
                         setShowUserMenu(false)
                       }}
-                      className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                      className="flex items-center w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                     >
                       <LogOut className="h-4 w-4 mr-3" />
                       {t('nav.logout')}
@@ -324,7 +351,7 @@ function Navbar() {
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-50">
         <div className="flex justify-around items-center h-16">
           {navItems.map((item) => (
             <Link
@@ -333,7 +360,7 @@ function Navbar() {
               className={`flex flex-col items-center justify-center flex-1 h-full ${
                 isActive(item.path)
                   ? 'text-primary-600'
-                  : 'text-gray-600'
+                  : 'text-gray-600 dark:text-gray-400'
               }`}
             >
               <item.icon className="h-6 w-6" />
@@ -347,7 +374,7 @@ function Navbar() {
             className={`flex flex-col items-center justify-center flex-1 h-full relative ${
               isActive('/messages')
                 ? 'text-primary-600'
-                : 'text-gray-600'
+                : 'text-gray-600 dark:text-gray-400'
             }`}
           >
             <div className="relative">

@@ -82,11 +82,11 @@ function NotificationsPanel({ onClose }) {
   }
 
   return (
-    <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-[32rem] overflow-hidden flex flex-col">
+    <div className="absolute right-0 mt-2 w-96 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 max-h-[32rem] overflow-hidden flex flex-col">
       {/* Header */}
-      <div className="p-4 border-b border-gray-200">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="font-bold text-lg">{t('notifications.title')}</h3>
+          <h3 className="font-bold text-lg text-gray-900 dark:text-white">{t('notifications.title')}</h3>
         </div>
         {notifications && notifications.length > 0 && (
           <div className="flex items-center gap-3">
@@ -96,10 +96,10 @@ function NotificationsPanel({ onClose }) {
             >
               <span>{t('notifications.markAllRead')}</span>
             </button>
-            <span className="text-gray-300">|</span>
+            <span className="text-gray-300 dark:text-gray-600">|</span>
             <button
               onClick={handleDeleteAll}
-              className="text-sm text-red-600 hover:text-red-700 flex items-center gap-1"
+              className="text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 flex items-center gap-1"
             >
               <Trash2 className="h-3.5 w-3.5" />
               <span>{t('notifications.deleteAll') || 'Eliminar todas'}</span>
@@ -119,14 +119,14 @@ function NotificationsPanel({ onClose }) {
             {notifications.map((notification) => (
               <div
                 key={notification.id}
-                className={`relative group border-b border-gray-100 transition-colors ${
-                  !notification.is_read ? 'bg-primary-50' : ''
+                className={`relative group border-b border-gray-100 dark:border-gray-700 transition-colors ${
+                  !notification.is_read ? 'bg-primary-50 dark:bg-primary-900/20' : ''
                 }`}
               >
                 <Link
                   to={getNotificationLink(notification)}
                   onClick={() => handleNotificationClick(notification)}
-                  className="block p-4 hover:bg-gray-50"
+                  className="block p-4 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   <div className="flex space-x-3">
                     {/* Icon */}
@@ -152,10 +152,10 @@ function NotificationsPanel({ onClose }) {
 
                         {/* Message */}
                         <div className="flex-1 min-w-0 pr-8">
-                          <p className="text-sm text-gray-900">
+                          <p className="text-sm text-gray-900 dark:text-gray-100">
                             {getNotificationMessage(notification)}
                           </p>
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                             {formatRelativeTime(notification.created_at)}
                           </p>
                         </div>
@@ -172,17 +172,17 @@ function NotificationsPanel({ onClose }) {
                 {/* Delete button */}
                 <button
                   onClick={(e) => handleDeleteNotification(e, notification.id)}
-                  className="absolute top-3 right-3 p-1.5 rounded-full opacity-0 group-hover:opacity-100 hover:bg-red-50 transition-opacity"
+                  className="absolute top-3 right-3 p-1.5 rounded-full opacity-0 group-hover:opacity-100 hover:bg-red-50 dark:hover:bg-red-900/20 transition-opacity"
                   title={t('notifications.delete') || 'Eliminar'}
                 >
-                  <X className="h-4 w-4 text-gray-400 hover:text-red-600" />
+                  <X className="h-4 w-4 text-gray-400 hover:text-red-600 dark:hover:text-red-400" />
                 </button>
               </div>
             ))}
           </div>
         ) : (
           <div className="text-center py-12 px-4">
-            <p className="text-gray-500">{t('notifications.noNotifications')}</p>
+            <p className="text-gray-500 dark:text-gray-400">{t('notifications.noNotifications')}</p>
           </div>
         )}
       </div>
