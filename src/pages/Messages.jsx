@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Send, MessageCircle, ArrowLeft, Trash2, MoreVertical, Edit, Trash, Loader2 } from 'lucide-react'
+import { Send, MessageCircle, ArrowLeft, Trash2, MoreVertical, Edit, Trash, Loader2, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
@@ -29,6 +29,7 @@ function Messages() {
   const [messageToDelete, setMessageToDelete] = useState(null)
   const [deleteForEveryone, setDeleteForEveryone] = useState(false)
   const [uploadingMedia, setUploadingMedia] = useState(false)
+  const [mediaPreview, setMediaPreview] = useState(null) // { file, url, type }
 
   const dateLocale = i18n.language === 'es' ? es : enUS
 
@@ -83,16 +84,63 @@ function Messages() {
 
   const handleSendMessage = async (e) => {
     e.preventDefault()
-    if (!messageContent.trim() || !selectedUser) return
+    if ((!messageContent.trim() && !mediaPreview) || !selectedUser) return
 
     try {
-      await sendMessage.mutateAsync({
-        receiverId: selectedUser.id,
-        content: messageContent.trim(),
-      })
+      // If there's media, upload it first
+      if (mediaPreview) {
+        await uploadAndSendMedia(mediaPreview.file, messageContent.trim())
+      } else {
+        await sendMessage.mutateAsync({
+          receiverId: selectedUser.id,
+          content: messageContent.trim(),
+        })
+      }
       setMessageContent('')
+      clearMediaPreview()
     } catch (error) {
       console.error('Error sending message:', error)
+    }
+  }
+
+  const clearMediaPreview = () => {
+    if (mediaPreview?.url) {
+      URL.revokeObjectURL(mediaPreview.url)
+    }
+    setMediaPreview(null)
+  }
+
+  const uploadAndSendMedia = async (file, caption = '') => {
+    setUploadingMedia(true)
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `chat/${user.id}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`
+
+      const { error } = await supabase.storage
+        .from('movies')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
+
+      if (error) throw error
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('movies')
+        .getPublicUrl(fileName)
+
+      // Send media URL as message (with caption if provided)
+      const content = caption ? `${publicUrl}\n${caption}` : publicUrl
+      await sendMessage.mutateAsync({
+        receiverId: selectedUser.id,
+        content: content,
+      })
+    } catch (error) {
+      console.error('Error uploading media:', error)
+      alert(t('messages.uploadError') || 'Error al subir el archivo')
+      throw error
+    } finally {
+      setUploadingMedia(false)
     }
   }
 
@@ -160,41 +208,13 @@ function Messages() {
     })
   }
 
-  const handleMediaUpload = async (file) => {
-    if (!file || !selectedUser) return
+  const handleMediaSelect = (file) => {
+    if (!file) return
 
-    setUploadingMedia(true)
-    try {
-      // Create unique filename - use 'movies' bucket which should have RLS configured
-      const fileExt = file.name.split('.').pop()
-      const fileName = `chat/${user.id}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`
-
-      // Upload to Supabase storage - try 'movies' bucket first (likely has RLS)
-      const { data, error } = await supabase.storage
-        .from('movies')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: false
-        })
-
-      if (error) throw error
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('movies')
-        .getPublicUrl(fileName)
-
-      // Send as message
-      await sendMessage.mutateAsync({
-        receiverId: selectedUser.id,
-        content: publicUrl,
-      })
-    } catch (error) {
-      console.error('Error uploading media:', error)
-      alert(t('messages.uploadError') || 'Error al subir el archivo')
-    } finally {
-      setUploadingMedia(false)
-    }
+    // Create preview URL
+    const url = URL.createObjectURL(file)
+    const type = file.type.startsWith('video/') ? 'video' : 'image'
+    setMediaPreview({ file, url, type })
   }
 
   return (
@@ -354,6 +374,10 @@ function Messages() {
                   messages.map((message) => {
                     const isOwn = message.sender_id === user?.id
                     const isEditing = editingMessage === message.id
+                    const content = message.content || ''
+                    const firstLine = content.split('\n')[0]
+                    const isMedia = firstLine.match(/\.(gif|jpg|jpeg|png|webp|mp4|webm|mov)/i) || firstLine.includes('giphy.com')
+
                     return (
                       <div
                         key={message.id}
@@ -361,7 +385,7 @@ function Messages() {
                       >
                         <div className={`flex items-start gap-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
                           <div
-                            className={`max-w-[70%] rounded-lg px-4 py-2 ${
+                            className={`max-w-[70%] rounded-lg ${isMedia ? 'p-1' : 'px-4 py-2'} ${
                               isOwn
                                 ? 'bg-primary-600 text-white'
                                 : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700'
@@ -398,31 +422,57 @@ function Messages() {
                             ) : (
                               <>
                                 {/* Check if content is a media URL */}
-                                {message.content?.match(/\.(gif|giphy\.com)/i) ? (
-                                  <img
-                                    src={message.content}
-                                    alt="GIF"
-                                    className="max-w-[200px] max-h-[150px] rounded"
-                                    loading="lazy"
-                                  />
-                                ) : message.content?.match(/\.(jpg|jpeg|png|webp)/i) ? (
-                                  <img
-                                    src={message.content}
-                                    alt="Imagen"
-                                    className="max-w-[250px] max-h-[200px] rounded cursor-pointer hover:opacity-90"
-                                    loading="lazy"
-                                    onClick={() => window.open(message.content, '_blank')}
-                                  />
-                                ) : message.content?.match(/\.(mp4|webm|mov)/i) ? (
-                                  <video
-                                    src={message.content}
-                                    controls
-                                    className="max-w-[250px] max-h-[200px] rounded"
-                                    preload="metadata"
-                                  />
-                                ) : (
-                                  <p className="break-words">{message.content}</p>
-                                )}
+                                {(() => {
+                                  const content = message.content || ''
+                                  const lines = content.split('\n')
+                                  const mediaUrl = lines[0]
+                                  const caption = lines.slice(1).join('\n').trim()
+
+                                  const isGif = mediaUrl.match(/\.(gif)/i) || mediaUrl.includes('giphy.com')
+                                  const isImage = mediaUrl.match(/\.(jpg|jpeg|png|webp)/i) || (mediaUrl.includes('supabase') && mediaUrl.match(/\.(jpg|jpeg|png|webp)/i))
+                                  const isVideo = mediaUrl.match(/\.(mp4|webm|mov)/i)
+
+                                  if (isGif) {
+                                    return (
+                                      <>
+                                        <img
+                                          src={mediaUrl}
+                                          alt="GIF"
+                                          className="max-w-[200px] max-h-[150px] rounded"
+                                          loading="lazy"
+                                        />
+                                        {caption && <p className="break-words mt-2">{caption}</p>}
+                                      </>
+                                    )
+                                  } else if (isImage) {
+                                    return (
+                                      <>
+                                        <img
+                                          src={mediaUrl}
+                                          alt="Imagen"
+                                          className="max-w-[200px] max-h-[200px] rounded cursor-pointer hover:opacity-90"
+                                          loading="lazy"
+                                          onClick={() => window.open(mediaUrl, '_blank')}
+                                        />
+                                        {caption && <p className="break-words mt-2">{caption}</p>}
+                                      </>
+                                    )
+                                  } else if (isVideo) {
+                                    return (
+                                      <>
+                                        <video
+                                          src={mediaUrl}
+                                          controls
+                                          className="max-w-[200px] max-h-[200px] rounded"
+                                          preload="metadata"
+                                        />
+                                        {caption && <p className="break-words mt-2">{caption}</p>}
+                                      </>
+                                    )
+                                  } else {
+                                    return <p className="break-words">{content}</p>
+                                  }
+                                })()}
                                 <p
                                   className={`text-xs mt-1 ${
                                     isOwn ? 'text-primary-100' : 'text-gray-500 dark:text-gray-400'
@@ -522,6 +572,31 @@ function Messages() {
 
               {/* Message Input */}
               <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                {/* Media Preview */}
+                {mediaPreview && (
+                  <div className="mb-3 relative inline-block">
+                    <button
+                      type="button"
+                      onClick={clearMediaPreview}
+                      className="absolute -top-2 -right-2 z-10 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow-lg"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                    {mediaPreview.type === 'video' ? (
+                      <video
+                        src={mediaPreview.url}
+                        className="max-h-32 rounded-lg border border-gray-300 dark:border-gray-600"
+                        controls
+                      />
+                    ) : (
+                      <img
+                        src={mediaPreview.url}
+                        alt="Preview"
+                        className="max-h-32 rounded-lg border border-gray-300 dark:border-gray-600"
+                      />
+                    )}
+                  </div>
+                )}
                 <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
                   {uploadingMedia && (
                     <div className="flex items-center text-primary-600">
@@ -542,7 +617,7 @@ function Messages() {
                         content: stickerUrl,
                       })
                     }}
-                    onMediaSelect={handleMediaUpload}
+                    onMediaSelect={handleMediaSelect}
                     position="top"
                   />
                   <input
@@ -555,10 +630,10 @@ function Messages() {
                   />
                   <button
                     type="submit"
-                    disabled={!messageContent.trim() || sendMessage.isPending}
+                    disabled={(!messageContent.trim() && !mediaPreview) || sendMessage.isPending || uploadingMedia}
                     className="btn btn-primary rounded-full p-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {sendMessage.isPending ? (
+                    {sendMessage.isPending || uploadingMedia ? (
                       <LoadingSpinner size="sm" />
                     ) : (
                       <Send className="h-5 w-5" />
