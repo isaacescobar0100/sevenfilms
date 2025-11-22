@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Smile, Image, X, Search } from 'lucide-react'
+import { Smile, X, Search } from 'lucide-react'
 import data from '@emoji-mart/data'
 import Picker from '@emoji-mart/react'
 import { GiphyFetch } from '@giphy/js-fetch-api'
@@ -129,7 +129,11 @@ function EmojiGifPicker({ onSelect, onGifSelect, onStickerSelect, position = 'to
             className="p-2 text-gray-500 hover:text-primary-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
             title="GIFs & Stickers"
           >
-            <Image className="w-5 h-5" />
+            {/* GIF icon */}
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="4" width="20" height="16" rx="2" />
+              <text x="12" y="15" textAnchor="middle" fontSize="8" fill="currentColor" stroke="none" fontWeight="bold">GIF</text>
+            </svg>
           </button>
         )}
       </div>
