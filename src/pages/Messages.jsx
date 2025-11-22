@@ -217,6 +217,25 @@ function Messages() {
     setMediaPreview({ file, url, type })
   }
 
+  // Helper to format message preview in conversation list
+  const formatMessagePreview = (content) => {
+    if (!content) return ''
+    const firstLine = content.split('\n')[0]
+
+    // Check if it's a media URL
+    if (firstLine.match(/\.(gif)/i) || firstLine.includes('giphy.com')) {
+      return '🎬 GIF'
+    }
+    if (firstLine.match(/\.(jpg|jpeg|png|webp)/i)) {
+      return '📷 Foto'
+    }
+    if (firstLine.match(/\.(mp4|webm|mov)/i)) {
+      return '🎥 Video'
+    }
+
+    return content
+  }
+
   return (
     <div className="max-w-7xl mx-auto h-[calc(100vh-4rem)]">
       <div className="flex h-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
@@ -274,7 +293,7 @@ function Messages() {
                         </div>
                         <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
                           {conv.sender_id === user?.id ? t('messages.you') + ' ' : ''}
-                          {conv.content}
+                          {formatMessagePreview(conv.content)}
                         </p>
                       </div>
 
