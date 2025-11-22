@@ -460,7 +460,8 @@ function Messages() {
                                         <img
                                           src={mediaUrl}
                                           alt="GIF"
-                                          className="max-w-[200px] max-h-[150px] rounded"
+                                          className="max-w-full w-auto h-auto rounded"
+                                          style={{ maxWidth: '200px', maxHeight: '150px' }}
                                           loading="lazy"
                                         />
                                         {caption && <p className="break-words mt-2">{caption}</p>}
@@ -472,7 +473,8 @@ function Messages() {
                                         <img
                                           src={mediaUrl}
                                           alt="Imagen"
-                                          className="max-w-[200px] max-h-[200px] rounded cursor-pointer hover:opacity-90"
+                                          className="max-w-full w-auto h-auto rounded cursor-pointer hover:opacity-90"
+                                          style={{ maxWidth: '200px', maxHeight: '200px' }}
                                           loading="lazy"
                                           onClick={() => window.open(mediaUrl, '_blank')}
                                         />
@@ -485,7 +487,8 @@ function Messages() {
                                         <video
                                           src={mediaUrl}
                                           controls
-                                          className="max-w-[200px] max-h-[200px] rounded"
+                                          className="max-w-full w-auto h-auto rounded"
+                                          style={{ maxWidth: '200px', maxHeight: '200px' }}
                                           preload="metadata"
                                         />
                                         {caption && <p className="break-words mt-2">{caption}</p>}
