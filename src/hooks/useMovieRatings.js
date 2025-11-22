@@ -147,17 +147,9 @@ export function useFeaturedMovies() {
   return useQuery({
     queryKey: ['featured-movies'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: movies, error } = await supabase
         .from('movies')
-        .select(`
-          *,
-          profiles (
-            id,
-            username,
-            full_name,
-            avatar_url
-          )
-        `)
+        .select('*')
         .gt('views', 0)
         .order('views', { ascending: false })
         .order('average_rating', { ascending: false, nullsLast: true })
@@ -165,7 +157,29 @@ export function useFeaturedMovies() {
         .limit(10)
 
       if (error) throw error
-      return data || []
+
+      // Obtener perfiles de los usuarios
+      const moviesWithProfiles = await Promise.all(
+        (movies || []).map(async (movie) => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('id, username, full_name, avatar_url')
+            .eq('id', movie.user_id)
+            .maybeSingle()
+
+          return {
+            ...movie,
+            profiles: profile || {
+              id: movie.user_id,
+              username: 'Usuario',
+              full_name: 'Usuario Sin Nombre',
+              avatar_url: null,
+            },
+          }
+        })
+      )
+
+      return moviesWithProfiles
     },
     ...CACHE_TIMES.COMPUTED,
   })
