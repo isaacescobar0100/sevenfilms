@@ -1,13 +1,14 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Film, Plus, Play, Eye, Calendar, Star, ArrowUpDown, ChevronDown, Check } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { useMovies } from '../hooks/useMovies'
+import { useInfiniteMovies } from '../hooks/useMovies'
 import { useFeaturedMovies } from '../hooks/useMovieRatings'
 import { getTranslatedGenre } from '../utils/genreMapper'
 import LoadingSpinner from '../components/common/LoadingSpinner'
 import UploadMovieModal from '../components/movies/UploadMovieModal'
 import MoviePlayerModal from '../components/movies/MoviePlayerModal'
 import MovieRatingStars from '../components/movies/MovieRatingStars'
+import { VirtualizedGrid } from '../components/common/VirtualizedList'
 
 function Movies() {
   const { t } = useTranslation()
@@ -57,8 +58,19 @@ function Movies() {
     ...(selectedGenreKey !== 'all' ? { genre: selectedGenre?.label } : {}),
     sortBy
   }
-  const { data: movies, isLoading } = useMovies(filters)
+  const { data, fetchNextPage, hasNextPage, isLoading, isFetchingNextPage } = useInfiniteMovies(filters)
   const { data: featuredMovies, isLoading: isFeaturedLoading } = useFeaturedMovies()
+
+  // Aplanar las páginas de películas
+  const movies = data?.pages.flatMap(page => page.data) || []
+
+  // Renderizar cada película (memoizado para virtualización)
+  const renderMovie = useCallback((movie) => (
+    <MovieCard key={movie.id} movie={movie} onClick={() => setSelectedMovie(movie)} />
+  ), [])
+
+  // Obtener key única para cada película
+  const getMovieKey = useCallback((movie) => movie.id, [])
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -176,11 +188,19 @@ function Movies() {
           <LoadingSpinner />
         </div>
       ) : movies && movies.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {movies.map((movie) => (
-            <MovieCard key={movie.id} movie={movie} onClick={() => setSelectedMovie(movie)} />
-          ))}
-        </div>
+        <VirtualizedGrid
+          items={movies}
+          renderItem={renderMovie}
+          getItemKey={getMovieKey}
+          columns={4}
+          estimatedRowHeight={380}
+          hasNextPage={hasNextPage}
+          isFetchingNextPage={isFetchingNextPage}
+          fetchNextPage={fetchNextPage}
+          className="h-[calc(100vh-350px)] min-h-[500px]"
+          gap={24}
+          overscan={2}
+        />
       ) : (
         <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
           <Film className="h-16 w-16 text-gray-400 mx-auto mb-4" />

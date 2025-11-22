@@ -1,4 +1,4 @@
-import { useState, Fragment } from 'react'
+import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Users, TrendingUp } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -9,6 +9,7 @@ import Post from '../components/social/Post'
 import LoadingSpinner from '../components/common/LoadingSpinner'
 import ErrorMessage from '../components/common/ErrorMessage'
 import UserCard from '../components/social/UserCard'
+import { VirtualizedList } from '../components/common/VirtualizedList'
 
 function Feed() {
   const { t } = useTranslation()
@@ -19,6 +20,14 @@ function Feed() {
   const { data: trending } = useTrending()
 
   const posts = data?.pages.flatMap(page => page.data) || []
+
+  // Renderizar cada post (memoizado para virtualización)
+  const renderPost = useCallback((post) => (
+    <Post key={post.id} post={post} />
+  ), [])
+
+  // Obtener key única para cada post
+  const getPostKey = useCallback((post) => post.id, [])
 
   // Determinar si hay contenido en el sidebar
   const hasSidebar = (suggestedUsers && suggestedUsers.length > 0) || (trending && trending.length > 0)
@@ -106,28 +115,18 @@ function Feed() {
                   </p>
                 </div>
               ) : (
-                <>
-                  {posts.map((post) => (
-                    <Post key={post.id} post={post} />
-                  ))}
-
-                  {/* Load More Button */}
-                  {hasNextPage && (
-                    <div className="flex justify-center py-4">
-                      <button
-                        onClick={() => fetchNextPage()}
-                        disabled={isFetchingNextPage}
-                        className="btn btn-secondary"
-                      >
-                        {isFetchingNextPage ? (
-                          <LoadingSpinner size="sm" />
-                        ) : (
-                          t('feed.loadMore')
-                        )}
-                      </button>
-                    </div>
-                  )}
-                </>
+                <VirtualizedList
+                  items={posts}
+                  renderItem={renderPost}
+                  getItemKey={getPostKey}
+                  estimatedItemSize={350}
+                  hasNextPage={hasNextPage}
+                  isFetchingNextPage={isFetchingNextPage}
+                  fetchNextPage={fetchNextPage}
+                  className="h-[calc(100vh-300px)] min-h-[500px]"
+                  overscan={3}
+                  loadingText={t('feed.loadMore')}
+                />
               )}
             </div>
           )}

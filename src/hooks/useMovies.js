@@ -1,7 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import { optimizeThumbnail } from './useImageOptimization'
+
+const MOVIES_PAGE_SIZE = 12
 
 // Obtener todas las películas
 export function useMovies(filters = {}) {
@@ -113,6 +115,87 @@ export function useMovie(movieId) {
       }
     },
     enabled: !!movieId,
+  })
+}
+
+// Obtener películas con paginación infinita (para virtualización)
+export function useInfiniteMovies(filters = {}) {
+  return useInfiniteQuery({
+    queryKey: ['movies-infinite', filters],
+    queryFn: async ({ pageParam = 0 }) => {
+      let query = supabase
+        .from('movies')
+        .select('*')
+
+      // Aplicar ordenamiento
+      const sortBy = filters.sortBy || 'popular'
+      switch (sortBy) {
+        case 'rating':
+          query = query.order('average_rating', { ascending: false, nullsLast: true })
+          query = query.order('ratings_count', { ascending: false })
+          break
+        case 'views':
+          query = query.order('views', { ascending: false })
+          break
+        case 'recent':
+          query = query.order('created_at', { ascending: false })
+          break
+        case 'comments':
+          query = query.order('comments_count', { ascending: false })
+          break
+        case 'popular':
+        default:
+          query = query.order('engagement_score', { ascending: false })
+          query = query.order('created_at', { ascending: false })
+          break
+      }
+
+      // Aplicar filtros
+      if (filters.genre) {
+        query = query.eq('genre', filters.genre)
+      }
+      if (filters.userId) {
+        query = query.eq('user_id', filters.userId)
+      }
+      if (filters.search) {
+        query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`)
+      }
+
+      // Paginación
+      query = query.range(pageParam, pageParam + MOVIES_PAGE_SIZE - 1)
+
+      const { data: movies, error, count } = await query
+
+      if (error) throw error
+
+      // Obtener perfiles de los usuarios
+      const moviesWithProfiles = await Promise.all(
+        (movies || []).map(async (movie) => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('id, username, full_name, avatar_url')
+            .eq('id', movie.user_id)
+            .maybeSingle()
+
+          return {
+            ...movie,
+            profiles: profile || {
+              id: movie.user_id,
+              username: 'Usuario',
+              full_name: 'Usuario Sin Nombre',
+              avatar_url: null,
+            },
+          }
+        })
+      )
+
+      return {
+        data: moviesWithProfiles,
+        nextCursor: movies && movies.length === MOVIES_PAGE_SIZE ? pageParam + MOVIES_PAGE_SIZE : undefined,
+      }
+    },
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    initialPageParam: 0,
   })
 }
 
