@@ -2,8 +2,10 @@ import { Link } from 'react-router-dom'
 import { useIsFollowing, useToggleFollow } from '../../hooks/useFollows'
 import { useAuthStore } from '../../store/authStore'
 import { useRateLimit } from '../../hooks/useRateLimit'
+import { useTranslation } from 'react-i18next'
 
-function UserCard({ user, showFollowButton = false }) {
+function UserCard({ user, showFollowButton = false, compact = false }) {
+  const { t } = useTranslation()
   const { user: currentUser } = useAuthStore()
   const { data: isFollowing } = useIsFollowing(user.id)
   const toggleFollow = useToggleFollow()
@@ -22,6 +24,43 @@ function UserCard({ user, showFollowButton = false }) {
     performAction()
   }
 
+  // Versión compacta para carrusel horizontal (móvil)
+  if (compact) {
+    return (
+      <div className="flex-shrink-0 w-28">
+        <Link to={`/profile/${user.username}`} className="block text-center">
+          {user.avatar_url ? (
+            <img
+              src={user.avatar_url}
+              alt={user.username}
+              className="h-16 w-16 rounded-full mx-auto mb-2 object-cover"
+            />
+          ) : (
+            <div className="h-16 w-16 rounded-full bg-primary-600 flex items-center justify-center text-white font-bold text-xl mx-auto mb-2">
+              {user.full_name?.[0] || user.username?.[0] || 'U'}
+            </div>
+          )}
+          <p className="font-medium text-sm truncate text-gray-900">{user.full_name || user.username}</p>
+          <p className="text-xs text-gray-500 truncate">@{user.username}</p>
+        </Link>
+        {showFollowButton && !isOwnProfile && (
+          <button
+            onClick={handleFollow}
+            disabled={toggleFollow.isPending}
+            className={`mt-2 w-full text-xs py-1.5 px-2 rounded-full font-medium transition-colors ${
+              isFollowing
+                ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                : 'bg-primary-600 text-white hover:bg-primary-700'
+            }`}
+          >
+            {isFollowing ? t('profile.following') : t('profile.follow')}
+          </button>
+        )}
+      </div>
+    )
+  }
+
+  // Versión normal (lista vertical)
   return (
     <div className="flex items-center justify-between">
       <Link to={`/profile/${user.username}`} className="flex items-center space-x-3 flex-1">
@@ -52,7 +91,7 @@ function UserCard({ user, showFollowButton = false }) {
               : 'btn-primary'
           }`}
         >
-          {isFollowing ? 'Siguiendo' : 'Seguir'}
+          {isFollowing ? t('profile.following') : t('profile.follow')}
         </button>
       )}
     </div>

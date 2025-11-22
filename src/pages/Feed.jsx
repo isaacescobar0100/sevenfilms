@@ -71,6 +71,18 @@ function Feed() {
             </div>
           </div>
 
+          {/* Cineastas sugeridos - Carrusel horizontal solo en móvil */}
+          {suggestedUsers && suggestedUsers.length > 0 && (
+            <div className="lg:hidden bg-white rounded-lg shadow-md p-4">
+              <h2 className="font-bold text-sm text-gray-700 mb-3">{t('feed.suggestedFilmmakers')}</h2>
+              <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                {suggestedUsers.slice(0, 6).map((user) => (
+                  <UserCard key={user.id} user={user} showFollowButton compact />
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Posts */}
           {isLoading && <LoadingSpinner />}
           {error && <ErrorMessage message="Error al cargar el feed" />}
