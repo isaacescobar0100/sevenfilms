@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import { optimizeAvatar, optimizeCover } from './useImageOptimization'
+import { CACHE_TIMES } from '../lib/queryConfig'
 
 // Obtener perfil de un usuario
 export function useProfile(userId) {
@@ -18,6 +19,7 @@ export function useProfile(userId) {
       return data
     },
     enabled: !!userId,
+    ...CACHE_TIMES.PROFILE,
   })
 }
 
@@ -36,6 +38,7 @@ export function useProfileByUsername(username) {
       return data
     },
     enabled: !!username,
+    ...CACHE_TIMES.PROFILE,
   })
 }
 
@@ -54,6 +57,7 @@ export function useUserStats(userId) {
       return data
     },
     enabled: !!userId,
+    ...CACHE_TIMES.SOCIAL,
   })
 }
 
@@ -180,6 +184,7 @@ export function useSearchUsers(query) {
       return data || []
     },
     enabled: Boolean(query && query.trim().length >= 2),
+    ...CACHE_TIMES.SEARCH,
   })
 }
 
@@ -207,5 +212,6 @@ export function useSuggestedUsers() {
       return data || []
     },
     enabled: !!user,
+    ...CACHE_TIMES.COMPUTED,
   })
 }

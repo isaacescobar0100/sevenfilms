@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import { useTranslation } from 'react-i18next'
 import { captureError } from '../lib/sentry'
+import { CACHE_TIMES } from '../lib/queryConfig'
 
 // Obtener rating de un usuario para una película específica
 export function useUserMovieRating(movieId) {
@@ -24,6 +25,7 @@ export function useUserMovieRating(movieId) {
       return data
     },
     enabled: !!user && !!movieId,
+    ...CACHE_TIMES.SOCIAL,
   })
 }
 
@@ -50,6 +52,7 @@ export function useMovieRatings(movieId) {
       return data || []
     },
     enabled: !!movieId,
+    ...CACHE_TIMES.SOCIAL,
   })
 }
 
@@ -163,6 +166,6 @@ export function useFeaturedMovies() {
       if (error) throw error
       return data || []
     },
-    staleTime: 1000 * 60 * 5, // 5 minutos
+    ...CACHE_TIMES.COMPUTED,
   })
 }

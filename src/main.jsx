@@ -6,17 +6,14 @@ import App from './App'
 import './i18n'
 import './index.css'
 import { initSentry } from './lib/sentry'
+import { DEFAULT_QUERY_CONFIG } from './lib/queryConfig'
 
 // Inicializar Sentry ANTES de renderizar React
 initSentry()
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    },
+    queries: DEFAULT_QUERY_CONFIG,
   },
 })
 

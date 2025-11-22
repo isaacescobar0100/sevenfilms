@@ -2,6 +2,7 @@ import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tansta
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import { optimizeThumbnail } from './useImageOptimization'
+import { CACHE_TIMES, INFINITE_QUERY_CONFIG } from '../lib/queryConfig'
 
 const MOVIES_PAGE_SIZE = 12
 
@@ -75,6 +76,7 @@ export function useMovies(filters = {}) {
 
       return moviesWithProfiles
     },
+    ...CACHE_TIMES.MOVIES,
   })
 }
 
@@ -115,6 +117,7 @@ export function useMovie(movieId) {
       }
     },
     enabled: !!movieId,
+    ...CACHE_TIMES.MOVIES,
   })
 }
 
@@ -196,6 +199,7 @@ export function useInfiniteMovies(filters = {}) {
     },
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     initialPageParam: 0,
+    ...INFINITE_QUERY_CONFIG,
   })
 }
 
@@ -214,6 +218,7 @@ export function useUserMovies(userId) {
       return data
     },
     enabled: !!userId,
+    ...CACHE_TIMES.MOVIES,
   })
 }
 

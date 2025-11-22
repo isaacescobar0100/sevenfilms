@@ -3,6 +3,7 @@ import { useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import { useRealtimeSubscription } from './useRealtimeSubscription'
+import { CACHE_TIMES } from '../lib/queryConfig'
 
 // Obtener notificaciones del usuario
 export function useNotifications() {
@@ -49,6 +50,7 @@ export function useNotifications() {
       return data || []
     },
     enabled: !!user,
+    ...CACHE_TIMES.REALTIME,
   })
 }
 
@@ -87,6 +89,7 @@ export function useUnreadNotificationsCount() {
       return count || 0
     },
     enabled: !!user,
+    ...CACHE_TIMES.REALTIME,
   })
 }
 

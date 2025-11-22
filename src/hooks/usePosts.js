@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tansta
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import { optimizePostImage } from './useImageOptimization'
+import { CACHE_TIMES, INFINITE_QUERY_CONFIG } from '../lib/queryConfig'
 
 // Obtener feed de posts (todos los posts o solo de seguidos)
 export function useFeed(filter = 'all') {
@@ -73,6 +74,7 @@ export function useFeed(filter = 'all') {
       return lastPage.hasMore ? pages.length : undefined
     },
     enabled: !!user,
+    ...INFINITE_QUERY_CONFIG,
   })
 }
 
@@ -112,6 +114,7 @@ export function useUserPosts(userId) {
       return postsWithDetails
     },
     enabled: !!userId,
+    ...CACHE_TIMES.FEED,
   })
 }
 
@@ -130,6 +133,7 @@ export function usePost(postId) {
       return data
     },
     enabled: !!postId,
+    ...CACHE_TIMES.FEED,
   })
 }
 
@@ -240,7 +244,8 @@ export function useTrending() {
 
       return trending
     },
-    refetchInterval: 60000, // Actualizar cada minuto
+    ...CACHE_TIMES.COMPUTED,
+    refetchInterval: 5 * 60 * 1000, // Actualizar cada 5 minutos (antes era 1 min)
   })
 }
 
@@ -283,6 +288,7 @@ export function useSearchPosts(query) {
       return postsWithDetails
     },
     enabled: !!query && query.length >= 2,
+    ...CACHE_TIMES.SEARCH,
   })
 }
 

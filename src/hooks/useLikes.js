@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import { createNotification } from './useNotifications'
+import { CACHE_TIMES } from '../lib/queryConfig'
 
 // Verificar si el usuario dio like a un post
 export function useHasLiked(postId) {
@@ -23,6 +24,7 @@ export function useHasLiked(postId) {
       return !!data
     },
     enabled: !!postId && !!user,
+    ...CACHE_TIMES.SOCIAL,
   })
 }
 
@@ -137,5 +139,6 @@ export function usePostLikes(postId) {
       return data
     },
     enabled: !!postId,
+    ...CACHE_TIMES.SOCIAL,
   })
 }

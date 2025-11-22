@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import { createNotification } from './useNotifications'
+import { CACHE_TIMES } from '../lib/queryConfig'
 
 // Verificar si sigo a un usuario
 export function useIsFollowing(userId) {
@@ -23,6 +24,7 @@ export function useIsFollowing(userId) {
       return !!data
     },
     enabled: !!user && !!userId && user.id !== userId,
+    ...CACHE_TIMES.SOCIAL,
   })
 }
 
@@ -133,6 +135,7 @@ export function useFollowers(userId) {
       return data
     },
     enabled: !!userId,
+    ...CACHE_TIMES.SOCIAL,
   })
 }
 
@@ -159,5 +162,6 @@ export function useFollowing(userId) {
       return data
     },
     enabled: !!userId,
+    ...CACHE_TIMES.SOCIAL,
   })
 }
