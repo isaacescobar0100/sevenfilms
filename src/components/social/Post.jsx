@@ -9,6 +9,7 @@ import { useDeletePost, useUpdatePost } from '../../hooks/usePosts'
 import { useAuthStore } from '../../store/authStore'
 import ConfirmDialog from '../common/ConfirmDialog'
 import { useMultipleRateLimits } from '../../hooks/useRateLimit'
+import EmojiGifPicker from '../common/EmojiGifPicker'
 
 function Post({ post }) {
   const { t } = useTranslation()
@@ -401,21 +402,45 @@ function Post({ post }) {
       {showComments && (
         <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-3">
           {/* Comment form */}
-          <form onSubmit={handleComment} className="flex space-x-2 mb-4">
-            <input
-              type="text"
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              placeholder={t('post.writeComment')}
-              className="flex-1 input"
-            />
-            <button
-              type="submit"
-              disabled={!commentText.trim() || createComment.isPending}
-              className="btn btn-primary"
-            >
-              {t('post.comment')}
-            </button>
+          <form onSubmit={handleComment} className="mb-4">
+            <div className="flex space-x-2">
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  placeholder={t('post.writeComment')}
+                  className="w-full input pr-10"
+                />
+              </div>
+              <EmojiGifPicker
+                onSelect={(emoji) => setCommentText(prev => prev + emoji)}
+                onGifSelect={(gifUrl) => {
+                  createComment.mutate({
+                    postId: post.id,
+                    content: gifUrl,
+                    postOwnerId: post.user_id,
+                    isGif: true,
+                  })
+                }}
+                onStickerSelect={(stickerUrl) => {
+                  createComment.mutate({
+                    postId: post.id,
+                    content: stickerUrl,
+                    postOwnerId: post.user_id,
+                    isGif: true,
+                  })
+                }}
+                position="top"
+              />
+              <button
+                type="submit"
+                disabled={!commentText.trim() || createComment.isPending}
+                className="btn btn-primary"
+              >
+                {t('post.comment')}
+              </button>
+            </div>
           </form>
 
           {/* Comments list */}
@@ -468,7 +493,17 @@ function Post({ post }) {
                       >
                         {comment.profiles?.full_name || comment.profiles?.username}
                       </Link>
-                      <p className="text-sm text-gray-900 dark:text-gray-100">{comment.content}</p>
+                      {/* Check if content is a GIF/image URL */}
+                      {comment.content?.match(/\.(gif|giphy\.com)/i) ? (
+                        <img
+                          src={comment.content}
+                          alt="GIF"
+                          className="max-w-[200px] max-h-[150px] rounded mt-1"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <p className="text-sm text-gray-900 dark:text-gray-100">{comment.content}</p>
+                      )}
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         {formatRelativeTime(comment.created_at)}
                       </p>

@@ -8,6 +8,7 @@ import { useAuthStore } from '../store/authStore'
 import { supabase } from '../lib/supabase'
 import LoadingSpinner from '../components/common/LoadingSpinner'
 import ConfirmDialog from '../components/common/ConfirmDialog'
+import EmojiGifPicker from '../components/common/EmojiGifPicker'
 import { formatDistanceToNow } from 'date-fns'
 import { es, enUS } from 'date-fns/locale'
 
@@ -358,7 +359,17 @@ function Messages() {
                               </div>
                             ) : (
                               <>
-                                <p className="break-words">{message.content}</p>
+                                {/* Check if content is a GIF/image URL */}
+                                {message.content?.match(/\.(gif|giphy\.com)/i) ? (
+                                  <img
+                                    src={message.content}
+                                    alt="GIF"
+                                    className="max-w-[200px] max-h-[150px] rounded"
+                                    loading="lazy"
+                                  />
+                                ) : (
+                                  <p className="break-words">{message.content}</p>
+                                )}
                                 <p
                                   className={`text-xs mt-1 ${
                                     isOwn ? 'text-primary-100' : 'text-gray-500 dark:text-gray-400'
@@ -458,7 +469,23 @@ function Messages() {
 
               {/* Message Input */}
               <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-                <form onSubmit={handleSendMessage} className="flex space-x-2">
+                <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
+                  <EmojiGifPicker
+                    onSelect={(emoji) => setMessageContent(prev => prev + emoji)}
+                    onGifSelect={(gifUrl) => {
+                      sendMessage.mutate({
+                        receiverId: selectedUser.id,
+                        content: gifUrl,
+                      })
+                    }}
+                    onStickerSelect={(stickerUrl) => {
+                      sendMessage.mutate({
+                        receiverId: selectedUser.id,
+                        content: stickerUrl,
+                      })
+                    }}
+                    position="top"
+                  />
                   <input
                     type="text"
                     value={messageContent}

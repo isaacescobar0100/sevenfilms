@@ -6,6 +6,7 @@ import { es, enUS } from 'date-fns/locale'
 import CustomVideoPlayer from './CustomVideoPlayer'
 import MovieRatingStars from './MovieRatingStars'
 import ConfirmDialog from '../common/ConfirmDialog'
+import EmojiGifPicker from '../common/EmojiGifPicker'
 import { useAuthStore } from '../../store/authStore'
 import {
   useUserMovieRating,
@@ -382,6 +383,24 @@ function MoviePlayerModal({ movie, onClose }) {
                     className="flex-1 bg-gray-800 text-white rounded-lg p-3 focus:ring-2 focus:ring-primary-500 focus:outline-none resize-none"
                     rows={2}
                   />
+                  <div className="flex flex-col gap-1">
+                    <EmojiGifPicker
+                      onSelect={(emoji) => setCommentText(prev => prev + emoji)}
+                      onGifSelect={(gifUrl) => {
+                        createComment.mutate({
+                          movieId: movie.id,
+                          content: gifUrl,
+                        })
+                      }}
+                      onStickerSelect={(stickerUrl) => {
+                        createComment.mutate({
+                          movieId: movie.id,
+                          content: stickerUrl,
+                        })
+                      }}
+                      position="top"
+                    />
+                  </div>
                   <button
                     onClick={handleCreateComment}
                     disabled={!commentText.trim() || createComment.isPending}
@@ -469,7 +488,17 @@ function MoviePlayerModal({ movie, onClose }) {
                           </div>
                         ) : (
                           <>
-                            <p className="text-gray-300 text-sm">{comment.content}</p>
+                            {/* Check if content is a GIF/image URL */}
+                            {comment.content?.match(/\.(gif|giphy\.com)/i) ? (
+                              <img
+                                src={comment.content}
+                                alt="GIF"
+                                className="max-w-[200px] max-h-[150px] rounded mt-1"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <p className="text-gray-300 text-sm">{comment.content}</p>
+                            )}
                             <p className="text-xs text-gray-500 mt-1">
                               {formatDistanceToNow(new Date(comment.created_at), {
                                 addSuffix: true,
