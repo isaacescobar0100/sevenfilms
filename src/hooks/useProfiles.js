@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
+import { optimizeAvatar, optimizeCover } from './useImageOptimization'
 
 // Obtener perfil de un usuario
 export function useProfile(userId) {
@@ -79,17 +80,29 @@ export function useUpdateProfile() {
   })
 }
 
-// Subir avatar
+// Subir avatar (con optimización automática)
 export async function uploadAvatar(file) {
   const { user } = useAuthStore.getState()
   if (!user) throw new Error('User not authenticated')
 
-  const fileExt = file.name.split('.').pop()
+  // Optimizar imagen antes de subir
+  let optimizedFile = file
+  if (file.type.startsWith('image/')) {
+    try {
+      const result = await optimizeAvatar(file)
+      optimizedFile = result.file
+      console.log(`[Avatar] Optimizado: ${result.savings.toFixed(1)}% de ahorro`)
+    } catch (err) {
+      console.warn('[Avatar] No se pudo optimizar, usando original:', err)
+    }
+  }
+
+  const fileExt = optimizedFile.name.split('.').pop()
   const fileName = `${user.id}/avatar.${fileExt}`
 
   const { error } = await supabase.storage
     .from('avatars')
-    .upload(fileName, file, { upsert: true })
+    .upload(fileName, optimizedFile, { upsert: true })
 
   if (error) throw error
 
@@ -106,17 +119,29 @@ export async function uploadAvatar(file) {
   return data.publicUrl
 }
 
-// Subir foto de portada
+// Subir foto de portada (con optimización automática)
 export async function uploadCover(file) {
   const { user } = useAuthStore.getState()
   if (!user) throw new Error('User not authenticated')
 
-  const fileExt = file.name.split('.').pop()
+  // Optimizar imagen antes de subir
+  let optimizedFile = file
+  if (file.type.startsWith('image/')) {
+    try {
+      const result = await optimizeCover(file)
+      optimizedFile = result.file
+      console.log(`[Cover] Optimizado: ${result.savings.toFixed(1)}% de ahorro`)
+    } catch (err) {
+      console.warn('[Cover] No se pudo optimizar, usando original:', err)
+    }
+  }
+
+  const fileExt = optimizedFile.name.split('.').pop()
   const fileName = `${user.id}/cover.${fileExt}`
 
   const { error } = await supabase.storage
     .from('covers')
-    .upload(fileName, file, { upsert: true })
+    .upload(fileName, optimizedFile, { upsert: true })
 
   if (error) throw error
 

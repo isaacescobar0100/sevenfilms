@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
+import { optimizeThumbnail } from './useImageOptimization'
 
 // Obtener todas las películas
 export function useMovies(filters = {}) {
@@ -214,14 +215,26 @@ export function useUploadMovie() {
         }
       }
 
-      // Subir thumbnail si existe
+      // Subir thumbnail si existe (con optimización automática)
       if (thumbnailFile) {
-        const thumbExt = thumbnailFile.name.split('.').pop()
+        // Optimizar thumbnail antes de subir
+        let optimizedThumb = thumbnailFile
+        if (thumbnailFile.type.startsWith('image/')) {
+          try {
+            const result = await optimizeThumbnail(thumbnailFile)
+            optimizedThumb = result.file
+            console.log(`[Thumbnail] Optimizado: ${result.savings.toFixed(1)}% de ahorro`)
+          } catch (err) {
+            console.warn('[Thumbnail] No se pudo optimizar, usando original:', err)
+          }
+        }
+
+        const thumbExt = optimizedThumb.name.split('.').pop()
         const thumbFileName = `${user.id}/${Date.now()}_thumb.${thumbExt}`
 
         const { error: thumbError } = await supabase.storage
           .from('movies') // Usar el mismo bucket 'movies'
-          .upload(thumbFileName, thumbnailFile)
+          .upload(thumbFileName, optimizedThumb)
 
         if (!thumbError) {
           const { data: thumbUrlData } = supabase.storage

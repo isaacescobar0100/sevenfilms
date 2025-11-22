@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
+import { optimizePostImage } from './useImageOptimization'
 
 // Obtener feed de posts (todos los posts o solo de seguidos)
 export function useFeed(filter = 'all') {
@@ -285,18 +286,30 @@ export function useSearchPosts(query) {
   })
 }
 
-// Subir imagen/video
+// Subir imagen/video (con optimización automática para imágenes)
 export async function uploadMedia(file, type = 'image') {
   const { user } = useAuthStore.getState()
   if (!user) throw new Error('User not authenticated')
 
-  const fileExt = file.name.split('.').pop()
+  // Optimizar imagen antes de subir (solo para imágenes)
+  let optimizedFile = file
+  if (type === 'image' && file.type.startsWith('image/')) {
+    try {
+      const result = await optimizePostImage(file)
+      optimizedFile = result.file
+      console.log(`[PostImage] Optimizado: ${result.savings.toFixed(1)}% de ahorro`)
+    } catch (err) {
+      console.warn('[PostImage] No se pudo optimizar, usando original:', err)
+    }
+  }
+
+  const fileExt = optimizedFile.name.split('.').pop()
   const fileName = `${user.id}/${Date.now()}.${fileExt}`
   const bucket = type === 'image' ? 'post-images' : 'post-videos'
 
   const { data, error } = await supabase.storage
     .from(bucket)
-    .upload(fileName, file)
+    .upload(fileName, optimizedFile)
 
   if (error) throw error
 
