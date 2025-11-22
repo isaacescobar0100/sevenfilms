@@ -2,8 +2,18 @@ import React from 'react'
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react'
 import * as Sentry from '@sentry/react'
 
-class ErrorBoundary extends React.Component {
-  constructor(props) {
+interface ErrorBoundaryProps {
+  children: React.ReactNode
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean
+  error: Error | null
+  errorInfo: React.ErrorInfo | null
+}
+
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
     super(props)
     this.state = {
       hasError: false,
@@ -12,22 +22,18 @@ class ErrorBoundary extends React.Component {
     }
   }
 
-  static getDerivedStateFromError(error) {
-    // Actualizar el estado para que el siguiente renderizado muestre la UI de error
+  static getDerivedStateFromError(_error: Error): Partial<ErrorBoundaryState> {
     return { hasError: true }
   }
 
-  componentDidCatch(error, errorInfo) {
-    // Registrar el error en consola (desarrollo)
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo)
 
-    // Guardar información del error
     this.setState({
       error,
       errorInfo,
     })
 
-    // Enviar error a Sentry con contexto adicional
     Sentry.captureException(error, {
       contexts: {
         react: {
@@ -60,7 +66,6 @@ class ErrorBoundary extends React.Component {
 
   render() {
     if (this.state.hasError) {
-      // UI de error personalizada
       return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
           <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
@@ -78,7 +83,6 @@ class ErrorBoundary extends React.Component {
                 y estamos trabajando para solucionarlo.
               </p>
 
-              {/* Detalles del error (solo en desarrollo) */}
               {process.env.NODE_ENV === 'development' && this.state.error && (
                 <details className="mb-6 text-left">
                   <summary className="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900 mb-2">
@@ -95,7 +99,6 @@ class ErrorBoundary extends React.Component {
                 </details>
               )}
 
-              {/* Acciones */}
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={this.handleReset}
@@ -114,7 +117,6 @@ class ErrorBoundary extends React.Component {
                 </button>
               </div>
 
-              {/* Información adicional */}
               <div className="mt-6 pt-6 border-t border-gray-200">
                 <p className="text-sm text-gray-500">
                   Si el problema persiste, por favor contacta a soporte o intenta:

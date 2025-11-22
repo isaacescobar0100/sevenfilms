@@ -1,7 +1,30 @@
 import { useTranslation } from 'react-i18next'
 import { AlertTriangle, Info, Trash2, X } from 'lucide-react'
+import type { MouseEvent } from 'react'
 
-function ConfirmDialog({ isOpen, onClose, onConfirm, title, message, confirmText, cancelText, type = 'danger' }) {
+type DialogType = 'danger' | 'warning' | 'info'
+
+interface ConfirmDialogProps {
+  isOpen: boolean
+  onClose: () => void
+  onConfirm: () => void
+  title: string
+  message: string
+  confirmText?: string
+  cancelText?: string
+  type?: DialogType
+}
+
+function ConfirmDialog({
+  isOpen,
+  onClose,
+  onConfirm,
+  title,
+  message,
+  confirmText,
+  cancelText,
+  type = 'danger'
+}: ConfirmDialogProps) {
   const { t } = useTranslation()
 
   if (!isOpen) return null
@@ -11,7 +34,7 @@ function ConfirmDialog({ isOpen, onClose, onConfirm, title, message, confirmText
     onClose()
   }
 
-  const handleBackdropClick = (e) => {
+  const handleBackdropClick = (e: MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
       onClose()
     }

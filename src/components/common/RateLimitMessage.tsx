@@ -1,6 +1,13 @@
 import { formatResetTime } from '../../hooks/useRateLimit'
 
-function RateLimitMessage({ actionType, resetTime, remaining, limit }) {
+interface RateLimitMessageProps {
+  actionType?: string
+  resetTime: Date | null
+  remaining: number
+  limit: number
+}
+
+function RateLimitMessage({ resetTime, remaining, limit }: RateLimitMessageProps) {
   if (remaining > 0) return null
 
   return (

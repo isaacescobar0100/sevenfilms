@@ -3,8 +3,15 @@
  * Reduce llamadas a Supabase manteniendo datos frescos en memoria
  */
 
+interface CacheConfig {
+  staleTime: number
+  gcTime: number
+}
+
+type CacheType = 'STATIC' | 'PROFILE' | 'MOVIES' | 'FEED' | 'SOCIAL' | 'COMPUTED' | 'SEARCH' | 'REALTIME'
+
 // Tiempos de caché por tipo de datos (en milisegundos)
-export const CACHE_TIMES = {
+export const CACHE_TIMES: Record<CacheType, CacheConfig> = {
   // Datos que cambian muy poco - caché muy largo
   STATIC: {
     staleTime: 30 * 60 * 1000,  // 30 minutos
@@ -62,10 +69,13 @@ export const DEFAULT_QUERY_CONFIG = {
   refetchOnWindowFocus: false,
   refetchOnMount: false,        // No refetch si datos están frescos
   refetchOnReconnect: false,    // No refetch al reconectar si hay datos
-}
+} as const
 
 // Helper para crear opciones de query con caché específico
-export function createQueryOptions(cacheType, extraOptions = {}) {
+export function createQueryOptions<T extends object>(
+  cacheType: CacheType,
+  extraOptions: T = {} as T
+): CacheConfig & T {
   const cacheConfig = CACHE_TIMES[cacheType] || CACHE_TIMES.FEED
   return {
     ...cacheConfig,
@@ -79,4 +89,4 @@ export const INFINITE_QUERY_CONFIG = {
   gcTime: 30 * 60 * 1000,
   refetchOnWindowFocus: false,
   refetchOnMount: false,
-}
+} as const

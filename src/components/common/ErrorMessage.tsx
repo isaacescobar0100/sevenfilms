@@ -1,6 +1,11 @@
 import { AlertCircle } from 'lucide-react'
 
-function ErrorMessage({ message, className = '' }) {
+interface ErrorMessageProps {
+  message?: string | null
+  className?: string
+}
+
+function ErrorMessage({ message, className = '' }: ErrorMessageProps) {
   if (!message) return null
 
   return (
