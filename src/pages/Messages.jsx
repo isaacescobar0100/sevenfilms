@@ -165,48 +165,23 @@ function Messages() {
 
     setUploadingMedia(true)
     try {
-      // Create unique filename
+      // Create unique filename - use 'movies' bucket which should have RLS configured
       const fileExt = file.name.split('.').pop()
-      const fileName = `${user.id}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`
+      const fileName = `chat/${user.id}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`
 
-      // Upload to Supabase storage
+      // Upload to Supabase storage - try 'movies' bucket first (likely has RLS)
       const { data, error } = await supabase.storage
-        .from('chat-media')
+        .from('movies')
         .upload(fileName, file, {
           cacheControl: '3600',
           upsert: false
         })
 
-      if (error) {
-        // If bucket doesn't exist, try creating in 'avatars' bucket as fallback
-        if (error.message?.includes('not found')) {
-          const fallbackName = `chat/${fileName}`
-          const { data: fallbackData, error: fallbackError } = await supabase.storage
-            .from('avatars')
-            .upload(fallbackName, file, {
-              cacheControl: '3600',
-              upsert: false
-            })
-
-          if (fallbackError) throw fallbackError
-
-          const { data: { publicUrl } } = supabase.storage
-            .from('avatars')
-            .getPublicUrl(fallbackName)
-
-          // Send as message
-          await sendMessage.mutateAsync({
-            receiverId: selectedUser.id,
-            content: publicUrl,
-          })
-          return
-        }
-        throw error
-      }
+      if (error) throw error
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
-        .from('chat-media')
+        .from('movies')
         .getPublicUrl(fileName)
 
       // Send as message
