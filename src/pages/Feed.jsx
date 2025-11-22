@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react'
-import { Users, Compass } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Users, Compass, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useFeed } from '../hooks/usePosts'
 import { useSuggestedUsers } from '../hooks/useProfiles'
@@ -8,23 +8,34 @@ import Post from '../components/social/Post'
 import LoadingSpinner from '../components/common/LoadingSpinner'
 import ErrorMessage from '../components/common/ErrorMessage'
 import UserCard from '../components/social/UserCard'
-import { VirtualizedList } from '../components/common/VirtualizedList'
 
 function Feed() {
   const { t } = useTranslation()
   const [filter, setFilter] = useState('all') // 'all' or 'following'
+  const [showSuggestedUsers, setShowSuggestedUsers] = useState(true)
   const { data, fetchNextPage, hasNextPage, isLoading, isFetchingNextPage, error } = useFeed(filter)
   const { data: suggestedUsers } = useSuggestedUsers()
+  const loadMoreRef = useRef(null)
 
   const posts = data?.pages.flatMap(page => page.data) || []
 
-  // Renderizar cada post (memoizado para virtualización)
-  const renderPost = useCallback((post) => (
-    <Post key={post.id} post={post} />
-  ), [])
+  // Infinite scroll con Intersection Observer (como Facebook)
+  useEffect(() => {
+    if (!loadMoreRef.current || !hasNextPage || isFetchingNextPage) return
 
-  // Obtener key única para cada post
-  const getPostKey = useCallback((post) => post.id, [])
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage()
+        }
+      },
+      { threshold: 0.1, rootMargin: '100px' }
+    )
+
+    observer.observe(loadMoreRef.current)
+
+    return () => observer.disconnect()
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
   // Determinar si hay contenido en el sidebar
   const hasSidebar = suggestedUsers && suggestedUsers.length > 0
@@ -72,9 +83,18 @@ function Feed() {
           </div>
 
           {/* Cineastas sugeridos - Carrusel horizontal solo en móvil */}
-          {suggestedUsers && suggestedUsers.length > 0 && (
+          {suggestedUsers && suggestedUsers.length > 0 && showSuggestedUsers && (
             <div className="lg:hidden bg-white rounded-lg shadow-md p-4">
-              <h2 className="font-bold text-sm text-gray-700 mb-3">{t('feed.suggestedFilmmakers')}</h2>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="font-bold text-sm text-gray-700">{t('feed.suggestedFilmmakers')}</h2>
+                <button
+                  onClick={() => setShowSuggestedUsers(false)}
+                  className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                  aria-label={t('common.close')}
+                >
+                  <X className="h-4 w-4 text-gray-500" />
+                </button>
+              </div>
               <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                 {suggestedUsers.slice(0, 6).map((user) => (
                   <UserCard key={user.id} user={user} showFollowButton compact />
@@ -98,18 +118,19 @@ function Feed() {
                   </p>
                 </div>
               ) : (
-                <VirtualizedList
-                  items={posts}
-                  renderItem={renderPost}
-                  getItemKey={getPostKey}
-                  estimatedItemSize={350}
-                  hasNextPage={hasNextPage}
-                  isFetchingNextPage={isFetchingNextPage}
-                  fetchNextPage={fetchNextPage}
-                  className="h-[calc(100vh-300px)] min-h-[500px]"
-                  overscan={3}
-                  loadingText={t('feed.loadMore')}
-                />
+                <>
+                  {posts.map((post) => (
+                    <Post key={post.id} post={post} />
+                  ))}
+
+                  {/* Load more trigger */}
+                  <div ref={loadMoreRef} className="py-4 flex justify-center">
+                    {isFetchingNextPage && <LoadingSpinner size="sm" />}
+                    {!hasNextPage && posts.length > 0 && (
+                      <p className="text-gray-500 text-sm">{t('feed.noMorePosts')}</p>
+                    )}
+                  </div>
+                </>
               )}
             </div>
           )}

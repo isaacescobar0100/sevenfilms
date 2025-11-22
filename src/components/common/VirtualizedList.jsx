@@ -16,6 +16,8 @@ import LoadingSpinner from './LoadingSpinner'
  * @param {Function} props.fetchNextPage - Función para cargar más elementos
  * @param {string} props.className - Clases CSS adicionales para el contenedor
  * @param {number} props.overscan - Número de elementos extra a renderizar fuera del viewport
+ * @param {React.ReactNode} props.headerComponent - Componente opcional para mostrar antes de la lista (se desplaza con el contenido)
+ * @param {number} props.headerHeight - Altura estimada del header para el virtualizador
  */
 export function VirtualizedList({
   items = [],
@@ -28,18 +30,29 @@ export function VirtualizedList({
   className = '',
   overscan = 5,
   loadingText = 'Cargando más...',
+  headerComponent = null,
+  headerHeight = 150,
 }) {
   const parentRef = useRef(null)
 
+  // Calcular el número total de elementos (header + items + loader)
+  const hasHeader = !!headerComponent
+  const totalCount = (hasHeader ? 1 : 0) + items.length + (hasNextPage ? 1 : 0)
+
   // Configurar virtualizador
   const virtualizer = useVirtualizer({
-    count: hasNextPage ? items.length + 1 : items.length,
+    count: totalCount,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => estimatedItemSize,
+    estimateSize: (index) => {
+      if (hasHeader && index === 0) return headerHeight
+      return estimatedItemSize
+    },
     overscan,
     getItemKey: (index) => {
-      if (index >= items.length) return 'loader'
-      return getItemKey ? getItemKey(items[index], index) : index
+      if (hasHeader && index === 0) return 'header'
+      const itemIndex = hasHeader ? index - 1 : index
+      if (itemIndex >= items.length) return 'loader'
+      return getItemKey ? getItemKey(items[itemIndex], itemIndex) : itemIndex
     },
   })
 
@@ -73,7 +86,9 @@ export function VirtualizedList({
         }}
       >
         {virtualItems.map((virtualItem) => {
-          const isLoaderRow = virtualItem.index >= items.length
+          const isHeaderRow = hasHeader && virtualItem.index === 0
+          const itemIndex = hasHeader ? virtualItem.index - 1 : virtualItem.index
+          const isLoaderRow = itemIndex >= items.length
 
           return (
             <div
@@ -88,7 +103,9 @@ export function VirtualizedList({
                 transform: `translateY(${virtualItem.start}px)`,
               }}
             >
-              {isLoaderRow ? (
+              {isHeaderRow ? (
+                <div className="pb-6">{headerComponent}</div>
+              ) : isLoaderRow ? (
                 <div className="flex justify-center py-4">
                   {isFetchingNextPage ? (
                     <LoadingSpinner size="sm" />
@@ -97,7 +114,7 @@ export function VirtualizedList({
                   )}
                 </div>
               ) : (
-                renderItem(items[virtualItem.index], virtualItem.index)
+                renderItem(items[itemIndex], itemIndex)
               )}
             </div>
           )

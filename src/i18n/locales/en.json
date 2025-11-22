@@ -268,7 +268,8 @@
     "trending": "Trending",
     "noPostsFollowing": "No posts from users you follow. Start following other filmmakers!",
     "noPostsExplore": "No posts yet. Be the first to post!",
-    "loadMore": "Load more"
+    "loadMore": "Load more",
+    "noMorePosts": "No more posts"
   },
   "post": {
     "like": "Like",

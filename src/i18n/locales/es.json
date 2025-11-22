@@ -268,7 +268,8 @@
     "trending": "Tendencias",
     "noPostsFollowing": "No hay publicaciones de usuarios que sigues. ¡Empieza a seguir a otros cineastas!",
     "noPostsExplore": "No hay publicaciones aún. ¡Sé el primero en publicar!",
-    "loadMore": "Cargar más"
+    "loadMore": "Cargar más",
+    "noMorePosts": "No hay más publicaciones"
   },
   "post": {
     "like": "Me gusta",
