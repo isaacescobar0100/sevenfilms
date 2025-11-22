@@ -1,8 +1,7 @@
 import { useState, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Users, TrendingUp } from 'lucide-react'
+import { Users, Compass } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { useFeed, useTrending } from '../hooks/usePosts'
+import { useFeed } from '../hooks/usePosts'
 import { useSuggestedUsers } from '../hooks/useProfiles'
 import CreatePost from '../components/social/CreatePost'
 import Post from '../components/social/Post'
@@ -13,11 +12,9 @@ import { VirtualizedList } from '../components/common/VirtualizedList'
 
 function Feed() {
   const { t } = useTranslation()
-  const navigate = useNavigate()
   const [filter, setFilter] = useState('all') // 'all' or 'following'
   const { data, fetchNextPage, hasNextPage, isLoading, isFetchingNextPage, error } = useFeed(filter)
   const { data: suggestedUsers } = useSuggestedUsers()
-  const { data: trending } = useTrending()
 
   const posts = data?.pages.flatMap(page => page.data) || []
 
@@ -30,12 +27,7 @@ function Feed() {
   const getPostKey = useCallback((post) => post.id, [])
 
   // Determinar si hay contenido en el sidebar
-  const hasSidebar = (suggestedUsers && suggestedUsers.length > 0) || (trending && trending.length > 0)
-
-  // Navegar a búsqueda con hashtag
-  const handleTrendingClick = (hashtag) => {
-    navigate(`/search?q=${encodeURIComponent(hashtag)}`)
-  }
+  const hasSidebar = suggestedUsers && suggestedUsers.length > 0
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -59,7 +51,7 @@ function Feed() {
                 }`}
               >
                 <div className="flex items-center justify-center space-x-2">
-                  <TrendingUp className="h-5 w-5" />
+                  <Compass className="h-5 w-5" />
                   <span>{t('feed.explore')}</span>
                 </div>
               </button>
@@ -78,27 +70,6 @@ function Feed() {
               </button>
             </div>
           </div>
-
-          {/* Trending Topics - Solo visible en móvil */}
-          {trending && trending.length > 0 && (
-            <div className="lg:hidden bg-white rounded-lg shadow-md p-4">
-              <h2 className="font-bold text-lg mb-4">{t('feed.trending')}</h2>
-              <div className="grid grid-cols-2 gap-3">
-                {trending.slice(0, 4).map((item) => (
-                  <div
-                    key={item.hashtag}
-                    onClick={() => handleTrendingClick(item.hashtag)}
-                    className="hover:bg-gray-50 hover:border-primary-300 active:bg-gray-100 p-3 rounded cursor-pointer border border-gray-200 transition-all"
-                  >
-                    <p className="text-sm text-gray-900 font-semibold truncate">{item.hashtag}</p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {item.count} {item.count === 1 ? t('feed.post') : t('feed.posts')}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Posts */}
           {isLoading && <LoadingSpinner />}
@@ -147,26 +118,6 @@ function Feed() {
             </div>
           )}
 
-          {/* Trending Topics - Solo visible en desktop */}
-          {trending && trending.length > 0 && (
-            <div className="bg-white rounded-lg shadow-md p-4">
-              <h2 className="font-bold text-lg mb-4">{t('feed.trending')}</h2>
-              <div className="space-y-3">
-                {trending.map((item) => (
-                  <div
-                    key={item.hashtag}
-                    onClick={() => handleTrendingClick(item.hashtag)}
-                    className="hover:bg-gray-50 active:bg-gray-100 p-2 rounded cursor-pointer transition-colors"
-                  >
-                    <p className="text-sm text-gray-500 font-medium">{item.hashtag}</p>
-                    <p className="text-xs text-gray-400">
-                      {item.count} {item.count === 1 ? t('feed.post') : t('feed.posts')}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
           </div>
         )}
       </div>

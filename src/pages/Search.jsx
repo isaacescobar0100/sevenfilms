@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Search as SearchIcon, Film, Users, Play, Eye, FileText, X, Clock, Grid3x3 } from 'lucide-react'
+import { Search as SearchIcon, Film, Users, Play, Eye, FileText, X, Clock, Grid3x3, TrendingUp, Hash } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '../lib/supabase'
 import { useSearchUsers } from '../hooks/useProfiles'
-import { useSearchPosts } from '../hooks/usePosts'
+import { useSearchPosts, useTrending } from '../hooks/usePosts'
 import { useRecentSearches } from '../hooks/useRecentSearches'
 import { getTranslatedGenre } from '../utils/genreMapper'
 import UserCard from '../components/social/UserCard'
@@ -36,6 +36,7 @@ function Search() {
   }, [searchParams])
 
   const { recentSearches, addSearch, removeSearch, clearSearches } = useRecentSearches()
+  const { data: trending } = useTrending()
 
   // Verificar rate limit antes de hacer la búsqueda
   const shouldEnableSearch = Boolean(query && query.trim().length >= 2 && !searchBlocked)
@@ -152,13 +153,13 @@ function Search() {
             onChange={(e) => setQuery(e.target.value)}
             onFocus={(e) => {
               e.stopPropagation()
-              if (recentSearches.length > 0 && !query) {
+              if ((recentSearches.length > 0 || (trending && trending.length > 0)) && !query) {
                 setShowRecentDropdown(true)
               }
             }}
             onClick={(e) => {
               e.stopPropagation()
-              if (recentSearches.length > 0 && !query) {
+              if ((recentSearches.length > 0 || (trending && trending.length > 0)) && !query) {
                 setShowRecentDropdown(true)
               }
             }}
@@ -166,73 +167,111 @@ function Search() {
             placeholder={t('search.placeholder')}
           />
 
-          {/* Dropdown de búsquedas recientes */}
-          {showRecentDropdown && recentSearches.length > 0 && !query && (
+          {/* Dropdown de búsquedas recientes y tendencias */}
+          {showRecentDropdown && !query && (recentSearches.length > 0 || (trending && trending.length > 0)) && (
             <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-96 overflow-y-auto">
-              <div className="p-3 border-b border-gray-200 flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-gray-900 flex items-center space-x-2">
-                  <Clock className="h-4 w-4 text-gray-500" />
-                  <span>{t('search.recentSearches')}</span>
-                </h3>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    clearSearches()
-                    setShowRecentDropdown(false)
-                  }}
-                  className="text-xs text-primary-600 hover:text-primary-700 font-medium"
-                >
-                  {t('common.delete')}
-                </button>
-              </div>
-              <div className="divide-y divide-gray-100">
-                {recentSearches.map((search, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-3 hover:bg-gray-50 transition-colors group cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleRecentSearchClick(search.query, search.type)
-                    }}
-                  >
-                    <div className="flex items-center space-x-3 flex-1">
-                      <div className="flex-shrink-0">
-                        {search.type === 'users' && (
-                          <Users className="h-5 w-5 text-gray-400" />
-                        )}
-                        {search.type === 'posts' && (
-                          <FileText className="h-5 w-5 text-gray-400" />
-                        )}
-                        {search.type === 'movies' && (
-                          <Film className="h-5 w-5 text-gray-400" />
-                        )}
-                        {(!search.type || search.type === 'general') && (
-                          <SearchIcon className="h-5 w-5 text-gray-400" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {search.query}
-                        </p>
-                        {search.type && search.type !== 'general' && (
-                          <p className="text-xs text-gray-500">
-                            {t(`search.tabs.${search.type}`)}
-                          </p>
-                        )}
-                      </div>
-                    </div>
+              {/* Tendencias */}
+              {trending && trending.length > 0 && (
+                <>
+                  <div className="p-3 border-b border-gray-200">
+                    <h3 className="text-sm font-semibold text-gray-900 flex items-center space-x-2">
+                      <TrendingUp className="h-4 w-4 text-primary-500" />
+                      <span>{t('feed.trending')}</span>
+                    </h3>
+                  </div>
+                  <div className="p-2 flex flex-wrap gap-2 border-b border-gray-200">
+                    {trending.slice(0, 8).map((item) => (
+                      <button
+                        key={item.hashtag}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          // Remover el # para la búsqueda
+                          const searchTerm = item.hashtag.startsWith('#') ? item.hashtag.substring(1) : item.hashtag
+                          setQuery(searchTerm)
+                          setShowRecentDropdown(false)
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-primary-100 hover:text-primary-700 rounded-full text-sm font-medium text-gray-700 transition-colors"
+                      >
+                        <Hash className="h-3.5 w-3.5" />
+                        <span>{item.hashtag.replace('#', '')}</span>
+                        <span className="text-xs text-gray-500">({item.count})</span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* Búsquedas recientes */}
+              {recentSearches.length > 0 && (
+                <>
+                  <div className="p-3 border-b border-gray-200 flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-gray-900 flex items-center space-x-2">
+                      <Clock className="h-4 w-4 text-gray-500" />
+                      <span>{t('search.recentSearches')}</span>
+                    </h3>
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
-                        removeSearch(search.query)
+                        clearSearches()
+                        if (!trending || trending.length === 0) {
+                          setShowRecentDropdown(false)
+                        }
                       }}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-200 rounded-full"
+                      className="text-xs text-primary-600 hover:text-primary-700 font-medium"
                     >
-                      <X className="h-4 w-4 text-gray-500" />
+                      {t('common.delete')}
                     </button>
                   </div>
-                ))}
-              </div>
+                  <div className="divide-y divide-gray-100">
+                    {recentSearches.map((search, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-3 hover:bg-gray-50 transition-colors group cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleRecentSearchClick(search.query, search.type)
+                        }}
+                      >
+                        <div className="flex items-center space-x-3 flex-1">
+                          <div className="flex-shrink-0">
+                            {search.type === 'users' && (
+                              <Users className="h-5 w-5 text-gray-400" />
+                            )}
+                            {search.type === 'posts' && (
+                              <FileText className="h-5 w-5 text-gray-400" />
+                            )}
+                            {search.type === 'movies' && (
+                              <Film className="h-5 w-5 text-gray-400" />
+                            )}
+                            {(!search.type || search.type === 'general') && (
+                              <SearchIcon className="h-5 w-5 text-gray-400" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {search.query}
+                            </p>
+                            {search.type && search.type !== 'general' && (
+                              <p className="text-xs text-gray-500">
+                                {t(`search.tabs.${search.type}`)}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            removeSearch(search.query)
+                          }}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-200 rounded-full"
+                        >
+                          <X className="h-4 w-4 text-gray-500" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>
