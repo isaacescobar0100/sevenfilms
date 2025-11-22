@@ -158,8 +158,9 @@ export function useFeaturedMovies() {
             avatar_url
           )
         `)
-        .gt('engagement_score', 0)
-        .order('engagement_score', { ascending: false })
+        .gt('views', 0)
+        .order('views', { ascending: false })
+        .order('average_rating', { ascending: false, nullsLast: true })
         .order('created_at', { ascending: false })
         .limit(10)
 

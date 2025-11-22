@@ -33,7 +33,9 @@ export function useMovies(filters = {}) {
           break
         case 'popular':
         default:
-          query = query.order('engagement_score', { ascending: false })
+          // Ordenar por combinación de vistas y ratings (engagement)
+          query = query.order('views', { ascending: false })
+          query = query.order('average_rating', { ascending: false, nullsLast: true })
           query = query.order('created_at', { ascending: false })
           break
       }
@@ -148,7 +150,9 @@ export function useInfiniteMovies(filters = {}) {
           break
         case 'popular':
         default:
-          query = query.order('engagement_score', { ascending: false })
+          // Ordenar por combinación de vistas y ratings (engagement)
+          query = query.order('views', { ascending: false })
+          query = query.order('average_rating', { ascending: false, nullsLast: true })
           query = query.order('created_at', { ascending: false })
           break
       }
