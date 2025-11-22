@@ -28,7 +28,10 @@
     "login": "Login",
     "register": "Register",
     "logout": "Logout",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "main": "Main navigation",
+    "userMenu": "User menu",
+    "unread": "unread"
   },
   "notifications": {
     "title": "Notifications",

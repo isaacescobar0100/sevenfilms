@@ -36,12 +36,12 @@ function Navbar() {
   // Si el usuario no está logueado, mostrar navbar simple
   if (!user) {
     return (
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
+      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50" role="navigation" aria-label={t('nav.main')}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <Link to="/" className="flex items-center space-x-2">
-                <Clapperboard className="h-8 w-8 text-primary-600" />
+              <Link to="/" className="flex items-center space-x-2" aria-label="CineAmateur - Ir al inicio">
+                <Clapperboard className="h-8 w-8 text-primary-600" aria-hidden="true" />
                 <span className="text-xl font-bold text-gray-900">CineAmateur</span>
               </Link>
             </div>
@@ -68,13 +68,13 @@ function Navbar() {
   const isActive = (path) => location.pathname === path
 
   return (
-    <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
+    <nav className="bg-white border-b border-gray-200 sticky top-0 z-50" role="navigation" aria-label={t('nav.main')}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <Link to="/feed" className="flex items-center space-x-2">
-              <Clapperboard className="h-8 w-8 text-primary-600" />
+            <Link to="/feed" className="flex items-center space-x-2" aria-label="CineAmateur - Ir al feed">
+              <Clapperboard className="h-8 w-8 text-primary-600" aria-hidden="true" />
               <span className="text-xl font-bold text-gray-900 hidden sm:block">CineAmateur</span>
             </Link>
           </div>
@@ -108,17 +108,20 @@ function Navbar() {
                     ? 'text-primary-600'
                     : 'text-gray-600 hover:text-primary-600'
                 }`}
+                aria-label={`${t('nav.notifications')}${unreadNotifications > 0 ? ` (${unreadNotifications} ${t('nav.unread')})` : ''}`}
+                aria-expanded={showNotifications}
+                aria-haspopup="true"
               >
                 <div className="relative">
-                  <Bell className="h-6 w-6" />
+                  <Bell className="h-6 w-6" aria-hidden="true" />
                   {unreadNotifications > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center" aria-hidden="true">
                       {unreadNotifications > 9 ? '9+' : unreadNotifications}
                     </span>
                   )}
                 </div>
                 {showNotifications && (
-                  <div className="w-1 h-1 rounded-full bg-primary-600 mt-1"></div>
+                  <div className="w-1 h-1 rounded-full bg-primary-600 mt-1" aria-hidden="true"></div>
                 )}
               </button>
 
@@ -159,7 +162,10 @@ function Navbar() {
             <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center space-x-2 focus:outline-none"
+                className="flex items-center space-x-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 rounded-full"
+                aria-label={t('nav.userMenu')}
+                aria-expanded={showUserMenu}
+                aria-haspopup="menu"
               >
                 {user?.user_metadata?.avatar_url ? (
                   <img

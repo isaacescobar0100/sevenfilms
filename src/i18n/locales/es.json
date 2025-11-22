@@ -28,7 +28,10 @@
     "login": "Iniciar Sesión",
     "register": "Registrarse",
     "logout": "Cerrar Sesión",
-    "notifications": "Notificaciones"
+    "notifications": "Notificaciones",
+    "main": "Navegación principal",
+    "userMenu": "Menú de usuario",
+    "unread": "sin leer"
   },
   "notifications": {
     "title": "Notificaciones",
