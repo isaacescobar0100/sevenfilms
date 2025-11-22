@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Send, MessageCircle, ArrowLeft, Trash2, MoreVertical, Edit, Trash } from 'lucide-react'
+import { Send, MessageCircle, ArrowLeft, Trash2, MoreVertical, Edit, Trash, Loader2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
@@ -28,6 +28,7 @@ function Messages() {
   const [showDeleteMessageDialog, setShowDeleteMessageDialog] = useState(false)
   const [messageToDelete, setMessageToDelete] = useState(null)
   const [deleteForEveryone, setDeleteForEveryone] = useState(false)
+  const [uploadingMedia, setUploadingMedia] = useState(false)
 
   const dateLocale = i18n.language === 'es' ? es : enUS
 
@@ -157,6 +158,68 @@ function Messages() {
         setShowDeleteMessageDialog(false)
       }
     })
+  }
+
+  const handleMediaUpload = async (file) => {
+    if (!file || !selectedUser) return
+
+    setUploadingMedia(true)
+    try {
+      // Create unique filename
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${user.id}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`
+
+      // Upload to Supabase storage
+      const { data, error } = await supabase.storage
+        .from('chat-media')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
+
+      if (error) {
+        // If bucket doesn't exist, try creating in 'avatars' bucket as fallback
+        if (error.message?.includes('not found')) {
+          const fallbackName = `chat/${fileName}`
+          const { data: fallbackData, error: fallbackError } = await supabase.storage
+            .from('avatars')
+            .upload(fallbackName, file, {
+              cacheControl: '3600',
+              upsert: false
+            })
+
+          if (fallbackError) throw fallbackError
+
+          const { data: { publicUrl } } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(fallbackName)
+
+          // Send as message
+          await sendMessage.mutateAsync({
+            receiverId: selectedUser.id,
+            content: publicUrl,
+          })
+          return
+        }
+        throw error
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('chat-media')
+        .getPublicUrl(fileName)
+
+      // Send as message
+      await sendMessage.mutateAsync({
+        receiverId: selectedUser.id,
+        content: publicUrl,
+      })
+    } catch (error) {
+      console.error('Error uploading media:', error)
+      alert(t('messages.uploadError') || 'Error al subir el archivo')
+    } finally {
+      setUploadingMedia(false)
+    }
   }
 
   return (
@@ -359,13 +422,28 @@ function Messages() {
                               </div>
                             ) : (
                               <>
-                                {/* Check if content is a GIF/image URL */}
+                                {/* Check if content is a media URL */}
                                 {message.content?.match(/\.(gif|giphy\.com)/i) ? (
                                   <img
                                     src={message.content}
                                     alt="GIF"
                                     className="max-w-[200px] max-h-[150px] rounded"
                                     loading="lazy"
+                                  />
+                                ) : message.content?.match(/\.(jpg|jpeg|png|webp)/i) ? (
+                                  <img
+                                    src={message.content}
+                                    alt="Imagen"
+                                    className="max-w-[250px] max-h-[200px] rounded cursor-pointer hover:opacity-90"
+                                    loading="lazy"
+                                    onClick={() => window.open(message.content, '_blank')}
+                                  />
+                                ) : message.content?.match(/\.(mp4|webm|mov)/i) ? (
+                                  <video
+                                    src={message.content}
+                                    controls
+                                    className="max-w-[250px] max-h-[200px] rounded"
+                                    preload="metadata"
                                   />
                                 ) : (
                                   <p className="break-words">{message.content}</p>
@@ -470,6 +548,11 @@ function Messages() {
               {/* Message Input */}
               <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
                 <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
+                  {uploadingMedia && (
+                    <div className="flex items-center text-primary-600">
+                      <Loader2 className="w-5 h-5 animate-spin mr-1" />
+                    </div>
+                  )}
                   <EmojiGifPicker
                     onSelect={(emoji) => setMessageContent(prev => prev + emoji)}
                     onGifSelect={(gifUrl) => {
@@ -484,6 +567,7 @@ function Messages() {
                         content: stickerUrl,
                       })
                     }}
+                    onMediaSelect={handleMediaUpload}
                     position="top"
                   />
                   <input

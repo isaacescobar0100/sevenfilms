@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Smile, X, Search } from 'lucide-react'
+import { Smile, X, Search, Image } from 'lucide-react'
 import data from '@emoji-mart/data'
 import Picker from '@emoji-mart/react'
 import { GiphyFetch } from '@giphy/js-fetch-api'
@@ -24,7 +24,7 @@ const STICKERS = [
   { id: 12, url: 'https://media.giphy.com/media/3ohzdIuqJoo8QdKlnW/giphy.gif', name: 'party' },
 ]
 
-function EmojiGifPicker({ onSelect, onGifSelect, onStickerSelect, position = 'top' }) {
+function EmojiGifPicker({ onSelect, onGifSelect, onStickerSelect, onMediaSelect, position = 'top' }) {
   const { t, i18n } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   const [activeTab, setActiveTab] = useState('emoji') // 'emoji', 'gif', 'sticker'
@@ -32,6 +32,7 @@ function EmojiGifPicker({ onSelect, onGifSelect, onStickerSelect, position = 'to
   const [gifSearch, setGifSearch] = useState('')
   const [loadingGifs, setLoadingGifs] = useState(false)
   const pickerRef = useRef(null)
+  const fileInputRef = useRef(null)
 
   // Close on click outside
   useEffect(() => {
@@ -100,6 +101,17 @@ function EmojiGifPicker({ onSelect, onGifSelect, onStickerSelect, position = 'to
     searchGifs(gifSearch)
   }
 
+  const handleMediaSelect = (e) => {
+    const file = e.target.files?.[0]
+    if (file && onMediaSelect) {
+      onMediaSelect(file)
+    }
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
   const positionClasses = position === 'top'
     ? 'bottom-full mb-2'
     : 'top-full mt-2'
@@ -135,6 +147,25 @@ function EmojiGifPicker({ onSelect, onGifSelect, onStickerSelect, position = 'to
               <text x="12" y="15" textAnchor="middle" fontSize="8" fill="currentColor" stroke="none" fontWeight="bold">GIF</text>
             </svg>
           </button>
+        )}
+        {onMediaSelect && (
+          <>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,video/*"
+              onChange={handleMediaSelect}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="p-2 text-gray-500 hover:text-primary-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+              title="Foto o Video"
+            >
+              <Image className="w-5 h-5" />
+            </button>
+          </>
         )}
       </div>
 
