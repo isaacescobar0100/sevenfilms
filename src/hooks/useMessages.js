@@ -1,52 +1,35 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
+import { useRealtimeSubscription } from './useRealtimeSubscription'
 
 // Obtener conversaciones del usuario
 export function useConversations() {
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
 
-  // Suscribirse a cambios en tiempo real
-  useEffect(() => {
-    if (!user) return
-
-    console.log('[Conversations] Suscribiéndose a cambios en tiempo real...')
-
-    const channel = supabase
-      .channel('conversations-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'messages',
-        },
-        (payload) => {
-          console.log('[Conversations] Evento recibido:', payload.eventType, payload)
-          const message = payload.new || payload.old
-          // Actualizar si el usuario está involucrado en el mensaje
-          if (message && (message.sender_id === user.id || message.receiver_id === user.id)) {
-            console.log('[Conversations] Actualizando conversaciones...')
-            queryClient.invalidateQueries({ queryKey: ['conversations', user.id] })
-            // Forzar refetch inmediato para eventos DELETE
-            if (payload.eventType === 'DELETE') {
-              console.log('[Conversations] Evento DELETE detectado, forzando refetch...')
-              queryClient.refetchQueries({ queryKey: ['conversations', user.id] })
-            }
-          }
-        }
-      )
-      .subscribe((status) => {
-        console.log('[Conversations] Estado de suscripción:', status)
-      })
-
-    return () => {
-      console.log('[Conversations] Desuscribiéndose...')
-      supabase.removeChannel(channel)
+  // Callback para manejar eventos de mensajes
+  const handleMessageEvent = useCallback((payload) => {
+    const message = payload.new || payload.old
+    // Actualizar si el usuario está involucrado en el mensaje
+    if (message && (message.sender_id === user?.id || message.receiver_id === user?.id)) {
+      queryClient.invalidateQueries({ queryKey: ['conversations', user?.id] })
+      // Forzar refetch inmediato para eventos DELETE
+      if (payload.eventType === 'DELETE') {
+        queryClient.refetchQueries({ queryKey: ['conversations', user?.id] })
+      }
     }
-  }, [user, queryClient])
+  }, [user?.id, queryClient])
+
+  // Suscripción con cleanup robusto
+  useRealtimeSubscription({
+    channelName: `conversations-${user?.id}`,
+    table: 'messages',
+    event: '*',
+    onEvent: handleMessageEvent,
+    enabled: !!user,
+  })
 
   return useQuery({
     queryKey: ['conversations', user?.id],
@@ -316,43 +299,27 @@ export function useRealtimeMessages(otherUserId) {
   const queryClient = useQueryClient()
   const { user } = useAuthStore()
 
-  useEffect(() => {
-    if (!user || !otherUserId) return
-
-    console.log(`[Messages RT] Suscribiéndose a conversación con usuario ${otherUserId}`)
-
-    const channel = supabase
-      .channel(`messages-${user.id}-${otherUserId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-        },
-        (payload) => {
-          console.log('[Messages RT] Nuevo mensaje recibido:', payload)
-          const message = payload.new
-          // Solo actualizar si el mensaje es parte de esta conversación
-          if (
-            (message.sender_id === user.id && message.receiver_id === otherUserId) ||
-            (message.sender_id === otherUserId && message.receiver_id === user.id)
-          ) {
-            console.log('[Messages RT] Actualizando mensajes...')
-            queryClient.invalidateQueries({ queryKey: ['messages', user.id, otherUserId] })
-            queryClient.invalidateQueries({ queryKey: ['conversations', user.id] })
-          }
-        }
-      )
-      .subscribe((status) => {
-        console.log('[Messages RT] Estado de suscripción:', status)
-      })
-
-    return () => {
-      console.log('[Messages RT] Desuscribiéndose...')
-      supabase.removeChannel(channel)
+  // Callback para manejar nuevos mensajes
+  const handleNewMessage = useCallback((payload) => {
+    const message = payload.new
+    // Solo actualizar si el mensaje es parte de esta conversación
+    if (
+      (message.sender_id === user?.id && message.receiver_id === otherUserId) ||
+      (message.sender_id === otherUserId && message.receiver_id === user?.id)
+    ) {
+      queryClient.invalidateQueries({ queryKey: ['messages', user?.id, otherUserId] })
+      queryClient.invalidateQueries({ queryKey: ['conversations', user?.id] })
     }
-  }, [user, otherUserId, queryClient])
+  }, [user?.id, otherUserId, queryClient])
+
+  // Suscripción con cleanup robusto
+  useRealtimeSubscription({
+    channelName: `messages-${user?.id}-${otherUserId}`,
+    table: 'messages',
+    event: 'INSERT',
+    onEvent: handleNewMessage,
+    enabled: !!user && !!otherUserId,
+  })
 }
 
 // Obtener contador de mensajes no leídos
@@ -360,36 +327,20 @@ export function useUnreadMessagesCount() {
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
 
-  // Suscribirse a cambios en tiempo real
-  useEffect(() => {
-    if (!user) return
+  // Callback para manejar cambios en mensajes
+  const handleUnreadChange = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['unread-messages-count', user?.id] })
+  }, [user?.id, queryClient])
 
-    console.log('[Unread Count] Suscribiéndose a mensajes no leídos...')
-
-    const channel = supabase
-      .channel('unread-messages-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'messages',
-          filter: `receiver_id=eq.${user.id}`,
-        },
-        (payload) => {
-          console.log('[Unread Count] Cambio detectado:', payload)
-          queryClient.invalidateQueries({ queryKey: ['unread-messages-count', user.id] })
-        }
-      )
-      .subscribe((status) => {
-        console.log('[Unread Count] Estado de suscripción:', status)
-      })
-
-    return () => {
-      console.log('[Unread Count] Desuscribiéndose...')
-      supabase.removeChannel(channel)
-    }
-  }, [user, queryClient])
+  // Suscripción con cleanup robusto
+  useRealtimeSubscription({
+    channelName: `unread-messages-${user?.id}`,
+    table: 'messages',
+    event: '*',
+    filter: user ? `receiver_id=eq.${user.id}` : undefined,
+    onEvent: handleUnreadChange,
+    enabled: !!user,
+  })
 
   return useQuery({
     queryKey: ['unread-messages-count', user?.id],

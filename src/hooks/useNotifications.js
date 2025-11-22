@@ -1,39 +1,29 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
+import { useRealtimeSubscription } from './useRealtimeSubscription'
 
 // Obtener notificaciones del usuario
 export function useNotifications() {
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
 
-  // Suscribirse a cambios en tiempo real
-  useEffect(() => {
-    if (!user) return
+  // Callback para manejar cambios en notificaciones
+  const handleNotificationChange = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['notifications', user?.id] })
+    queryClient.invalidateQueries({ queryKey: ['unread-notifications-count', user?.id] })
+  }, [user?.id, queryClient])
 
-    const channel = supabase
-      .channel('notifications-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => {
-          // Actualizar las notificaciones cuando hay cambios
-          queryClient.invalidateQueries({ queryKey: ['notifications', user.id] })
-          queryClient.invalidateQueries({ queryKey: ['unread-notifications-count', user.id] })
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [user, queryClient])
+  // Suscripción con cleanup robusto
+  useRealtimeSubscription({
+    channelName: `notifications-${user?.id}`,
+    table: 'notifications',
+    event: '*',
+    filter: user ? `user_id=eq.${user.id}` : undefined,
+    onEvent: handleNotificationChange,
+    enabled: !!user,
+  })
 
   return useQuery({
     queryKey: ['notifications', user?.id],
@@ -67,31 +57,20 @@ export function useUnreadNotificationsCount() {
   const { user } = useAuthStore()
   const queryClient = useQueryClient()
 
-  // Suscribirse a cambios en tiempo real
-  useEffect(() => {
-    if (!user) return
+  // Callback para manejar cambios en notificaciones
+  const handleUnreadChange = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['unread-notifications-count', user?.id] })
+  }, [user?.id, queryClient])
 
-    const channel = supabase
-      .channel('unread-notifications-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => {
-          // Actualizar el contador cuando hay cambios
-          queryClient.invalidateQueries({ queryKey: ['unread-notifications-count', user.id] })
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [user, queryClient])
+  // Suscripción con cleanup robusto
+  useRealtimeSubscription({
+    channelName: `unread-notifications-${user?.id}`,
+    table: 'notifications',
+    event: '*',
+    filter: user ? `user_id=eq.${user.id}` : undefined,
+    onEvent: handleUnreadChange,
+    enabled: !!user,
+  })
 
   return useQuery({
     queryKey: ['unread-notifications-count', user?.id],
