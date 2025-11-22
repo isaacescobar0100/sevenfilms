@@ -51,14 +51,14 @@ function Feed() {
           }} />
 
           {/* Filter Tabs */}
-          <div className="bg-white rounded-lg shadow-md">
-            <div className="flex border-b border-gray-200">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md">
+            <div className="flex border-b border-gray-200 dark:border-gray-700">
               <button
                 onClick={() => setFilter('all')}
                 className={`flex-1 px-4 py-3 text-center font-medium ${
                   filter === 'all'
                     ? 'text-primary-600 border-b-2 border-primary-600'
-                    : 'text-gray-600 hover:text-gray-900'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
                 <div className="flex items-center justify-center space-x-2">
@@ -71,7 +71,7 @@ function Feed() {
                 className={`flex-1 px-4 py-3 text-center font-medium ${
                   filter === 'following'
                     ? 'text-primary-600 border-b-2 border-primary-600'
-                    : 'text-gray-600 hover:text-gray-900'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
                 <div className="flex items-center justify-center space-x-2">
@@ -84,15 +84,15 @@ function Feed() {
 
           {/* Cineastas sugeridos - Carrusel horizontal solo en móvil */}
           {suggestedUsers && suggestedUsers.length > 0 && showSuggestedUsers && (
-            <div className="lg:hidden bg-white rounded-lg shadow-md p-4">
+            <div className="lg:hidden bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="font-bold text-sm text-gray-700">{t('feed.suggestedFilmmakers')}</h2>
+                <h2 className="font-bold text-sm text-gray-700 dark:text-gray-300">{t('feed.suggestedFilmmakers')}</h2>
                 <button
                   onClick={() => setShowSuggestedUsers(false)}
-                  className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                  className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
                   aria-label={t('common.close')}
                 >
-                  <X className="h-4 w-4 text-gray-500" />
+                  <X className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                 </button>
               </div>
               <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
@@ -110,8 +110,8 @@ function Feed() {
           {!isLoading && !error && (
             <div className="space-y-6">
               {posts.length === 0 ? (
-                <div className="bg-white rounded-lg shadow-md p-8 text-center">
-                  <p className="text-gray-600">
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 text-center">
+                  <p className="text-gray-600 dark:text-gray-400">
                     {filter === 'following'
                       ? t('feed.noPostsFollowing')
                       : t('feed.noPostsExplore')}
@@ -127,7 +127,7 @@ function Feed() {
                   <div ref={loadMoreRef} className="py-4 flex justify-center">
                     {isFetchingNextPage && <LoadingSpinner size="sm" />}
                     {!hasNextPage && posts.length > 0 && (
-                      <p className="text-gray-500 text-sm">{t('feed.noMorePosts')}</p>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">{t('feed.noMorePosts')}</p>
                     )}
                   </div>
                 </>
@@ -141,8 +141,8 @@ function Feed() {
           <div className="hidden lg:block space-y-6">
           {/* Suggested Users */}
           {suggestedUsers && suggestedUsers.length > 0 && (
-            <div className="bg-white rounded-lg shadow-md p-4">
-              <h2 className="font-bold text-lg mb-4">{t('feed.suggestedFilmmakers')}</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+              <h2 className="font-bold text-lg text-gray-900 dark:text-white mb-4">{t('feed.suggestedFilmmakers')}</h2>
               <div className="space-y-3">
                 {suggestedUsers.map((user) => (
                   <UserCard key={user.id} user={user} showFollowButton />

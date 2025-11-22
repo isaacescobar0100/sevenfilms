@@ -160,12 +160,12 @@ function Messages() {
 
   return (
     <div className="max-w-7xl mx-auto h-[calc(100vh-4rem)]">
-      <div className="flex h-full bg-white border border-gray-200 rounded-lg overflow-hidden">
+      <div className="flex h-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
         {/* Conversations List */}
-        <div className={`w-full md:w-80 border-r border-gray-200 flex flex-col ${selectedUser ? 'hidden md:flex' : 'flex'}`}>
+        <div className={`w-full md:w-80 border-r border-gray-200 dark:border-gray-700 flex flex-col ${selectedUser ? 'hidden md:flex' : 'flex'}`}>
           {/* Header */}
-          <div className="p-4 border-b border-gray-200">
-            <h2 className="text-xl font-bold text-gray-900">{t('messages.title')}</h2>
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('messages.title')}</h2>
           </div>
 
           {/* Conversations */}
@@ -178,14 +178,14 @@ function Messages() {
               conversations.map((conv) => (
                 <div
                   key={conv.otherUser.id}
-                  className={`relative w-full border-b border-gray-100 ${
-                    selectedUser?.id === conv.otherUser.id ? 'bg-primary-50' : ''
+                  className={`relative w-full border-b border-gray-100 dark:border-gray-700 ${
+                    selectedUser?.id === conv.otherUser.id ? 'bg-primary-50 dark:bg-primary-900/20' : ''
                   }`}
                 >
                   <div className="flex items-start">
                     <button
                       onClick={() => setSelectedUser(conv.otherUser)}
-                      className="flex-1 p-4 flex items-start space-x-3 hover:bg-gray-50 transition-colors"
+                      className="flex-1 p-4 flex items-start space-x-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                     >
                       {/* Avatar */}
                       {conv.otherUser.avatar_url ? (
@@ -203,17 +203,17 @@ function Messages() {
                       {/* Info */}
                       <div className="flex-1 min-w-0 text-left">
                         <div className="flex items-center justify-between mb-1">
-                          <p className="font-semibold text-gray-900 truncate">
+                          <p className="font-semibold text-gray-900 dark:text-white truncate">
                             {conv.otherUser.full_name}
                           </p>
-                          <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
+                          <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0 ml-2">
                             {formatDistanceToNow(new Date(conv.created_at), {
                               addSuffix: true,
                               locale: dateLocale,
                             })}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-600 truncate">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
                           {conv.sender_id === user?.id ? t('messages.you') + ' ' : ''}
                           {conv.content}
                         </p>
@@ -232,9 +232,9 @@ function Messages() {
                           e.stopPropagation()
                           setShowConversationMenu(showConversationMenu === conv.otherUser.id ? null : conv.otherUser.id)
                         }}
-                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
                       >
-                        <MoreVertical className="h-5 w-5 text-gray-600" />
+                        <MoreVertical className="h-5 w-5 text-gray-600 dark:text-gray-400" />
                       </button>
 
                       {/* Menu dropdown */}
@@ -244,7 +244,7 @@ function Messages() {
                             className="fixed inset-0 z-10"
                             onClick={() => setShowConversationMenu(null)}
                           ></div>
-                          <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-xl py-1 border border-gray-200 z-20">
+                          <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl py-1 border border-gray-200 dark:border-gray-700 z-20">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
@@ -252,7 +252,7 @@ function Messages() {
                                 setShowDeleteDialog(true)
                                 setShowConversationMenu(null)
                               }}
-                              className="w-full px-4 py-2 text-left text-red-600 hover:bg-gray-100 flex items-center space-x-2"
+                              className="w-full px-4 py-2 text-left text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
                             >
                               <Trash2 className="h-4 w-4" />
                               <span>{t('messages.deleteConversation')}</span>
@@ -266,9 +266,9 @@ function Messages() {
               ))
             ) : (
               <div className="text-center py-12 px-4">
-                <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600 font-medium mb-1">{t('messages.noConversations')}</p>
-                <p className="text-sm text-gray-500">
+                <MessageCircle className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
+                <p className="text-gray-600 dark:text-gray-400 font-medium mb-1">{t('messages.noConversations')}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-500">
                   {t('messages.searchUsers')}
                 </p>
               </div>
@@ -281,10 +281,10 @@ function Messages() {
           {selectedUser ? (
             <>
               {/* Chat Header */}
-              <div className="p-4 border-b border-gray-200 flex items-center space-x-3">
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center space-x-3">
                 <button
                   onClick={() => setSelectedUser(null)}
-                  className="md:hidden text-gray-600 hover:text-gray-900"
+                  className="md:hidden text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                 >
                   <ArrowLeft className="h-6 w-6" />
                 </button>
@@ -300,13 +300,13 @@ function Messages() {
                   </div>
                 )}
                 <div>
-                  <p className="font-semibold text-gray-900">{selectedUser.full_name}</p>
-                  <p className="text-sm text-gray-600">@{selectedUser.username}</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">{selectedUser.full_name}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">@{selectedUser.username}</p>
                 </div>
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900">
                 {messagesLoading ? (
                   <div className="flex justify-center py-8">
                     <LoadingSpinner />
@@ -325,7 +325,7 @@ function Messages() {
                             className={`max-w-[70%] rounded-lg px-4 py-2 ${
                               isOwn
                                 ? 'bg-primary-600 text-white'
-                                : 'bg-gray-100 text-gray-900'
+                                : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700'
                             }`}
                           >
                             {isEditing ? (
@@ -338,19 +338,19 @@ function Messages() {
                                     if (e.key === 'Enter') handleSaveEdit()
                                     if (e.key === 'Escape') handleCancelEdit()
                                   }}
-                                  className="w-full px-2 py-1 bg-white text-gray-900 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                  className="w-full px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-primary-500"
                                   autoFocus
                                 />
                                 <div className="flex gap-2">
                                   <button
                                     onClick={handleSaveEdit}
-                                    className="text-xs px-2 py-1 bg-white text-primary-600 rounded hover:bg-gray-100"
+                                    className="text-xs px-2 py-1 bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 rounded hover:bg-gray-100 dark:hover:bg-gray-600"
                                   >
                                     {t('common.save')}
                                   </button>
                                   <button
                                     onClick={handleCancelEdit}
-                                    className="text-xs px-2 py-1 bg-white text-gray-600 rounded hover:bg-gray-100"
+                                    className="text-xs px-2 py-1 bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded hover:bg-gray-100 dark:hover:bg-gray-600"
                                   >
                                     {t('common.cancel')}
                                   </button>
@@ -361,7 +361,7 @@ function Messages() {
                                 <p className="break-words">{message.content}</p>
                                 <p
                                   className={`text-xs mt-1 ${
-                                    isOwn ? 'text-primary-100' : 'text-gray-500'
+                                    isOwn ? 'text-primary-100' : 'text-gray-500 dark:text-gray-400'
                                   }`}
                                 >
                                   {formatDistanceToNow(new Date(message.created_at), {
@@ -382,8 +382,8 @@ function Messages() {
                                   e.stopPropagation()
                                   setShowMessageMenu(showMessageMenu === message.id ? null : message.id)
                                 }}
-                                className={`p-1 rounded-full hover:bg-gray-200 ${
-                                  isOwn ? 'text-primary-600' : 'text-gray-600'
+                                className={`p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 ${
+                                  isOwn ? 'text-primary-600 dark:text-primary-400' : 'text-gray-600 dark:text-gray-400'
                                 }`}
                               >
                                 <MoreVertical className="h-4 w-4" />
@@ -395,14 +395,14 @@ function Messages() {
                                     className="fixed inset-0 z-10"
                                     onClick={() => setShowMessageMenu(null)}
                                   ></div>
-                                  <div className={`absolute ${isOwn ? 'right-0' : 'left-0'} top-full mt-1 w-48 bg-white rounded-lg shadow-xl py-1 border border-gray-200 z-20`}>
+                                  <div className={`absolute ${isOwn ? 'right-0' : 'left-0'} top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl py-1 border border-gray-200 dark:border-gray-700 z-20`}>
                                     {isOwn && (
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation()
                                           handleEditMessage(message)
                                         }}
-                                        className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                                        className="w-full px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
                                       >
                                         <Edit className="h-4 w-4" />
                                         <span>{t('messages.edit')}</span>
@@ -416,7 +416,7 @@ function Messages() {
                                         setShowDeleteMessageDialog(true)
                                         setShowMessageMenu(null)
                                       }}
-                                      className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                                      className="w-full px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
                                     >
                                       <Trash className="h-4 w-4" />
                                       <span>{t('messages.deleteForMe')}</span>
@@ -430,7 +430,7 @@ function Messages() {
                                           setShowDeleteMessageDialog(true)
                                           setShowMessageMenu(null)
                                         }}
-                                        className="w-full px-4 py-2 text-left text-red-600 hover:bg-gray-100 flex items-center space-x-2"
+                                        className="w-full px-4 py-2 text-left text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
                                       >
                                         <Trash2 className="h-4 w-4" />
                                         <span>{t('messages.deleteForEveryone')}</span>
@@ -447,8 +447,8 @@ function Messages() {
                   })
                 ) : (
                   <div className="text-center py-12">
-                    <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                    <p className="text-gray-600">
+                    <MessageCircle className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
+                    <p className="text-gray-600 dark:text-gray-400">
                       {t('messages.sendMessage')}
                     </p>
                   </div>
@@ -457,14 +457,14 @@ function Messages() {
               </div>
 
               {/* Message Input */}
-              <div className="p-4 border-t border-gray-200">
+              <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
                 <form onSubmit={handleSendMessage} className="flex space-x-2">
                   <input
                     type="text"
                     value={messageContent}
                     onChange={(e) => setMessageContent(e.target.value)}
                     placeholder={t('messages.placeholder')}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-full focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder-gray-500 dark:placeholder-gray-400"
                     disabled={sendMessage.isPending}
                   />
                   <button
@@ -482,13 +482,13 @@ function Messages() {
               </div>
             </>
           ) : (
-            <div className="flex-1 flex items-center justify-center p-8">
+            <div className="flex-1 flex items-center justify-center p-8 bg-gray-50 dark:bg-gray-900">
               <div className="text-center">
-                <MessageCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                <MessageCircle className="h-16 w-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                   {t('messages.yourMessages')}
                 </h3>
-                <p className="text-gray-600">
+                <p className="text-gray-600 dark:text-gray-400">
                   {t('messages.selectConversation')}
                 </p>
               </div>

@@ -139,13 +139,13 @@ function Search() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       {/* Search Header */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('search.title')}</h1>
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">{t('search.title')}</h1>
 
         {/* Search Input */}
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <SearchIcon className="h-5 w-5 text-gray-400" />
+            <SearchIcon className="h-5 w-5 text-gray-400 dark:text-gray-500" />
           </div>
           <input
             type="text"
@@ -163,23 +163,23 @@ function Search() {
                 setShowRecentDropdown(true)
               }
             }}
-            className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder-gray-500 dark:placeholder-gray-400"
             placeholder={t('search.placeholder')}
           />
 
           {/* Dropdown de búsquedas recientes y tendencias */}
           {showRecentDropdown && !query && (recentSearches.length > 0 || (trending && trending.length > 0)) && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-96 overflow-y-auto">
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50 max-h-96 overflow-y-auto">
               {/* Tendencias */}
               {trending && trending.length > 0 && (
                 <>
-                  <div className="p-3 border-b border-gray-200">
-                    <h3 className="text-sm font-semibold text-gray-900 flex items-center space-x-2">
+                  <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
                       <TrendingUp className="h-4 w-4 text-primary-500" />
                       <span>{t('feed.trending')}</span>
                     </h3>
                   </div>
-                  <div className="p-2 flex flex-wrap gap-2 border-b border-gray-200">
+                  <div className="p-2 flex flex-wrap gap-2 border-b border-gray-200 dark:border-gray-700">
                     {trending.slice(0, 8).map((item) => (
                       <button
                         key={item.hashtag}
@@ -190,11 +190,11 @@ function Search() {
                           setQuery(searchTerm)
                           setShowRecentDropdown(false)
                         }}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-primary-100 hover:text-primary-700 rounded-full text-sm font-medium text-gray-700 transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-primary-100 dark:hover:bg-primary-900/30 hover:text-primary-700 dark:hover:text-primary-400 rounded-full text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors"
                       >
                         <Hash className="h-3.5 w-3.5" />
                         <span>{item.hashtag.replace('#', '')}</span>
-                        <span className="text-xs text-gray-500">({item.count})</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">({item.count})</span>
                       </button>
                     ))}
                   </div>
@@ -204,9 +204,9 @@ function Search() {
               {/* Búsquedas recientes */}
               {recentSearches.length > 0 && (
                 <>
-                  <div className="p-3 border-b border-gray-200 flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-gray-900 flex items-center space-x-2">
-                      <Clock className="h-4 w-4 text-gray-500" />
+                  <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
+                      <Clock className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                       <span>{t('search.recentSearches')}</span>
                     </h3>
                     <button
@@ -217,16 +217,16 @@ function Search() {
                           setShowRecentDropdown(false)
                         }
                       }}
-                      className="text-xs text-primary-600 hover:text-primary-700 font-medium"
+                      className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium"
                     >
                       {t('common.delete')}
                     </button>
                   </div>
-                  <div className="divide-y divide-gray-100">
+                  <div className="divide-y divide-gray-100 dark:divide-gray-700">
                     {recentSearches.map((search, index) => (
                       <div
                         key={index}
-                        className="flex items-center justify-between p-3 hover:bg-gray-50 transition-colors group cursor-pointer"
+                        className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group cursor-pointer"
                         onClick={(e) => {
                           e.stopPropagation()
                           handleRecentSearchClick(search.query, search.type)
@@ -235,24 +235,24 @@ function Search() {
                         <div className="flex items-center space-x-3 flex-1">
                           <div className="flex-shrink-0">
                             {search.type === 'users' && (
-                              <Users className="h-5 w-5 text-gray-400" />
+                              <Users className="h-5 w-5 text-gray-400 dark:text-gray-500" />
                             )}
                             {search.type === 'posts' && (
-                              <FileText className="h-5 w-5 text-gray-400" />
+                              <FileText className="h-5 w-5 text-gray-400 dark:text-gray-500" />
                             )}
                             {search.type === 'movies' && (
-                              <Film className="h-5 w-5 text-gray-400" />
+                              <Film className="h-5 w-5 text-gray-400 dark:text-gray-500" />
                             )}
                             {(!search.type || search.type === 'general') && (
-                              <SearchIcon className="h-5 w-5 text-gray-400" />
+                              <SearchIcon className="h-5 w-5 text-gray-400 dark:text-gray-500" />
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                               {search.query}
                             </p>
                             {search.type && search.type !== 'general' && (
-                              <p className="text-xs text-gray-500">
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
                                 {t(`search.tabs.${search.type}`)}
                               </p>
                             )}
@@ -263,9 +263,9 @@ function Search() {
                             e.stopPropagation()
                             removeSearch(search.query)
                           }}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-200 rounded-full"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full"
                         >
-                          <X className="h-4 w-4 text-gray-500" />
+                          <X className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                         </button>
                       </div>
                     ))}
@@ -277,14 +277,14 @@ function Search() {
         </div>
 
         {/* Tabs */}
-        <div className="mt-6 border-b border-gray-200">
+        <div className="mt-6 border-b border-gray-200 dark:border-gray-700">
           <nav className="-mb-px flex space-x-8 overflow-x-auto">
             <button
               onClick={() => setActiveTab('all')}
               className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors flex items-center space-x-2 whitespace-nowrap ${
                 activeTab === 'all'
                   ? 'border-primary-600 text-primary-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                  : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-300'
               }`}
             >
               <Grid3x3 className="h-4 w-4" />
@@ -295,7 +295,7 @@ function Search() {
               className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors flex items-center space-x-2 whitespace-nowrap ${
                 activeTab === 'users'
                   ? 'border-primary-600 text-primary-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                  : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-300'
               }`}
             >
               <Users className="h-4 w-4" />
@@ -306,7 +306,7 @@ function Search() {
               className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors flex items-center space-x-2 whitespace-nowrap ${
                 activeTab === 'posts'
                   ? 'border-primary-600 text-primary-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                  : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-300'
               }`}
             >
               <FileText className="h-4 w-4" />
@@ -317,7 +317,7 @@ function Search() {
               className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors flex items-center space-x-2 whitespace-nowrap ${
                 activeTab === 'movies'
                   ? 'border-primary-600 text-primary-600'
-                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                  : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-300'
               }`}
             >
               <Film className="h-4 w-4" />
@@ -332,16 +332,16 @@ function Search() {
         {activeTab === 'all' && (
           <div className="space-y-8">
             {!query || query.trim().length < 2 ? (
-              <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-                <SearchIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600">{t('search.minChars')}</p>
+              <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <SearchIcon className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
+                <p className="text-gray-600 dark:text-gray-400">{t('search.minChars')}</p>
               </div>
             ) : (
               <>
                 {/* Usuarios */}
                 {users && users.length > 0 && (
                   <div>
-                    <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                       <Users className="h-5 w-5" />
                       {t('search.tabs.users')}
                     </h2>
@@ -353,7 +353,7 @@ function Search() {
                     {users.length > 4 && (
                       <button
                         onClick={() => setActiveTab('users')}
-                        className="mt-4 text-primary-600 hover:text-primary-700 font-medium text-sm"
+                        className="mt-4 text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium text-sm"
                       >
                         Ver todos los usuarios ({users.length})
                       </button>
@@ -364,7 +364,7 @@ function Search() {
                 {/* Posts */}
                 {posts && posts.length > 0 && (
                   <div>
-                    <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                       <FileText className="h-5 w-5" />
                       {t('search.tabs.posts')}
                     </h2>
@@ -376,7 +376,7 @@ function Search() {
                     {posts.length > 3 && (
                       <button
                         onClick={() => setActiveTab('posts')}
-                        className="mt-4 text-primary-600 hover:text-primary-700 font-medium text-sm"
+                        className="mt-4 text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium text-sm"
                       >
                         Ver todas las publicaciones ({posts.length})
                       </button>
@@ -387,7 +387,7 @@ function Search() {
                 {/* Movies */}
                 {movies && movies.length > 0 && (
                   <div>
-                    <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                       <Film className="h-5 w-5" />
                       {t('search.tabs.movies')}
                     </h2>
@@ -396,7 +396,7 @@ function Search() {
                         <div
                           key={movie.id}
                           onClick={() => setSelectedMovie(movie)}
-                          className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group"
+                          className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group"
                         >
                           {/* Thumbnail */}
                           <div className="relative aspect-video bg-gray-900">
@@ -423,12 +423,12 @@ function Search() {
                             )}
                           </div>
                           <div className="p-4">
-                            <h3 className="font-semibold text-gray-900 mb-1 line-clamp-1">
+                            <h3 className="font-semibold text-gray-900 dark:text-white mb-1 line-clamp-1">
                               {movie.title}
                             </h3>
-                            <div className="flex items-center justify-between text-sm text-gray-500">
+                            <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
                               {movie.genre && (
-                                <span className="bg-gray-100 px-2 py-1 rounded text-xs">
+                                <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-xs">
                                   {getTranslatedGenre(movie.genre, t)}
                                 </span>
                               )}
@@ -444,7 +444,7 @@ function Search() {
                     {movies.length > 3 && (
                       <button
                         onClick={() => setActiveTab('movies')}
-                        className="mt-4 text-primary-600 hover:text-primary-700 font-medium text-sm"
+                        className="mt-4 text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium text-sm"
                       >
                         Ver todas las películas ({movies.length})
                       </button>
@@ -457,10 +457,10 @@ function Search() {
                  (!posts || posts.length === 0) &&
                  (!movies || movies.length === 0) &&
                  !usersLoading && !postsLoading && !moviesLoading && (
-                  <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-                    <SearchIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                    <p className="text-gray-600">No se encontraron resultados</p>
-                    <p className="text-sm text-gray-500 mt-1">
+                  <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <SearchIcon className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
+                    <p className="text-gray-600 dark:text-gray-400">No se encontraron resultados</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
                       {t('search.tryAgain')}
                     </p>
                   </div>
@@ -480,9 +480,9 @@ function Search() {
         {activeTab === 'users' && (
           <div>
             {!query || query.trim().length < 2 ? (
-              <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-                <SearchIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600">{t('search.minChars')}</p>
+              <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <SearchIcon className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
+                <p className="text-gray-600 dark:text-gray-400">{t('search.minChars')}</p>
               </div>
             ) : usersLoading ? (
               <div className="flex justify-center py-12">
@@ -495,10 +495,10 @@ function Search() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-                <Users className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600">{t('search.noUsers')}</p>
-                <p className="text-sm text-gray-500 mt-1">
+              <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <Users className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
+                <p className="text-gray-600 dark:text-gray-400">{t('search.noUsers')}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
                   {t('search.tryAgain')}
                 </p>
               </div>
@@ -509,9 +509,9 @@ function Search() {
         {activeTab === 'posts' && (
           <div>
             {!query || query.trim().length < 2 ? (
-              <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-                <SearchIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600">{t('search.minChars')}</p>
+              <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <SearchIcon className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
+                <p className="text-gray-600 dark:text-gray-400">{t('search.minChars')}</p>
               </div>
             ) : postsLoading ? (
               <div className="flex justify-center py-12">
@@ -524,10 +524,10 @@ function Search() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600">{t('search.noPosts')}</p>
-                <p className="text-sm text-gray-500 mt-1">
+              <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <FileText className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
+                <p className="text-gray-600 dark:text-gray-400">{t('search.noPosts')}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
                   {t('search.tryAgain')}
                 </p>
               </div>
@@ -538,9 +538,9 @@ function Search() {
         {activeTab === 'movies' && (
           <div>
             {!query || query.trim().length < 2 ? (
-              <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-                <SearchIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600">{t('search.minCharsMovies')}</p>
+              <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <SearchIcon className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
+                <p className="text-gray-600 dark:text-gray-400">{t('search.minCharsMovies')}</p>
               </div>
             ) : moviesLoading ? (
               <div className="flex justify-center py-12">
@@ -552,7 +552,7 @@ function Search() {
                   <div
                     key={movie.id}
                     onClick={() => setSelectedMovie(movie)}
-                    className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group"
+                    className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group"
                   >
                     {/* Thumbnail */}
                     <div className="relative aspect-video bg-gray-900">
@@ -583,17 +583,17 @@ function Search() {
 
                     {/* Movie Info */}
                     <div className="p-4">
-                      <h3 className="font-semibold text-gray-900 mb-1 line-clamp-1">
+                      <h3 className="font-semibold text-gray-900 dark:text-white mb-1 line-clamp-1">
                         {movie.title}
                       </h3>
                       {movie.description && (
-                        <p className="text-sm text-gray-600 line-clamp-2 mb-2">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-2">
                           {movie.description}
                         </p>
                       )}
-                      <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
+                      <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-2">
                         {movie.genre && (
-                          <span className="bg-gray-100 px-2 py-1 rounded text-xs">
+                          <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-xs">
                             {getTranslatedGenre(movie.genre, t)}
                           </span>
                         )}
@@ -604,7 +604,7 @@ function Search() {
                       </div>
                       {/* Author */}
                       {movie.profiles && (
-                        <div className="flex items-center space-x-2 pt-2 border-t border-gray-100">
+                        <div className="flex items-center space-x-2 pt-2 border-t border-gray-100 dark:border-gray-700">
                           {movie.profiles.avatar_url ? (
                             <img
                               src={movie.profiles.avatar_url}
@@ -616,7 +616,7 @@ function Search() {
                               {movie.profiles.full_name?.[0] || 'U'}
                             </div>
                           )}
-                          <span className="text-xs text-gray-600">
+                          <span className="text-xs text-gray-600 dark:text-gray-400">
                             {movie.profiles.full_name}
                           </span>
                         </div>
@@ -626,10 +626,10 @@ function Search() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-                <Film className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600">{t('search.noMovies')}</p>
-                <p className="text-sm text-gray-500 mt-1">
+              <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <Film className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
+                <p className="text-gray-600 dark:text-gray-400">{t('search.noMovies')}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
                   {t('search.tryAgain')}
                 </p>
               </div>

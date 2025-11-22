@@ -40,8 +40,8 @@ function UserCard({ user, showFollowButton = false, compact = false }) {
               {user.full_name?.[0] || user.username?.[0] || 'U'}
             </div>
           )}
-          <p className="font-medium text-sm truncate text-gray-900">{user.full_name || user.username}</p>
-          <p className="text-xs text-gray-500 truncate">@{user.username}</p>
+          <p className="font-medium text-sm truncate text-gray-900 dark:text-white">{user.full_name || user.username}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">@{user.username}</p>
         </Link>
         {showFollowButton && !isOwnProfile && (
           <button
@@ -49,7 +49,7 @@ function UserCard({ user, showFollowButton = false, compact = false }) {
             disabled={toggleFollow.isPending}
             className={`mt-2 w-full text-xs py-1.5 px-2 rounded-full font-medium transition-colors ${
               isFollowing
-                ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
                 : 'bg-primary-600 text-white hover:bg-primary-700'
             }`}
           >
@@ -76,8 +76,8 @@ function UserCard({ user, showFollowButton = false, compact = false }) {
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <p className="font-semibold truncate">{user.full_name || user.username}</p>
-          <p className="text-sm text-gray-500 truncate">@{user.username}</p>
+          <p className="font-semibold truncate text-gray-900 dark:text-white">{user.full_name || user.username}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 truncate">@{user.username}</p>
         </div>
       </Link>
 

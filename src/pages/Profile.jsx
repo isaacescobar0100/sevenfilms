@@ -121,8 +121,8 @@ function Profile() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('profile.notFound')}</h2>
-          <p className="text-gray-600">{t('profile.notFoundDesc')}</p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{t('profile.notFound')}</h2>
+          <p className="text-gray-600 dark:text-gray-400">{t('profile.notFoundDesc')}</p>
         </div>
       </div>
     )
@@ -131,7 +131,7 @@ function Profile() {
   return (
     <div className="max-w-5xl mx-auto">
       {/* Header con Cover y Avatar */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         {/* Cover Image */}
         <div className="h-48 bg-gradient-to-r from-primary-500 to-primary-700 relative group">
           {profile.cover_url && (
@@ -176,10 +176,10 @@ function Profile() {
                   <img
                     src={profile.avatar_url}
                     alt={profile.full_name}
-                    className="h-32 w-32 rounded-full border-4 border-white bg-white object-cover"
+                    className="h-32 w-32 rounded-full border-4 border-white dark:border-gray-800 bg-white dark:bg-gray-800 object-cover"
                   />
                 ) : (
-                  <div className="h-32 w-32 rounded-full border-4 border-white bg-primary-600 flex items-center justify-center text-white text-4xl font-bold">
+                  <div className="h-32 w-32 rounded-full border-4 border-white dark:border-gray-800 bg-primary-600 flex items-center justify-center text-white text-4xl font-bold">
                     {profile.full_name?.[0] || profile.username?.[0] || 'U'}
                   </div>
                 )}
@@ -209,8 +209,8 @@ function Profile() {
               <div className="flex-1 mt-6 sm:mt-0 sm:pb-1">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h1 className="text-2xl font-bold text-gray-900">{profile.full_name}</h1>
-                    <p className="text-gray-600">@{profile.username}</p>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{profile.full_name}</h1>
+                    <p className="text-gray-600 dark:text-gray-400">@{profile.username}</p>
                   </div>
                   <div className="flex space-x-2">
                     {isOwnProfile ? (
@@ -255,9 +255,9 @@ function Profile() {
 
           {/* Bio y Metadata */}
           <div className="pb-5 space-y-3">
-            {profile.bio && <p className="text-gray-900">{profile.bio}</p>}
+            {profile.bio && <p className="text-gray-900 dark:text-white">{profile.bio}</p>}
 
-            <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+            <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
               {profile.location && (
                 <div className="flex items-center space-x-1">
                   <MapPin className="h-4 w-4" />
@@ -271,7 +271,7 @@ function Profile() {
                     href={profile.website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-primary-600 hover:underline"
+                    className="text-primary-600 dark:text-primary-400 hover:underline"
                   >
                     {profile.website.replace(/^https?:\/\//, '')}
                   </a>
@@ -290,33 +290,33 @@ function Profile() {
             {/* Stats */}
             <div className="flex space-x-6 text-sm">
               <div>
-                <span className="font-bold text-gray-900">{stats?.posts_count || 0}</span>{' '}
-                <span className="text-gray-600">{t('profile.stats.posts')}</span>
+                <span className="font-bold text-gray-900 dark:text-white">{stats?.posts_count || 0}</span>{' '}
+                <span className="text-gray-600 dark:text-gray-400">{t('profile.stats.posts')}</span>
               </div>
               <div>
-                <span className="font-bold text-gray-900">{stats?.movies_count || 0}</span>{' '}
-                <span className="text-gray-600">{t('profile.stats.movies')}</span>
+                <span className="font-bold text-gray-900 dark:text-white">{stats?.movies_count || 0}</span>{' '}
+                <span className="text-gray-600 dark:text-gray-400">{t('profile.stats.movies')}</span>
               </div>
               <div>
-                <span className="font-bold text-gray-900">{stats?.followers_count || 0}</span>{' '}
-                <span className="text-gray-600">{t('profile.stats.followers')}</span>
+                <span className="font-bold text-gray-900 dark:text-white">{stats?.followers_count || 0}</span>{' '}
+                <span className="text-gray-600 dark:text-gray-400">{t('profile.stats.followers')}</span>
               </div>
               <div>
-                <span className="font-bold text-gray-900">{stats?.following_count || 0}</span>{' '}
-                <span className="text-gray-600">{t('profile.stats.following')}</span>
+                <span className="font-bold text-gray-900 dark:text-white">{stats?.following_count || 0}</span>{' '}
+                <span className="text-gray-600 dark:text-gray-400">{t('profile.stats.following')}</span>
               </div>
             </div>
           </div>
 
           {/* Tabs */}
-          <div className="border-t border-gray-200">
+          <div className="border-t border-gray-200 dark:border-gray-700">
             <nav className="-mb-px flex space-x-8">
               <button
                 onClick={() => setActiveTab('posts')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === 'posts'
                     ? 'border-primary-600 text-primary-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                    : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-300'
                 }`}
               >
                 {t('profile.tabs.posts')}
@@ -326,7 +326,7 @@ function Profile() {
                 className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === 'movies'
                     ? 'border-primary-600 text-primary-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                    : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-300'
                 }`}
               >
                 {t('profile.tabs.movies')}
@@ -336,7 +336,7 @@ function Profile() {
                 className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === 'about'
                     ? 'border-primary-600 text-primary-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                    : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-300'
                 }`}
               >
                 {t('profile.tabs.about')}
@@ -357,8 +357,8 @@ function Profile() {
             ) : posts && posts.length > 0 ? (
               posts.map((post) => <Post key={post.id} post={post} />)
             ) : (
-              <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-                <p className="text-gray-600">
+              <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <p className="text-gray-600 dark:text-gray-400">
                   {isOwnProfile
                     ? t('profile.noPosts')
                     : t('profile.noPostsOther')}
@@ -373,29 +373,29 @@ function Profile() {
         )}
 
         {activeTab === 'about' && (
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">{t('profile.about.title')}</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">{t('profile.about.title')}</h2>
             <div className="space-y-3">
               {profile.bio && (
                 <div>
-                  <h3 className="font-semibold text-gray-900">{t('profile.about.bio')}</h3>
-                  <p className="text-gray-700">{profile.bio}</p>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">{t('profile.about.bio')}</h3>
+                  <p className="text-gray-700 dark:text-gray-300">{profile.bio}</p>
                 </div>
               )}
               {profile.location && (
                 <div>
-                  <h3 className="font-semibold text-gray-900">{t('profile.about.location')}</h3>
-                  <p className="text-gray-700">{profile.location}</p>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">{t('profile.about.location')}</h3>
+                  <p className="text-gray-700 dark:text-gray-300">{profile.location}</p>
                 </div>
               )}
               {profile.website && (
                 <div>
-                  <h3 className="font-semibold text-gray-900">{t('profile.about.website')}</h3>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">{t('profile.about.website')}</h3>
                   <a
                     href={profile.website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-primary-600 hover:underline"
+                    className="text-primary-600 dark:text-primary-400 hover:underline"
                   >
                     {profile.website}
                   </a>
@@ -464,9 +464,9 @@ function UserMovies({ userId, isOwnProfile }) {
 
   if (!movies || movies.length === 0) {
     return (
-      <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-        <Film className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-        <p className="text-gray-600">
+      <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <Film className="h-16 w-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+        <p className="text-gray-600 dark:text-gray-400">
           {isOwnProfile
             ? t('profile.noMovies')
             : t('profile.noMoviesOther')}
@@ -481,7 +481,7 @@ function UserMovies({ userId, isOwnProfile }) {
         {movies.map((movie) => (
           <div
             key={movie.id}
-            className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group relative"
+            className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group relative"
           >
             {/* Menu de opciones (solo para propietario) */}
             {isOwnProfile && (
@@ -504,14 +504,14 @@ function UserMovies({ userId, isOwnProfile }) {
                         setShowMenuMovieId(null)
                       }}
                     ></div>
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl py-1 border border-gray-200 z-20">
+                    <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl py-1 border border-gray-200 dark:border-gray-700 z-20">
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
                           setEditingMovie(movie)
                           setShowMenuMovieId(null)
                         }}
-                        className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                        className="w-full px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
                       >
                         <Edit className="h-4 w-4" />
                         <span>{t('common.edit')}</span>
@@ -523,7 +523,7 @@ function UserMovies({ userId, isOwnProfile }) {
                           setShowDeleteDialog(true)
                           setShowMenuMovieId(null)
                         }}
-                        className="w-full px-4 py-2 text-left text-red-600 hover:bg-gray-100 flex items-center space-x-2"
+                        className="w-full px-4 py-2 text-left text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
                       >
                         <Trash2 className="h-4 w-4" />
                         <span>{t('common.delete')}</span>
@@ -564,17 +564,17 @@ function UserMovies({ userId, isOwnProfile }) {
 
             {/* Movie Info */}
             <div className="p-4">
-              <h3 className="font-semibold text-gray-900 mb-1 line-clamp-1">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-1 line-clamp-1">
                 {movie.title}
               </h3>
               {movie.description && (
-                <p className="text-sm text-gray-600 line-clamp-2 mb-2">
+                <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-2">
                   {movie.description}
                 </p>
               )}
-              <div className="flex items-center justify-between text-sm text-gray-500">
+              <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
                 {movie.genre && (
-                  <span className="bg-gray-100 px-2 py-1 rounded text-xs">
+                  <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-xs">
                     {getTranslatedGenre(movie.genre, t)}
                   </span>
                 )}
