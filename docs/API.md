@@ -362,6 +362,73 @@ const { error } = await supabase.rpc('soft_delete_messages_for_user', {
 
 ---
 
+## Backend Rate Limiting
+
+Rate limiting is enforced at the database level via triggers and RPC functions.
+Users cannot bypass these limits even by modifying frontend code.
+
+### Rate Limit Configuration
+
+| Action | Limit | Window | Enforcement |
+|--------|-------|--------|-------------|
+| `movie_upload` | 10 | 24 hours | Trigger |
+| `post_creation` | 50 | 24 hours | Trigger |
+| `message_send` | 100 | 24 hours | Trigger |
+| `search_request` | 100 | 1 hour | RPC |
+| `profile_update` | 5 | 1 hour | RPC |
+| `like_action` | 60 | 1 minute | Trigger |
+| `comment_action` | 30 | 1 minute | Trigger |
+| `follow_action` | 30 | 1 minute | Trigger |
+| `rating_action` | 20 | 1 minute | Trigger |
+
+### Check Rate Limit Status
+```javascript
+const { data, error } = await supabase.rpc('get_rate_limit_status', {
+  p_action_type: 'post_creation'
+})
+// Returns: { limited, limit, remaining, used, window_seconds, reset_at }
+```
+
+### Perform Rate-Limited Action (Manual)
+For actions without automatic triggers (like searches):
+```javascript
+const { data, error } = await supabase.rpc('perform_rate_limited_action', {
+  p_action_type: 'search_request'
+})
+// Returns: { allowed, limit, remaining, window_seconds } or { allowed: false, error, reset_at }
+```
+
+### Using the Hook
+```javascript
+import { useBackendRateLimit, RATE_LIMIT_ACTIONS } from '@/hooks/useBackendRateLimit'
+
+function PostButton() {
+  const { isLimited, remaining, resetTimeFormatted } = useBackendRateLimit(
+    RATE_LIMIT_ACTIONS.POST_CREATION
+  )
+
+  if (isLimited) {
+    return <p>Límite alcanzado. Reinicio en {resetTimeFormatted}</p>
+  }
+
+  return <button>Publicar ({remaining} restantes)</button>
+}
+```
+
+### Error Handling
+When a rate limit is exceeded via trigger, Supabase returns an error:
+```javascript
+try {
+  await supabase.from('posts').insert({ ... })
+} catch (error) {
+  if (error.message.includes('Rate limit exceeded')) {
+    // Show rate limit message to user
+  }
+}
+```
+
+---
+
 ## Storage Buckets
 
 | Bucket | Max Size | Content Type |
