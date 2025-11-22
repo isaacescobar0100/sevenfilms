@@ -195,13 +195,13 @@ function UploadMovieModal({ onClose }) {
 
       {/* Modal */}
       <div className="flex min-h-screen items-center justify-center p-4">
-        <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full">
+        <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
-            <h2 className="text-xl font-bold text-gray-900">Subir película</h2>
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Subir película</h2>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             >
               <X className="h-6 w-6" />
             </button>
@@ -210,8 +210,8 @@ function UploadMovieModal({ onClose }) {
           {/* Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
             {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm text-red-800">{error}</p>
+              <div className="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-sm text-red-800 dark:text-red-300">{error}</p>
               </div>
             )}
 
@@ -225,8 +225,8 @@ function UploadMovieModal({ onClose }) {
 
             {/* Remaining uploads counter */}
             {!isLimited && remaining <= limit && (
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm text-blue-800">
+              <div className="p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <p className="text-sm text-blue-800 dark:text-blue-300">
                   Puedes subir {remaining} de {limit} películas hoy
                 </p>
               </div>
@@ -234,10 +234,10 @@ function UploadMovieModal({ onClose }) {
 
             {/* Video Upload */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Video <span className="text-red-600">*</span>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Video <span className="text-red-600 dark:text-red-400">*</span>
               </label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary-500 transition-colors">
+              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-primary-500 dark:hover:border-primary-400 transition-colors">
                 <input
                   type="file"
                   accept="video/*"
@@ -252,24 +252,24 @@ function UploadMovieModal({ onClose }) {
                 >
                   {videoFile ? (
                     <>
-                      <Film className="h-12 w-12 text-primary-600 mb-2" />
-                      <p className="font-medium text-gray-900">{videoFile.name}</p>
-                      <p className="text-sm text-gray-500">
+                      <Film className="h-12 w-12 text-primary-600 dark:text-primary-400 mb-2" />
+                      <p className="font-medium text-gray-900 dark:text-white">{videoFile.name}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
                         {(videoFile.size / (1024 * 1024)).toFixed(2)} MB
                       </p>
                       {videoDuration && (
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                           Duración: {Math.floor(videoDuration / 60)}:{(videoDuration % 60).toString().padStart(2, '0')}
                         </p>
                       )}
                     </>
                   ) : (
                     <>
-                      <Upload className="h-12 w-12 text-gray-400 mb-2" />
-                      <p className="font-medium text-gray-900">
+                      <Upload className="h-12 w-12 text-gray-400 dark:text-gray-500 mb-2" />
+                      <p className="font-medium text-gray-900 dark:text-white">
                         Haz clic para subir un video
                       </p>
-                      <p className="text-sm text-gray-500">MP4, MOV, AVI (max. 500MB)</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">MP4, MOV, AVI (max. 500MB)</p>
                     </>
                   )}
                 </label>
@@ -277,11 +277,11 @@ function UploadMovieModal({ onClose }) {
 
               {/* Informative message about upcoming features */}
               {videoFile && (
-                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-sm text-blue-800 font-medium">
+                <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <p className="text-sm text-blue-800 dark:text-blue-300 font-medium">
                     📹 Múltiples calidades de video - Próximamente
                   </p>
-                  <p className="text-xs text-blue-600 mt-1">
+                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
                     Pronto podrás generar automáticamente versiones en 1080p, 720p, 480p y 360p.
                     Tu video se sube actualmente en calidad original.
                   </p>
@@ -292,11 +292,11 @@ function UploadMovieModal({ onClose }) {
             {/* Thumbnail Upload */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Miniatura (opcional)
                 </label>
               </div>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-primary-500 transition-colors">
+              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 text-center hover:border-primary-500 dark:hover:border-primary-400 transition-colors">
                 <input
                   type="file"
                   accept="image/*"
@@ -316,23 +316,23 @@ function UploadMovieModal({ onClose }) {
                         alt="Miniatura"
                         className="max-h-32 mx-auto rounded mb-2"
                       />
-                      <p className="text-sm text-gray-600">{thumbnailFile.name}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{thumbnailFile.name}</p>
                       <button
                         type="button"
                         onClick={(e) => {
                           e.preventDefault()
                           setThumbnailFile(null)
                         }}
-                        className="text-xs text-red-600 hover:text-red-700 mt-1"
+                        className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 mt-1"
                       >
                         Eliminar
                       </button>
                     </div>
                   ) : (
                     <>
-                      <Upload className="h-8 w-8 text-gray-400 mb-1" />
-                      <p className="text-sm text-gray-600">Subir miniatura</p>
-                      <p className="text-xs text-gray-500">JPG, PNG (max. 5MB)</p>
+                      <Upload className="h-8 w-8 text-gray-400 dark:text-gray-500 mb-1" />
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Subir miniatura</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">JPG, PNG (max. 5MB)</p>
                     </>
                   )}
                 </label>
@@ -342,7 +342,7 @@ function UploadMovieModal({ onClose }) {
             {/* Subtitles Upload */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Subtítulos (opcional)
                 </label>
                 {/* TEMPORALMENTE DESHABILITADO - Problema con @xenova/transformers */}
@@ -359,7 +359,7 @@ function UploadMovieModal({ onClose }) {
                 )}
               </div>
 
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-primary-500 transition-colors">
+              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 text-center hover:border-primary-500 dark:hover:border-primary-400 transition-colors">
                 <input
                   type="file"
                   accept=".srt,.vtt"
@@ -374,24 +374,24 @@ function UploadMovieModal({ onClose }) {
                 >
                   {subtitleFile ? (
                     <div className="w-full">
-                      <Subtitles className="h-8 w-8 text-primary-600 mx-auto mb-1" />
-                      <p className="text-sm text-gray-600">{subtitleFile.name}</p>
+                      <Subtitles className="h-8 w-8 text-primary-600 dark:text-primary-400 mx-auto mb-1" />
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{subtitleFile.name}</p>
                       <button
                         type="button"
                         onClick={(e) => {
                           e.preventDefault()
                           setSubtitleFile(null)
                         }}
-                        className="text-xs text-red-600 hover:text-red-700 mt-1"
+                        className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 mt-1"
                       >
                         Eliminar
                       </button>
                     </div>
                   ) : (
                     <>
-                      <Subtitles className="h-8 w-8 text-gray-400 mb-1" />
-                      <p className="text-sm text-gray-600">Subir subtítulos</p>
-                      <p className="text-xs text-gray-500">SRT, VTT (max. 1MB)</p>
+                      <Subtitles className="h-8 w-8 text-gray-400 dark:text-gray-500 mb-1" />
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Subir subtítulos</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">SRT, VTT (max. 1MB)</p>
                     </>
                   )}
                 </label>
@@ -435,8 +435,8 @@ function UploadMovieModal({ onClose }) {
 
             {/* Title */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Título <span className="text-red-600">*</span>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Título <span className="text-red-600 dark:text-red-400">*</span>
               </label>
               <input
                 {...register('title')}
@@ -445,13 +445,13 @@ function UploadMovieModal({ onClose }) {
                 placeholder="El nombre de tu película"
               />
               {errors.title && (
-                <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.title.message}</p>
               )}
             </div>
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Descripción
               </label>
               <textarea
@@ -461,15 +461,15 @@ function UploadMovieModal({ onClose }) {
                 placeholder="Describe de qué trata tu película..."
               />
               {errors.description && (
-                <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.description.message}</p>
               )}
             </div>
 
             {/* Genre and Year */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Género <span className="text-red-600">*</span>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Género <span className="text-red-600 dark:text-red-400">*</span>
                 </label>
                 <select {...register('genre')} className="input">
                   <option value="">Selecciona un género</option>
@@ -480,12 +480,12 @@ function UploadMovieModal({ onClose }) {
                   ))}
                 </select>
                 {errors.genre && (
-                  <p className="mt-1 text-sm text-red-600">{errors.genre.message}</p>
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.genre.message}</p>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Año
                 </label>
                 <input
@@ -495,7 +495,7 @@ function UploadMovieModal({ onClose }) {
                   placeholder={new Date().getFullYear().toString()}
                 />
                 {errors.year && (
-                  <p className="mt-1 text-sm text-red-600">{errors.year.message}</p>
+                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.year.message}</p>
                 )}
               </div>
             </div>
@@ -503,13 +503,13 @@ function UploadMovieModal({ onClose }) {
             {/* Upload Progress */}
             {uploadProgress > 0 && uploadProgress < 100 && (
               <div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                   <div
                     className="bg-primary-600 h-2 rounded-full transition-all"
                     style={{ width: `${uploadProgress}%` }}
                   ></div>
                 </div>
-                <p className="text-sm text-gray-600 mt-1 text-center">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 text-center">
                   Subiendo... {uploadProgress}%
                 </p>
               </div>
