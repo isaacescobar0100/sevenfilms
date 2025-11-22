@@ -32,11 +32,19 @@ export const useAuthStore = create((set) => ({
   },
 
   signUp: async (email, password, metadata = {}) => {
+    // Generate a clean username from the name (no spaces, lowercase)
+    const cleanUsername = metadata.name
+      ? metadata.name.trim().toLowerCase().replace(/\s+/g, '_').replace(/_+/g, '_')
+      : null
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: metadata,
+        data: {
+          ...metadata,
+          username: cleanUsername,
+        },
       },
     })
     if (error) throw error
