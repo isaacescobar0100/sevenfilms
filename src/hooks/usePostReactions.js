@@ -127,17 +127,8 @@ export function useToggleReaction() {
 
         if (error) throw error
 
-        // Eliminar notificación
-        if (postOwnerId && postOwnerId !== user.id) {
-          await supabase
-            .from('notifications')
-            .delete()
-            .eq('user_id', postOwnerId)
-            .eq('actor_id', user.id)
-            .eq('type', 'reaction')
-            .eq('entity_type', 'post')
-            .eq('entity_id', postId)
-        }
+        // NO eliminar notificación al quitar reacción
+        // La notificación ya fue vista, mantenerla en el historial
 
         return { postId, reaction: null }
       }
@@ -164,19 +155,34 @@ export function useToggleReaction() {
         if (error) throw error
       }
 
-      // Crear notificación solo si es una nueva reacción (no un cambio)
-      // Solo notificar cuando el usuario NO tenía reacción antes
-      if (postOwnerId && postOwnerId !== user.id && !currentReaction) {
-        await supabase
+      // Crear o actualizar notificación (upsert) - evita duplicados
+      // Solo si no es el dueño del post
+      if (postOwnerId && postOwnerId !== user.id) {
+        // Primero verificar si ya existe una notificación para esta combinación
+        const { data: existingNotif } = await supabase
           .from('notifications')
-          .insert({
-            user_id: postOwnerId,
-            actor_id: user.id,
-            type: 'reaction',
-            entity_type: 'post',
-            entity_id: postId,
-            is_read: false
-          })
+          .select('id')
+          .eq('user_id', postOwnerId)
+          .eq('actor_id', user.id)
+          .eq('type', 'reaction')
+          .eq('entity_type', 'post')
+          .eq('entity_id', postId)
+          .maybeSingle()
+
+        if (!existingNotif) {
+          // Solo crear si no existe
+          await supabase
+            .from('notifications')
+            .insert({
+              user_id: postOwnerId,
+              actor_id: user.id,
+              type: 'reaction',
+              entity_type: 'post',
+              entity_id: postId,
+              is_read: false
+            })
+        }
+        // Si ya existe, no hacer nada (mantener la notificación existente)
       }
 
       return { postId, reaction: reactionType }
