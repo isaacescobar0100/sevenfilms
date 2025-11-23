@@ -152,11 +152,15 @@ function ReactionPicker({
   const [hoveredReaction, setHoveredReaction] = useState(null)
   const [isLongPressing, setIsLongPressing] = useState(false)
   const [animateButton, setAnimateButton] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
   const containerRef = useRef(null)
+  const pickerRef = useRef(null)
   const longPressTimer = useRef(null)
   const hideTimer = useRef(null)
+  const touchStartPos = useRef({ x: 0, y: 0 })
 
   const currentReactionData = currentReaction ? REACTIONS[currentReaction] : null
+  const reactionsList = Object.entries(REACTIONS)
 
   // Limpiar timers al desmontar
   useEffect(() => {
@@ -171,17 +175,16 @@ function ReactionPicker({
     const handleClickOutside = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
         setShowPicker(false)
+        setHoveredReaction(null)
       }
     }
 
     if (showPicker) {
       document.addEventListener('mousedown', handleClickOutside)
-      document.addEventListener('touchstart', handleClickOutside)
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
-      document.removeEventListener('touchstart', handleClickOutside)
     }
   }, [showPicker])
 
@@ -208,21 +211,75 @@ function ReactionPicker({
     }, 300)
   }
 
-  const handleTouchStart = () => {
+  // Touch handlers para móvil estilo Facebook
+  const handleTouchStart = (e) => {
     if (disabled) return
+    const touch = e.touches[0]
+    touchStartPos.current = { x: touch.clientX, y: touch.clientY }
     setIsLongPressing(false)
+    setIsDragging(false)
+
     longPressTimer.current = setTimeout(() => {
       setIsLongPressing(true)
       setShowPicker(true)
-    }, 500)
+      // Vibración haptica si está disponible
+      if (navigator.vibrate) navigator.vibrate(50)
+    }, 400)
+  }
+
+  const handleTouchMove = (e) => {
+    if (!showPicker || !isLongPressing) {
+      // Si no está el picker abierto, cancelar long press si se mueve mucho
+      const touch = e.touches[0]
+      const deltaX = Math.abs(touch.clientX - touchStartPos.current.x)
+      const deltaY = Math.abs(touch.clientY - touchStartPos.current.y)
+      if (deltaX > 10 || deltaY > 10) {
+        if (longPressTimer.current) clearTimeout(longPressTimer.current)
+      }
+      return
+    }
+
+    setIsDragging(true)
+    const touch = e.touches[0]
+
+    // Encontrar qué reacción está bajo el dedo
+    if (pickerRef.current) {
+      const buttons = pickerRef.current.querySelectorAll('[data-reaction]')
+      buttons.forEach(button => {
+        const rect = button.getBoundingClientRect()
+        if (
+          touch.clientX >= rect.left &&
+          touch.clientX <= rect.right &&
+          touch.clientY >= rect.top &&
+          touch.clientY <= rect.bottom
+        ) {
+          const reactionType = button.getAttribute('data-reaction')
+          setHoveredReaction(reactionType)
+        }
+      })
+    }
   }
 
   const handleTouchEnd = () => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current)
-    if (isLongPressing) {
+
+    if (isLongPressing && showPicker) {
+      // Si estaba arrastrando y hay una reacción seleccionada
+      if (hoveredReaction) {
+        onReact(hoveredReaction)
+        if (navigator.vibrate) navigator.vibrate(30)
+      }
+      setShowPicker(false)
+      setHoveredReaction(null)
       setIsLongPressing(false)
+      setIsDragging(false)
       return
     }
+
+    setIsLongPressing(false)
+    setIsDragging(false)
+
+    // Tap simple
     if (!showPicker) {
       if (currentReaction) {
         onReact(currentReaction)
@@ -230,10 +287,6 @@ function ReactionPicker({
         onReact('popcorn')
       }
     }
-  }
-
-  const handleTouchMove = () => {
-    if (longPressTimer.current) clearTimeout(longPressTimer.current)
   }
 
   const handleClick = () => {
@@ -252,8 +305,6 @@ function ReactionPicker({
     setShowPicker(false)
     setHoveredReaction(null)
   }
-
-  const reactionsList = Object.entries(REACTIONS)
 
   // Renderizar el icono actual
   const renderCurrentIcon = () => {
@@ -278,10 +329,11 @@ function ReactionPicker({
         onTouchEnd={handleTouchEnd}
         onTouchMove={handleTouchMove}
         disabled={disabled}
-        className={`flex items-center space-x-2 transition-all duration-300 select-none group
+        className={`flex items-center space-x-2 transition-all duration-300 select-none group touch-none
           ${currentReactionData ? 'text-primary-600' : 'text-gray-500 dark:text-gray-400'}
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-105'}
           ${animateButton ? 'scale-125' : ''}
+          ${isLongPressing ? 'scale-110' : ''}
         `}
       >
         {/* Icono con efecto de brillo */}
@@ -318,13 +370,14 @@ function ReactionPicker({
       {/* Picker de reacciones */}
       {showPicker && (
         <div
-          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 z-50"
+          ref={pickerRef}
+          className="absolute bottom-full left-0 mb-3 z-50"
           onMouseEnter={() => { if (hideTimer.current) clearTimeout(hideTimer.current) }}
           onMouseLeave={handleMouseLeave}
         >
           {/* Contenedor con efecto glassmorphism */}
           <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg rounded-2xl shadow-2xl
-            border border-gray-200/50 dark:border-gray-700/50 px-3 py-2 flex items-center gap-1
+            border border-gray-200/50 dark:border-gray-700/50 px-2 sm:px-3 py-2 flex items-center gap-0.5 sm:gap-1
             animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-200">
 
             {reactionsList.map(([type, data], index) => {
@@ -335,22 +388,23 @@ function ReactionPicker({
               return (
                 <button
                   key={type}
+                  data-reaction={type}
                   onClick={() => handleSelectReaction(type)}
                   onMouseEnter={() => setHoveredReaction(type)}
                   onMouseLeave={() => setHoveredReaction(null)}
-                  className={`relative p-2 rounded-xl transition-all duration-200 ease-out
-                    ${isHovered ? 'scale-150 -translate-y-4 z-10' : 'scale-100'}
+                  className={`relative p-1.5 sm:p-2 rounded-xl transition-all duration-200 ease-out touch-none
+                    ${isHovered ? 'scale-150 -translate-y-6 z-10' : 'scale-100'}
                     ${isActive ? 'bg-primary-100 dark:bg-primary-900/40' : 'hover:bg-gray-100 dark:hover:bg-gray-700/50'}
                   `}
                   style={{
                     animation: `popIn 0.3s ease-out ${index * 50}ms both`
                   }}
                 >
-                  {/* Tooltip */}
+                  {/* Tooltip - siempre visible en móvil cuando está seleccionado */}
                   {isHovered && (
-                    <div className="absolute -top-10 left-1/2 -translate-x-1/2 px-3 py-1.5
+                    <div className="absolute -top-12 left-1/2 -translate-x-1/2 px-3 py-1.5
                       bg-gray-900 dark:bg-gray-700 text-white text-xs font-medium rounded-lg
-                      whitespace-nowrap shadow-lg animate-in fade-in zoom-in-95 duration-150">
+                      whitespace-nowrap shadow-lg animate-in fade-in zoom-in-95 duration-150 pointer-events-none">
                       {data.label}
                       <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2
                         bg-gray-900 dark:bg-gray-700 rotate-45" />
@@ -358,7 +412,7 @@ function ReactionPicker({
                   )}
 
                   {/* Icono SVG */}
-                  <div className={`w-8 h-8 transition-transform duration-200 ${isHovered ? 'animate-wiggle' : ''}`}>
+                  <div className={`w-7 h-7 sm:w-8 sm:h-8 transition-transform duration-200 ${isHovered ? 'animate-wiggle' : ''}`}>
                     <IconComponent
                       className="w-full h-full"
                       isActive={isActive}
@@ -367,7 +421,7 @@ function ReactionPicker({
                   </div>
 
                   {/* Indicador de seleccionado */}
-                  {isActive && (
+                  {isActive && !isHovered && (
                     <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5
                       bg-primary-500 rounded-full" />
                   )}
@@ -376,8 +430,8 @@ function ReactionPicker({
             })}
           </div>
 
-          {/* Flecha */}
-          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4
+          {/* Flecha apuntando al botón */}
+          <div className="absolute -bottom-2 left-4 w-4 h-4
             bg-white/95 dark:bg-gray-800/95 rotate-45 border-r border-b
             border-gray-200/50 dark:border-gray-700/50" />
         </div>
