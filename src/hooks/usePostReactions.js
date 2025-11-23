@@ -164,36 +164,19 @@ export function useToggleReaction() {
         if (error) throw error
       }
 
-      // Crear o actualizar notificación
-      if (postOwnerId && postOwnerId !== user.id) {
-        const { data: existingNotification } = await supabase
+      // Crear notificación solo si es una nueva reacción (no un cambio)
+      // Solo notificar cuando el usuario NO tenía reacción antes
+      if (postOwnerId && postOwnerId !== user.id && !currentReaction) {
+        await supabase
           .from('notifications')
-          .select('id')
-          .eq('user_id', postOwnerId)
-          .eq('actor_id', user.id)
-          .eq('type', 'reaction')
-          .eq('entity_type', 'post')
-          .eq('entity_id', postId)
-          .maybeSingle()
-
-        if (!existingNotification) {
-          await createNotification({
-            userId: postOwnerId,
-            actorId: user.id,
+          .insert({
+            user_id: postOwnerId,
+            actor_id: user.id,
             type: 'reaction',
-            entityType: 'post',
-            entityId: postId,
-            metadata: { reaction: reactionType }
+            entity_type: 'post',
+            entity_id: postId,
+            is_read: false
           })
-        } else {
-          await supabase
-            .from('notifications')
-            .update({
-              is_read: false,
-              created_at: new Date().toISOString()
-            })
-            .eq('id', existingNotification.id)
-        }
       }
 
       return { postId, reaction: reactionType }

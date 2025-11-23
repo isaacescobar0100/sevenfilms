@@ -61,11 +61,44 @@ export function useNotifications() {
 
       if (profilesError) throw profilesError
 
-      // Paso 3: Combinar notificaciones con perfiles
-      return notificationsData.map(notification => ({
-        ...notification,
-        actor: profiles?.find(p => p.id === notification.actor_id) || null
-      }))
+      // Paso 3: Para notificaciones de tipo 'reaction', obtener el tipo de reacción de post_reactions
+      const reactionNotifications = notificationsData.filter(n => n.type === 'reaction' && n.entity_type === 'post')
+      let reactionsMap = {}
+
+      if (reactionNotifications.length > 0) {
+        // Obtener las reacciones actuales de esos posts
+        const postIds = reactionNotifications.map(n => n.entity_id)
+        const actorIds = reactionNotifications.map(n => n.actor_id)
+
+        const { data: reactions } = await supabase
+          .from('post_reactions')
+          .select('post_id, user_id, reaction_type')
+          .in('post_id', postIds)
+          .in('user_id', actorIds)
+
+        // Crear mapa de reacciones por post_id + user_id
+        reactions?.forEach(r => {
+          reactionsMap[`${r.post_id}-${r.user_id}`] = r.reaction_type
+        })
+      }
+
+      // Paso 4: Combinar notificaciones con perfiles y datos de reacción
+      return notificationsData.map(notification => {
+        const result = {
+          ...notification,
+          actor: profiles?.find(p => p.id === notification.actor_id) || null
+        }
+
+        // Si es una notificación de reacción, agregar el tipo de reacción al metadata
+        if (notification.type === 'reaction' && notification.entity_type === 'post') {
+          const reactionType = reactionsMap[`${notification.entity_id}-${notification.actor_id}`]
+          if (reactionType) {
+            result.metadata = { reaction: reactionType }
+          }
+        }
+
+        return result
+      })
     },
     enabled: !!user,
     ...CACHE_TIMES.REALTIME,
@@ -155,7 +188,7 @@ export function useMarkAllNotificationsAsRead() {
 }
 
 // Crear notificación
-export async function createNotification({ userId, actorId, type, entityType, entityId }) {
+export async function createNotification({ userId, actorId, type, entityType, entityId, metadata = null }) {
   // No crear notificación para el mismo usuario
   if (userId === actorId) return
 
@@ -169,6 +202,7 @@ export async function createNotification({ userId, actorId, type, entityType, en
         entity_type: entityType,
         entity_id: entityId,
         is_read: false,
+        metadata,
       },
     ])
 

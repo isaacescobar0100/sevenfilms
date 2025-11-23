@@ -4,6 +4,8 @@ import { Heart, MessageCircle, UserPlus, Film, X, Trash2 } from 'lucide-react'
 import { useNotifications, useMarkNotificationAsRead, useMarkAllNotificationsAsRead, useDeleteNotification, useDeleteAllNotifications } from '../../hooks/useNotifications'
 import { formatRelativeTime } from '../../utils/formatters'
 import LoadingSpinner from '../common/LoadingSpinner'
+import { REACTIONS } from '../../hooks/usePostReactions'
+import { ReactionIcons } from '../common/ReactionIcons'
 
 function NotificationsPanel({ onClose }) {
   const { t } = useTranslation()
@@ -36,7 +38,19 @@ function NotificationsPanel({ onClose }) {
     }
   }
 
-  const getNotificationIcon = (type) => {
+  const getNotificationIcon = (notification) => {
+    const { type, metadata } = notification
+
+    // Si es una reacción, mostrar el icono SVG personalizado
+    if (type === 'reaction') {
+      if (metadata?.reaction && ReactionIcons[metadata.reaction]) {
+        const IconComponent = ReactionIcons[metadata.reaction]
+        return <IconComponent className="h-6 w-6" />
+      }
+      // Reacción sin metadata, mostrar icono de estrella
+      return <ReactionIcons.excellent className="h-6 w-6" />
+    }
+
     switch (type) {
       case 'like':
         return <Heart className="h-5 w-5 text-red-500" />
@@ -47,24 +61,73 @@ function NotificationsPanel({ onClose }) {
       case 'movie':
         return <Film className="h-5 w-5 text-purple-500" />
       default:
-        return null
+        return <Heart className="h-5 w-5 text-gray-400" />
     }
   }
 
   const getNotificationMessage = (notification) => {
     const actorName = notification.actor?.full_name || notification.actor?.username || 'Alguien'
+    const { type, metadata } = notification
 
-    switch (notification.type) {
+    // Si es una reacción
+    if (type === 'reaction') {
+      if (metadata?.reaction) {
+        const reactionData = REACTIONS[metadata.reaction]
+        const reactionLabel = reactionData?.label || metadata.reaction
+        return (
+          <span>
+            <span className="font-semibold">{actorName}</span>
+            {' reaccionó con '}
+            <span className="font-medium">{reactionLabel}</span>
+            {' a tu publicación'}
+          </span>
+        )
+      }
+      // Reacción sin metadata
+      return (
+        <span>
+          <span className="font-semibold">{actorName}</span>
+          {' reaccionó a tu publicación'}
+        </span>
+      )
+    }
+
+    switch (type) {
       case 'like':
-        return t('notifications.liked', { name: actorName })
+        return (
+          <span>
+            <span className="font-semibold">{actorName}</span>
+            {' le dio me gusta a tu publicación'}
+          </span>
+        )
       case 'comment':
-        return t('notifications.commented', { name: actorName })
+        return (
+          <span>
+            <span className="font-semibold">{actorName}</span>
+            {' comentó en tu publicación'}
+          </span>
+        )
       case 'follow':
-        return t('notifications.followed', { name: actorName })
+        return (
+          <span>
+            <span className="font-semibold">{actorName}</span>
+            {' comenzó a seguirte'}
+          </span>
+        )
       case 'movie':
-        return t('notifications.uploadedMovie', { name: actorName })
+        return (
+          <span>
+            <span className="font-semibold">{actorName}</span>
+            {' subió una nueva película'}
+          </span>
+        )
       default:
-        return ''
+        return (
+          <span>
+            <span className="font-semibold">{actorName}</span>
+            {' interactuó con tu contenido'}
+          </span>
+        )
     }
   }
 
@@ -129,32 +192,34 @@ function NotificationsPanel({ onClose }) {
                   className="block p-4 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   <div className="flex space-x-3">
-                    {/* Icon */}
+                    {/* Avatar */}
                     <div className="flex-shrink-0">
-                      {getNotificationIcon(notification.type)}
+                      {notification.actor?.avatar_url ? (
+                        <img
+                          src={notification.actor.avatar_url}
+                          alt={notification.actor.full_name}
+                          className="h-10 w-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded-full bg-primary-600 flex items-center justify-center text-white text-sm font-semibold">
+                          {notification.actor?.full_name?.[0] || notification.actor?.username?.[0] || 'U'}
+                        </div>
+                      )}
                     </div>
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start space-x-2">
-                        {/* Avatar */}
-                        {notification.actor?.avatar_url ? (
-                          <img
-                            src={notification.actor.avatar_url}
-                            alt={notification.actor.full_name}
-                            className="h-8 w-8 rounded-full object-cover flex-shrink-0"
-                          />
-                        ) : (
-                          <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
-                            {notification.actor?.full_name?.[0] || notification.actor?.username?.[0] || 'U'}
+                      <div className="flex items-start justify-between gap-2">
+                        {/* Message and icon */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-shrink-0">
+                              {getNotificationIcon(notification)}
+                            </div>
+                            <p className="text-sm text-gray-900 dark:text-gray-100">
+                              {getNotificationMessage(notification)}
+                            </p>
                           </div>
-                        )}
-
-                        {/* Message */}
-                        <div className="flex-1 min-w-0 pr-8">
-                          <p className="text-sm text-gray-900 dark:text-gray-100">
-                            {getNotificationMessage(notification)}
-                          </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                             {formatRelativeTime(notification.created_at)}
                           </p>
@@ -179,6 +244,7 @@ function NotificationsPanel({ onClose }) {
                 </button>
               </div>
             ))}
+
           </div>
         ) : (
           <div className="text-center py-12 px-4">
