@@ -58,13 +58,13 @@ function EditProfileModal({ profile, onClose }) {
 
       {/* Modal */}
       <div className="flex min-h-screen items-center justify-center p-4">
-        <div className="relative bg-white rounded-lg shadow-xl max-w-lg w-full">
+        <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
-            <h2 className="text-xl font-bold text-gray-900">Editar perfil</h2>
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Editar perfil</h2>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             >
               <X className="h-6 w-6" />
             </button>
@@ -73,84 +73,84 @@ function EditProfileModal({ profile, onClose }) {
           {/* Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
             {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm text-red-800">{error}</p>
+              <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-sm text-red-800 dark:text-red-400">{error}</p>
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Nombre completo
               </label>
               <input
                 {...register('full_name')}
                 type="text"
-                className="input"
+                className="input dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
                 placeholder="Tu nombre completo"
               />
               {errors.full_name && (
-                <p className="mt-1 text-sm text-red-600">{errors.full_name.message}</p>
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.full_name.message}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Nombre de usuario
               </label>
               <input
                 {...register('username')}
                 type="text"
-                className="input"
+                className="input dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
                 placeholder="nombre_usuario"
               />
               {errors.username && (
-                <p className="mt-1 text-sm text-red-600">{errors.username.message}</p>
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.username.message}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Biografía
               </label>
               <textarea
                 {...register('bio')}
                 rows={3}
-                className="input"
+                className="input dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
                 placeholder="Cuéntanos sobre ti..."
                 maxLength={160}
               />
               {errors.bio && (
-                <p className="mt-1 text-sm text-red-600">{errors.bio.message}</p>
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.bio.message}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Ubicación
               </label>
               <input
                 {...register('location')}
                 type="text"
-                className="input"
+                className="input dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
                 placeholder="Ciudad, País"
               />
               {errors.location && (
-                <p className="mt-1 text-sm text-red-600">{errors.location.message}</p>
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.location.message}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Sitio web
               </label>
               <input
                 {...register('website')}
                 type="url"
-                className="input"
+                className="input dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
                 placeholder="https://tusitio.com"
               />
               {errors.website && (
-                <p className="mt-1 text-sm text-red-600">{errors.website.message}</p>
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.website.message}</p>
               )}
             </div>
 

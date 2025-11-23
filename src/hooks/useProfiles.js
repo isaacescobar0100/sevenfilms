@@ -95,7 +95,6 @@ export async function uploadAvatar(file) {
     try {
       const result = await optimizeAvatar(file)
       optimizedFile = result.file
-      console.log(`[Avatar] Optimizado: ${result.savings.toFixed(1)}% de ahorro`)
     } catch (err) {
       console.warn('[Avatar] No se pudo optimizar, usando original:', err)
     }
@@ -134,7 +133,6 @@ export async function uploadCover(file) {
     try {
       const result = await optimizeCover(file)
       optimizedFile = result.file
-      console.log(`[Cover] Optimizado: ${result.savings.toFixed(1)}% de ahorro`)
     } catch (err) {
       console.warn('[Cover] No se pudo optimizar, usando original:', err)
     }

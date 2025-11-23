@@ -51,7 +51,6 @@ export function useFFmpegLazy() {
       setError(null)
       setLoadProgress(10)
 
-      console.log('[FFmpeg Lazy] Iniciando carga bajo demanda...')
 
       // Importar módulos dinámicamente
       setLoadProgress(20)
@@ -67,12 +66,10 @@ export function useFFmpegLazy() {
       const ffmpeg = new FFmpeg()
       ffmpegRef.current = ffmpeg
 
-      // Configurar logging
-      ffmpeg.on('log', ({ message }) => {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[FFmpeg]:', message)
-        }
-      })
+      // Configurar logging (solo en desarrollo)
+      if (import.meta.env.DEV) {
+        ffmpeg.on('log', () => {})
+      }
 
       ffmpeg.on('progress', ({ progress }) => {
         // progress es un valor entre 0 y 1
@@ -83,7 +80,6 @@ export function useFFmpegLazy() {
       const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd'
       setLoadProgress(50)
 
-      console.log('[FFmpeg Lazy] Descargando core y WASM...')
       const [coreURL, wasmURL] = await Promise.all([
         toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
         toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
@@ -97,7 +93,6 @@ export function useFFmpegLazy() {
       setLoaded(true)
       setLoading(false)
 
-      console.log('[FFmpeg Lazy] Cargado exitosamente!')
       return true
     } catch (err) {
       console.error('[FFmpeg Lazy] Error:', err)
@@ -353,7 +348,6 @@ export function useFFmpegLazy() {
       ffmpegModulesRef.current = null
       setLoaded(false)
       setLoadProgress(0)
-      console.log('[FFmpeg Lazy] Recursos liberados')
     }
   }, [])
 

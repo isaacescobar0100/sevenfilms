@@ -3,20 +3,28 @@ import { useNotifications } from '../../hooks/useNotifications'
 import Toast from './Toast'
 
 const SHOWN_NOTIFICATIONS_KEY = 'shown_notification_toasts'
+const LAST_CHECK_KEY = 'last_notification_check'
 
 function ToastContainer() {
   const { data: notifications } = useNotifications()
   const [toasts, setToasts] = useState([])
   const shownNotificationsRef = useRef(new Set())
-  const prevNotificationsRef = useRef([])
+  const initialLoadRef = useRef(true)
+  const lastCheckTimeRef = useRef(null)
 
-  // Cargar notificaciones mostradas desde localStorage al montar
+  // Cargar datos desde localStorage al montar
   useEffect(() => {
     try {
       const stored = localStorage.getItem(SHOWN_NOTIFICATIONS_KEY)
       if (stored) {
         const parsed = JSON.parse(stored)
         shownNotificationsRef.current = new Set(parsed)
+      }
+
+      // Cargar última vez que se verificaron notificaciones
+      const lastCheck = localStorage.getItem(LAST_CHECK_KEY)
+      if (lastCheck) {
+        lastCheckTimeRef.current = new Date(lastCheck)
       }
     } catch (error) {
       console.error('Error loading shown notifications:', error)
@@ -48,13 +56,38 @@ function ToastContainer() {
   useEffect(() => {
     if (!notifications || notifications.length === 0) return
 
-    // Comparar con notificaciones anteriores para detectar nuevas
-    const prevIds = new Set(prevNotificationsRef.current.map((n) => n.id))
+    // En la carga inicial, solo marcar todas como "vistas" sin mostrar toasts
+    // Esto evita mostrar notificaciones viejas al refrescar/iniciar sesión
+    if (initialLoadRef.current) {
+      initialLoadRef.current = false
+
+      // Marcar todas las notificaciones existentes como ya mostradas
+      notifications.forEach((notification) => {
+        shownNotificationsRef.current.add(notification.id)
+      })
+
+      // Guardar en localStorage
+      try {
+        localStorage.setItem(
+          SHOWN_NOTIFICATIONS_KEY,
+          JSON.stringify([...shownNotificationsRef.current])
+        )
+        // Actualizar tiempo de última verificación
+        localStorage.setItem(LAST_CHECK_KEY, new Date().toISOString())
+      } catch (error) {
+        console.error('Error saving shown notifications:', error)
+      }
+
+      return
+    }
+
+    // Solo mostrar notificaciones que llegaron DESPUÉS de la carga inicial
+    // y que no han sido mostradas aún
     const newNotifications = notifications.filter(
-      (n) => !prevIds.has(n.id) && !shownNotificationsRef.current.has(n.id)
+      (n) => !shownNotificationsRef.current.has(n.id)
     )
 
-    // Mostrar solo notificaciones realmente nuevas
+    // Mostrar solo notificaciones realmente nuevas (llegadas en tiempo real)
     if (newNotifications.length > 0) {
       newNotifications.forEach((notification) => {
         // Agregar al toast
@@ -74,9 +107,6 @@ function ToastContainer() {
         console.error('Error saving shown notifications:', error)
       }
     }
-
-    // Actualizar referencia
-    prevNotificationsRef.current = notifications
   }, [notifications])
 
   const removeToast = (id) => {

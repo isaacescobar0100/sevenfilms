@@ -100,12 +100,6 @@ export async function compressImage(file, options = {}) {
           const compressedSize = compressedFile.size
           const savings = ((originalSize - compressedSize) / originalSize) * 100
 
-          console.log(`[ImageOptimization] Compresión completada:
-            - Original: ${(originalSize / 1024).toFixed(2)} KB
-            - Comprimido: ${(compressedSize / 1024).toFixed(2)} KB
-            - Ahorro: ${savings.toFixed(1)}%
-            - Dimensiones: ${width}x${height}`)
-
           resolve({
             file: compressedFile,
             originalSize,
@@ -139,7 +133,7 @@ export async function compressImage(file, options = {}) {
  *
  * const handleUpload = async (file) => {
  *   const { file: optimizedFile, savings } = await optimizeImage(file)
- *   console.log(`Ahorraste ${savings}%`)
+ *   // Ahorro: ${savings}%
  *   await uploadToServer(optimizedFile)
  * }
  */

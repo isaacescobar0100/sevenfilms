@@ -315,7 +315,6 @@ export function useUploadMovie() {
           try {
             const result = await optimizeThumbnail(thumbnailFile)
             optimizedThumb = result.file
-            console.log(`[Thumbnail] Optimizado: ${result.savings.toFixed(1)}% de ahorro`)
           } catch (err) {
             console.warn('[Thumbnail] No se pudo optimizar, usando original:', err)
           }

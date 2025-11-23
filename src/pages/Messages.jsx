@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Send, MessageCircle, ArrowLeft, Trash2, MoreVertical, Edit, Trash, Loader2, X } from 'lucide-react'
+import { Send, MessageCircle, ArrowLeft, Trash2, MoreVertical, Edit, Trash, Loader2, X, Play } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
@@ -9,8 +9,11 @@ import { supabase } from '../lib/supabase'
 import LoadingSpinner from '../components/common/LoadingSpinner'
 import ConfirmDialog from '../components/common/ConfirmDialog'
 import EmojiGifPicker from '../components/common/EmojiGifPicker'
+import StoryViewer from '../components/stories/StoryViewer'
+import { useStoryById, useStoryByMediaUrl } from '../hooks/useStories'
 import { formatDistanceToNow } from 'date-fns'
 import { es, enUS } from 'date-fns/locale'
+import SEO from '../components/common/SEO'
 
 function Messages() {
   const { t, i18n } = useTranslation()
@@ -30,6 +33,8 @@ function Messages() {
   const [deleteForEveryone, setDeleteForEveryone] = useState(false)
   const [uploadingMedia, setUploadingMedia] = useState(false)
   const [mediaPreview, setMediaPreview] = useState(null) // { file, url, type }
+  const [storyToView, setStoryToView] = useState(null) // { storyId, storyOwnerId }
+  const [mediaToView, setMediaToView] = useState(null) // { url, type, text } - para ver historia antigua
 
   const dateLocale = i18n.language === 'es' ? es : enUS
 
@@ -41,6 +46,12 @@ function Messages() {
   const editMessage = useEditMessage()
   const deleteMessageForMe = useDeleteMessageForMe()
   const deleteMessageForEveryone = useDeleteMessageForEveryone()
+
+  // Obtener historia para ver desde mensaje (formato nuevo con IDs)
+  const { data: storyData } = useStoryById(storyToView?.storyId, storyToView?.storyOwnerId)
+
+  // Obtener historia por URL de media o texto (formato antiguo sin IDs)
+  const { data: storyDataByUrl } = useStoryByMediaUrl(mediaToView?.url, mediaToView?.text)
 
   // Obtener perfil del usuario seleccionado desde la navegación
   const { data: preselectedUser } = useQuery({
@@ -220,24 +231,57 @@ function Messages() {
   // Helper to format message preview in conversation list
   const formatMessagePreview = (content) => {
     if (!content) return ''
+
+    // Detectar respuestas a historias - extraer solo el mensaje de respuesta
+    if (content.startsWith('[STORY_REPLY:') || content.startsWith('[STORY_REPLY_TEXT')) {
+      const restContent = content.replace(/^\[STORY_REPLY[^\]]*\]\n/, '')
+      // Si empieza con comillas, el mensaje está después del doble salto de línea
+      if (restContent.startsWith('"')) {
+        const lines = restContent.split('\n\n')
+        const replyMessage = lines.slice(1).join('\n\n')
+        return replyMessage || 'Respondió a tu historia'
+      }
+      // Si no tiene comillas, todo es el mensaje de respuesta
+      return restContent || 'Respondió a tu historia'
+    }
+    if (content.startsWith('📩') || content.includes('Respondió a tu historia')) {
+      // Extraer solo la respuesta del formato antiguo
+      const match = content.match(/["'](.+?)["']\s*(.*)$/s)
+      if (match && match[2]) {
+        return match[2].trim()
+      }
+      // Buscar mensaje después de salto de línea
+      const lineMatch = content.match(/\n\n(.+)$/s)
+      if (lineMatch && lineMatch[1]) {
+        return lineMatch[1].trim()
+      }
+      return 'Respondió a tu historia'
+    }
+
     const firstLine = content.split('\n')[0]
 
     // Check if it's a media URL
     if (firstLine.match(/\.(gif)/i) || firstLine.includes('giphy.com')) {
-      return '🎬 GIF'
+      return 'GIF'
     }
     if (firstLine.match(/\.(jpg|jpeg|png|webp)/i)) {
-      return '📷 Foto'
+      return 'Foto'
     }
     if (firstLine.match(/\.(mp4|webm|mov)/i)) {
-      return '🎥 Video'
+      return 'Video'
     }
 
-    return content
+    return firstLine
   }
 
   return (
-    <div className="max-w-7xl mx-auto h-[calc(100vh-4rem)]">
+    <div className="max-w-7xl mx-auto h-[calc(100vh-8rem)] md:h-[calc(100vh-4rem)]">
+      <SEO
+        title="Mensajes"
+        description="Mensajes privados en Seven. Comunicate con otros cineastas de la comunidad."
+        noIndex
+      />
+
       <div className="flex h-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
         {/* Conversations List */}
         <div className={`w-full md:w-80 border-r border-gray-200 dark:border-gray-700 flex flex-col ${selectedUser ? 'hidden md:flex' : 'flex'}`}>
@@ -279,22 +323,20 @@ function Messages() {
                       )}
 
                       {/* Info */}
-                      <div className="flex-1 min-w-0 text-left">
-                        <div className="flex items-center justify-between mb-1">
-                          <p className="font-semibold text-gray-900 dark:text-white truncate">
-                            {conv.otherUser.full_name}
-                          </p>
-                          <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0 ml-2">
-                            {formatDistanceToNow(new Date(conv.created_at), {
-                              addSuffix: true,
-                              locale: dateLocale,
-                            })}
-                          </span>
-                        </div>
+                      <div className="flex-1 min-w-0 text-left overflow-hidden">
+                        <p className="font-semibold text-gray-900 dark:text-white truncate mb-0.5">
+                          {conv.otherUser.full_name}
+                        </p>
                         <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
                           {conv.sender_id === user?.id ? t('messages.you') + ' ' : ''}
                           {formatMessagePreview(conv.content)}
                         </p>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {formatDistanceToNow(new Date(conv.created_at), {
+                            addSuffix: true,
+                            locale: dateLocale,
+                          })}
+                        </span>
                       </div>
 
                       {/* Unread indicator */}
@@ -384,7 +426,7 @@ function Messages() {
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900">
+              <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4 bg-gray-50 dark:bg-gray-900">
                 {messagesLoading ? (
                   <div className="flex justify-center py-8">
                     <LoadingSpinner />
@@ -403,16 +445,15 @@ function Messages() {
                         key={message.id}
                         className={`flex ${isOwn ? 'justify-end' : 'justify-start'} group`}
                       >
-                        <div className={`flex items-start gap-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
-                          <div
-                            className={`max-w-[70%] rounded-lg ${
-                              isMedia && !hasCaption
-                                ? '' // Sin fondo para media sin caption
-                                : isMedia
-                                  ? 'p-2 ' + (isOwn ? 'bg-primary-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700')
-                                  : 'px-4 py-2 ' + (isOwn ? 'bg-primary-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700')
-                            }`}
-                          >
+                        <div
+                          className={`max-w-[70%] rounded-lg ${
+                            isMedia && !hasCaption
+                              ? '' // Sin fondo para media sin caption
+                              : isMedia
+                                ? 'p-2 ' + (isOwn ? 'bg-primary-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700')
+                                : 'px-4 py-2 ' + (isOwn ? 'bg-primary-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700')
+                          }`}
+                        >
                             {isEditing ? (
                               <div className="space-y-2">
                                 <input
@@ -446,6 +487,194 @@ function Messages() {
                                 {/* Check if content is a media URL */}
                                 {(() => {
                                   const content = message.content || ''
+
+                                  // Detectar respuesta a historia con media (nuevo formato con IDs)
+                                  // Formato: [STORY_REPLY:storyId:storyOwnerId:media_url:media_type]
+                                  const storyReplyNewMatch = content.match(/^\[STORY_REPLY:([a-f0-9-]+):([a-f0-9-]+):(.+):(image|video)\]\n/)
+                                  if (storyReplyNewMatch) {
+                                    const storyId = storyReplyNewMatch[1]
+                                    const storyOwnerId = storyReplyNewMatch[2]
+                                    const storyMediaUrl = storyReplyNewMatch[3]
+                                    const storyMediaType = storyReplyNewMatch[4]
+                                    const restContent = content.replace(/^\[STORY_REPLY:[^\]]+\]\n/, '')
+
+                                    // Si empieza con comillas, tiene texto de historia
+                                    let replyMessage = restContent
+
+                                    if (restContent.startsWith('"')) {
+                                      const lines = restContent.split('\n\n')
+                                      replyMessage = lines.slice(1).join('\n\n')
+                                    }
+
+                                    return (
+                                      <div className="space-y-2">
+                                        <button
+                                          onClick={() => setStoryToView({ storyId, storyOwnerId })}
+                                          className={`block w-full rounded-lg overflow-hidden ${isOwn ? 'bg-primary-500/20' : 'bg-black/20'} hover:opacity-80 transition-opacity`}
+                                        >
+                                          <div className="relative w-full aspect-[4/3] max-h-32">
+                                            {storyMediaType === 'video' ? (
+                                              <>
+                                                <video src={storyMediaUrl} className="w-full h-full object-cover" muted />
+                                                <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                                                  <Play className="w-8 h-8 text-white" fill="white" />
+                                                </div>
+                                              </>
+                                            ) : (
+                                              <img src={storyMediaUrl} alt="" className="w-full h-full object-cover" />
+                                            )}
+                                          </div>
+                                          <div className={`px-2 py-1 text-xs ${isOwn ? 'text-primary-100' : 'text-gray-400'}`}>
+                                            Respondió a tu historia
+                                          </div>
+                                        </button>
+                                        {replyMessage && <p className="break-words mt-1">{replyMessage}</p>}
+                                      </div>
+                                    )
+                                  }
+
+                                  // Detectar respuesta a historia con media (formato antiguo sin IDs)
+                                  // Formato: [STORY_REPLY:media_url:media_type]
+                                  const storyReplyOldMatch = content.match(/^\[STORY_REPLY:(.+):(image|video)\]\n/)
+                                  if (storyReplyOldMatch) {
+                                    const storyMediaUrl = storyReplyOldMatch[1]
+                                    const storyMediaType = storyReplyOldMatch[2]
+                                    const restContent = content.replace(/^\[STORY_REPLY:[^\]]+\]\n/, '')
+
+                                    // Si empieza con comillas, tiene texto de historia
+                                    let replyMessage = restContent
+
+                                    if (restContent.startsWith('"')) {
+                                      const lines = restContent.split('\n\n')
+                                      replyMessage = lines.slice(1).join('\n\n')
+                                    }
+
+                                    return (
+                                      <div className="space-y-2">
+                                        <button
+                                          onClick={() => setMediaToView({ url: storyMediaUrl, type: storyMediaType })}
+                                          className={`block w-full rounded-lg overflow-hidden ${isOwn ? 'bg-primary-500/20' : 'bg-black/20'} hover:opacity-80 transition-opacity`}
+                                        >
+                                          <div className="relative w-full aspect-[4/3] max-h-32">
+                                            {storyMediaType === 'video' ? (
+                                              <>
+                                                <video src={storyMediaUrl} className="w-full h-full object-cover" muted />
+                                                <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                                                  <Play className="w-8 h-8 text-white" fill="white" />
+                                                </div>
+                                              </>
+                                            ) : (
+                                              <img src={storyMediaUrl} alt="" className="w-full h-full object-cover" />
+                                            )}
+                                          </div>
+                                          <div className={`px-2 py-1 text-xs ${isOwn ? 'text-primary-100' : 'text-gray-400'}`}>
+                                            Respondió a tu historia
+                                          </div>
+                                        </button>
+                                        {replyMessage && <p className="break-words mt-1">{replyMessage}</p>}
+                                      </div>
+                                    )
+                                  }
+
+                                  // Detectar respuesta a historia de solo texto (formato nuevo con IDs)
+                                  const storyTextReplyNewMatch = content.match(/^\[STORY_REPLY_TEXT:([a-f0-9-]+):([a-f0-9-]+)\]\n/)
+                                  if (storyTextReplyNewMatch) {
+                                    const storyId = storyTextReplyNewMatch[1]
+                                    const storyOwnerId = storyTextReplyNewMatch[2]
+                                    const restContent = content.replace(/^\[STORY_REPLY_TEXT:[^\]]+\]\n/, '')
+                                    const lines = restContent.split('\n\n')
+                                    const storyText = lines[0]?.replace(/^"|"$/g, '')
+                                    const replyMessage = lines.slice(1).join('\n\n')
+
+                                    return (
+                                      <div className="space-y-1">
+                                        <button
+                                          onClick={() => setStoryToView({ storyId, storyOwnerId })}
+                                          className={`text-xs px-2 py-1 rounded ${isOwn ? 'bg-primary-500/30 hover:bg-primary-500/40' : 'bg-black/30 hover:bg-black/40'} transition-colors text-left`}
+                                        >
+                                          <span className={isOwn ? 'text-primary-100' : 'text-gray-300'}>
+                                            Historia: "{storyText?.slice(0, 30)}{storyText?.length > 30 ? '...' : ''}"
+                                          </span>
+                                        </button>
+                                        {replyMessage && <p className="break-words">{replyMessage}</p>}
+                                      </div>
+                                    )
+                                  }
+
+                                  // Detectar respuesta a historia de solo texto (formato antiguo sin IDs)
+                                  const storyTextReplyOldMatch = content.match(/^\[STORY_REPLY_TEXT\]\n/)
+                                  if (storyTextReplyOldMatch) {
+                                    const restContent = content.replace(/^\[STORY_REPLY_TEXT\]\n/, '')
+                                    const lines = restContent.split('\n\n')
+                                    const storyText = lines[0]?.replace(/^"|"$/g, '')
+                                    const replyMessage = lines.slice(1).join('\n\n')
+
+                                    return (
+                                      <div className="space-y-1">
+                                        <button
+                                          onClick={() => setMediaToView({ text: storyText })}
+                                          className={`text-xs px-2 py-1 rounded ${isOwn ? 'bg-primary-500/30 hover:bg-primary-500/40' : 'bg-black/30 hover:bg-black/40'} transition-colors text-left`}
+                                        >
+                                          <span className={isOwn ? 'text-primary-100' : 'text-gray-300'}>
+                                            Historia: "{storyText?.slice(0, 30)}{storyText?.length > 30 ? '...' : ''}"
+                                          </span>
+                                        </button>
+                                        {replyMessage && <p className="break-words">{replyMessage}</p>}
+                                      </div>
+                                    )
+                                  }
+
+                                  // Detectar formato antiguo: "📩 Respondió a tu historia..." o similar
+                                  const oldFormatMatch = content.match(/^📩\s*Respondió a tu historia[:\s]*["']?(.+?)["']?\s*\n\n(.+)$/s)
+                                  if (oldFormatMatch) {
+                                    const storyText = oldFormatMatch[1]?.trim()
+                                    const replyMessage = oldFormatMatch[2]?.trim()
+
+                                    return (
+                                      <div className="space-y-1">
+                                        <button
+                                          onClick={() => setMediaToView({ text: storyText })}
+                                          className={`text-xs px-2 py-1 rounded ${isOwn ? 'bg-primary-500/30 hover:bg-primary-500/40' : 'bg-black/30 hover:bg-black/40'} transition-colors text-left`}
+                                        >
+                                          <span className={isOwn ? 'text-primary-100' : 'text-gray-300'}>
+                                            Historia: "{storyText?.slice(0, 30)}{storyText?.length > 30 ? '...' : ''}"
+                                          </span>
+                                        </button>
+                                        {replyMessage && <p className="break-words">{replyMessage}</p>}
+                                      </div>
+                                    )
+                                  }
+
+                                  // Detectar formato más simple: línea con emoji 📩 seguida de texto
+                                  const simpleStoryReply = content.match(/^📩\s*Respondió a tu historia[:\s]*(.+)$/s)
+                                  if (simpleStoryReply) {
+                                    const fullText = simpleStoryReply[1]
+                                    // Intentar separar el texto de la historia del mensaje
+                                    const quotedMatch = fullText.match(/["'](.+?)["']\s*(.*)$/s)
+                                    if (quotedMatch) {
+                                      const storyText = quotedMatch[1]
+                                      const replyMessage = quotedMatch[2]?.trim()
+
+                                      return (
+                                        <div className="space-y-1">
+                                          <button
+                                            onClick={() => setMediaToView({ text: storyText })}
+                                            className={`text-xs px-2 py-1 rounded ${isOwn ? 'bg-primary-500/30 hover:bg-primary-500/40' : 'bg-black/30 hover:bg-black/40'} transition-colors text-left`}
+                                          >
+                                            <span className={isOwn ? 'text-primary-100' : 'text-gray-300'}>
+                                              Historia: "{storyText?.slice(0, 30)}{storyText?.length > 30 ? '...' : ''}"
+                                            </span>
+                                          </button>
+                                          {replyMessage && <p className="break-words">{replyMessage}</p>}
+                                        </div>
+                                      )
+                                    }
+                                    // Si no tiene comillas, mostrar todo como respuesta simple
+                                    return (
+                                      <p className="break-words">{fullText}</p>
+                                    )
+                                  }
+
                                   const lines = content.split('\n')
                                   const mediaUrl = lines[0]
                                   const caption = lines.slice(1).join('\n').trim()
@@ -581,7 +810,6 @@ function Messages() {
                             </div>
                           )}
                         </div>
-                      </div>
                     )
                   })
                 ) : (
@@ -630,18 +858,6 @@ function Messages() {
                   )}
                   <EmojiGifPicker
                     onSelect={(emoji) => setMessageContent(prev => prev + emoji)}
-                    onGifSelect={(gifUrl) => {
-                      sendMessage.mutate({
-                        receiverId: selectedUser.id,
-                        content: gifUrl,
-                      })
-                    }}
-                    onStickerSelect={(stickerUrl) => {
-                      sendMessage.mutate({
-                        receiverId: selectedUser.id,
-                        content: stickerUrl,
-                      })
-                    }}
                     onMediaSelect={handleMediaSelect}
                     position="top"
                   />
@@ -682,6 +898,65 @@ function Messages() {
           )}
         </div>
       </div>
+
+      {/* Story Viewer Modal */}
+      {storyToView && storyData && (
+        <StoryViewer
+          storiesData={storyData}
+          initialUserIndex={0}
+          onClose={() => setStoryToView(null)}
+        />
+      )}
+
+      {/* Story Viewer para historias antiguas (buscadas por URL) */}
+      {mediaToView && storyDataByUrl && (
+        <StoryViewer
+          storiesData={storyDataByUrl}
+          initialUserIndex={0}
+          onClose={() => setMediaToView(null)}
+        />
+      )}
+
+      {/* Media Viewer Modal (fallback si no se encuentra la historia) */}
+      {mediaToView && !storyDataByUrl && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          onClick={() => setMediaToView(null)}
+        >
+          <button
+            onClick={() => setMediaToView(null)}
+            className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors z-10"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          <div className="max-w-4xl max-h-[90vh] w-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+            {mediaToView.url ? (
+              mediaToView.type === 'video' ? (
+                <video
+                  src={mediaToView.url}
+                  controls
+                  autoPlay
+                  className="max-w-full max-h-[90vh] rounded-lg"
+                />
+              ) : (
+                <img
+                  src={mediaToView.url}
+                  alt="Historia"
+                  className="max-w-full max-h-[90vh] object-contain rounded-lg"
+                />
+              )
+            ) : (
+              <div className="bg-gray-800 rounded-lg p-8 text-center">
+                <p className="text-gray-400 text-lg mb-2">Historia no disponible</p>
+                <p className="text-gray-500 text-sm">La historia puede haber expirado o sido eliminada</p>
+                {mediaToView.text && (
+                  <p className="text-white mt-4 text-xl">"{mediaToView.text}"</p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Delete Conversation Confirm Dialog */}
       <ConfirmDialog

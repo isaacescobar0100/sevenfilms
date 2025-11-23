@@ -35,19 +35,37 @@ export function useNotifications() {
       const sevenDaysAgo = new Date()
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
 
-      const { data, error } = await supabase
+      // Paso 1: Obtener las notificaciones
+      const { data: notificationsData, error: notificationsError } = await supabase
         .from('notifications')
-        .select(`
-          *,
-          actor:profiles!actor_id(id, username, full_name, avatar_url)
-        `)
+        .select('*')
         .eq('user_id', user.id)
         .gte('created_at', sevenDaysAgo.toISOString())
         .order('created_at', { ascending: false })
         .limit(50)
 
-      if (error) throw error
-      return data || []
+      if (notificationsError) throw notificationsError
+      if (!notificationsData || notificationsData.length === 0) return []
+
+      // Paso 2: Obtener los perfiles de los actores (usuarios que realizaron las acciones)
+      const actorIds = [...new Set(notificationsData.map(n => n.actor_id).filter(Boolean))]
+
+      if (actorIds.length === 0) {
+        return notificationsData.map(n => ({ ...n, actor: null }))
+      }
+
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url')
+        .in('id', actorIds)
+
+      if (profilesError) throw profilesError
+
+      // Paso 3: Combinar notificaciones con perfiles
+      return notificationsData.map(notification => ({
+        ...notification,
+        actor: profiles?.find(p => p.id === notification.actor_id) || null
+      }))
     },
     enabled: !!user,
     ...CACHE_TIMES.REALTIME,

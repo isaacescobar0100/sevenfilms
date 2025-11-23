@@ -21,7 +21,20 @@
       "Bash(nul)",
       "Bash(git restore:*)",
       "Bash(git revert:*)",
-      "Bash(npm search:*)"
+      "Bash(npm search:*)",
+      "Bash(npx cap init:*)",
+      "Bash(npx cap add android)",
+      "Bash(gradlew.bat assembleDebug:*)",
+      "Bash(./gradlew.bat:*)",
+      "Bash(export JAVA_HOME=\"C:/Program Files/Android/Android Studio/jbr\")",
+      "Bash(npm run test:run:*)",
+      "Bash(vercel --version:*)",
+      "Bash(ren:*)",
+      "Bash(ren usePosts.test.js usePosts.test.jsx)",
+      "Bash(git reset:*)",
+      "Bash(del nul 2)",
+      "Bash(del /q \"src\\store\\authStore.test.js\" \"src\\components\\common\\LoadingSpinner.test.jsx\" \"src\\hooks\\useRateLimit.test.js\" \"src\\hooks\\useMovies.test.jsx\" \"src\\hooks\\useMessages.test.jsx\" \"src\\hooks\\usePosts.test.jsx\" \"src\\hooks\\useProfiles.test.jsx\" \"vitest.config.js\" 2)",
+      "Bash(del /q \"src\\hooks\\useFFmpeg.js\" 2)"
     ],
     "deny": [],
     "ask": []

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Film, Video, Users, Award } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
+import SEO from '../components/common/SEO'
 
 function Home() {
   const { t } = useTranslation()
@@ -32,6 +33,11 @@ function Home() {
 
   return (
     <div className="min-h-screen">
+      <SEO
+        title="Inicio"
+        description="Seven - La red social para cineastas amateurs. Comparte tus cortometrajes, conecta con otros creadores y descubre nuevo talento audiovisual."
+      />
+
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-primary-600 to-primary-800 text-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

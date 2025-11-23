@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { X, Trash2, Edit2, Send } from 'lucide-react'
+import { X, Trash2, Edit2, Send, Bookmark } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { formatDistanceToNow } from 'date-fns'
 import { es, enUS } from 'date-fns/locale'
 import CustomVideoPlayer from './CustomVideoPlayer'
-import MovieRatingStars from './MovieRatingStars'
+import MovieReactionPicker, { MovieReactionDisplay, MOVIE_REACTIONS, MovieReactionIcons } from './MovieReactionPicker'
 import ConfirmDialog from '../common/ConfirmDialog'
 import EmojiGifPicker from '../common/EmojiGifPicker'
 import { useAuthStore } from '../../store/authStore'
@@ -13,6 +13,8 @@ import {
   useMovieRatings,
   useUpsertMovieRating,
   useDeleteMovieRating,
+  reactionToValue,
+  valueToReaction,
 } from '../../hooks/useMovieRatings'
 import {
   useMovieComments,
@@ -20,11 +22,12 @@ import {
   useUpdateMovieComment,
   useDeleteMovieComment,
 } from '../../hooks/useMovieComments'
+import { useIsMovieSaved, useToggleSaveMovie } from '../../hooks/useSavedPosts'
 
 function MoviePlayerModal({ movie, onClose }) {
   const { t, i18n } = useTranslation()
   const { user } = useAuthStore()
-  const [selectedRating, setSelectedRating] = useState(0)
+  const [selectedReaction, setSelectedReaction] = useState(null)
   const [review, setReview] = useState('')
   const [showRatingForm, setShowRatingForm] = useState(false)
   const [commentText, setCommentText] = useState('')
@@ -36,6 +39,7 @@ function MoviePlayerModal({ movie, onClose }) {
   const { data: userRating } = useUserMovieRating(movie?.id)
   const { data: allRatings = [] } = useMovieRatings(movie?.id)
   const { data: comments = [] } = useMovieComments(movie?.id)
+  const { data: isSaved, isLoading: saveLoading } = useIsMovieSaved(movie?.id)
 
   // Mutations
   const upsertRating = useUpsertMovieRating()
@@ -43,22 +47,30 @@ function MoviePlayerModal({ movie, onClose }) {
   const createComment = useCreateMovieComment()
   const updateComment = useUpdateMovieComment()
   const deleteComment = useDeleteMovieComment()
+  const toggleSave = useToggleSaveMovie()
 
   if (!movie) return null
 
   const locale = i18n.language === 'es' ? es : enUS
 
+  const handleSave = () => {
+    if (saveLoading || toggleSave.isPending) return
+    toggleSave.mutate({ movieId: movie.id, isSaved })
+  }
+
   const handleSubmitRating = async () => {
-    if (selectedRating === 0) return
+    if (!selectedReaction) return
 
     try {
+      // Convertir reacción a valor numérico para la BD
+      const ratingValue = reactionToValue(selectedReaction)
       await upsertRating.mutateAsync({
         movieId: movie.id,
-        rating: selectedRating,
+        rating: ratingValue,
         review: review.trim() || null,
       })
       setShowRatingForm(false)
-      setSelectedRating(0)
+      setSelectedReaction(null)
       setReview('')
     } catch (error) {
       console.error('Error submitting rating:', error)
@@ -147,13 +159,29 @@ function MoviePlayerModal({ movie, onClose }) {
     <div className="fixed inset-0 z-50 bg-black bg-opacity-95 overflow-y-auto">
       <div className="min-h-screen flex items-start justify-center p-4 pt-16">
         <div className="relative w-full max-w-4xl">
-          {/* Close button */}
-          <button
-            onClick={onClose}
-            className="fixed top-4 right-4 text-white hover:text-gray-300 transition-colors z-[60] bg-black bg-opacity-70 rounded-full p-3 shadow-lg"
-          >
-            <X className="h-6 w-6" />
-          </button>
+          {/* Action buttons */}
+          <div className="fixed top-4 right-4 flex items-center gap-2 z-[60]">
+            {/* Save button */}
+            {user && (
+              <button
+                onClick={handleSave}
+                disabled={saveLoading || toggleSave.isPending}
+                className={`text-white hover:text-primary-400 transition-colors bg-black bg-opacity-70 rounded-full p-3 shadow-lg ${
+                  isSaved ? 'text-primary-400' : ''
+                }`}
+                title={isSaved ? 'Quitar de guardados' : 'Guardar película'}
+              >
+                <Bookmark className={`h-6 w-6 ${isSaved ? 'fill-current' : ''}`} />
+              </button>
+            )}
+            {/* Close button */}
+            <button
+              onClick={onClose}
+              className="text-white hover:text-gray-300 transition-colors bg-black bg-opacity-70 rounded-full p-3 shadow-lg"
+            >
+              <X className="h-6 w-6" />
+            </button>
+          </div>
 
           {/* Custom Video Player */}
           <CustomVideoPlayer movie={movie} />
@@ -195,15 +223,11 @@ function MoviePlayerModal({ movie, onClose }) {
             {/* Rating Display */}
             {movie.ratings_count > 0 && (
               <div className="flex items-center gap-2 mb-4">
-                <MovieRatingStars
-                  rating={movie.average_rating || 0}
-                  size="lg"
-                  showCount={true}
+                <MovieReactionDisplay
+                  averageRating={movie.average_rating || 0}
                   count={movie.ratings_count}
+                  size="lg"
                 />
-                <span className="text-sm text-gray-400">
-                  {movie.average_rating?.toFixed(1) || '0.0'} {t('movies.rating.averageRating')}
-                </span>
               </div>
             )}
 
@@ -242,11 +266,15 @@ function MoviePlayerModal({ movie, onClose }) {
               ) : userRating ? (
                 <div className="bg-gray-800 p-4 rounded-lg">
                   <div className="flex items-center justify-between mb-2">
-                    <MovieRatingStars rating={userRating.rating} size="lg" />
+                    <MovieReactionDisplay
+                      averageRating={userRating.rating}
+                      size="md"
+                    />
                     <div className="flex gap-2">
                       <button
                         onClick={() => {
-                          setSelectedRating(userRating.rating)
+                          // Convertir valor numérico a tipo de reacción
+                          setSelectedReaction(valueToReaction(userRating.rating))
                           setReview(userRating.review || '')
                           setShowRatingForm(true)
                         }}
@@ -278,14 +306,15 @@ function MoviePlayerModal({ movie, onClose }) {
               {showRatingForm && (
                 <div className="bg-gray-800 p-4 rounded-lg space-y-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">
+                    <label className="block text-sm font-medium mb-3 text-center">
                       {t('movies.rating.rateThis')}
                     </label>
-                    <MovieRatingStars
-                      rating={selectedRating}
-                      size="xl"
+                    <MovieReactionPicker
+                      currentReaction={selectedReaction}
+                      onReact={setSelectedReaction}
+                      size="lg"
                       interactive={true}
-                      onRate={setSelectedRating}
+                      showLabel={true}
                     />
                   </div>
 
@@ -305,7 +334,7 @@ function MoviePlayerModal({ movie, onClose }) {
                   <div className="flex gap-2">
                     <button
                       onClick={handleSubmitRating}
-                      disabled={selectedRating === 0 || upsertRating.isPending}
+                      disabled={!selectedReaction || upsertRating.isPending}
                       className="bg-primary-600 hover:bg-primary-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg transition-colors"
                     >
                       {upsertRating.isPending ? t('common.loading') : t('movies.rating.submit')}
@@ -313,7 +342,7 @@ function MoviePlayerModal({ movie, onClose }) {
                     <button
                       onClick={() => {
                         setShowRatingForm(false)
-                        setSelectedRating(0)
+                        setSelectedReaction(null)
                         setReview('')
                       }}
                       className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors"
@@ -350,7 +379,7 @@ function MoviePlayerModal({ movie, onClose }) {
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-1">
                           <p className="font-semibold">{rating.profiles?.full_name}</p>
-                          <MovieRatingStars rating={rating.rating} size="sm" />
+                          <MovieReactionDisplay averageRating={rating.rating} size="sm" />
                         </div>
                         <p className="text-gray-300 text-sm">{rating.review}</p>
                         <p className="text-xs text-gray-500 mt-1">

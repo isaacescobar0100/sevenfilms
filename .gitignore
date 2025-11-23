@@ -33,6 +33,12 @@ dist-ssr
 # Vercel
 .vercel
 
+# Coverage
+coverage/
+
+# NUL file (Windows)
+nul
+
 # Capacitor
 android/app/build/
 android/app/.cxx/

@@ -1,20 +1,26 @@
 import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Users, Compass, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { useFeed } from '../hooks/usePosts'
+import { useFeed, useTrending } from '../hooks/usePosts'
 import { useSuggestedUsers } from '../hooks/useProfiles'
 import CreatePost from '../components/social/CreatePost'
 import Post from '../components/social/Post'
 import LoadingSpinner from '../components/common/LoadingSpinner'
 import ErrorMessage from '../components/common/ErrorMessage'
 import UserCard from '../components/social/UserCard'
+import LeftSidebar from '../components/layout/LeftSidebar'
+import StoriesBar from '../components/stories/StoriesBar'
+import SEO from '../components/common/SEO'
 
 function Feed() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const [filter, setFilter] = useState('all') // 'all' or 'following'
   const [showSuggestedUsers, setShowSuggestedUsers] = useState(true)
   const { data, fetchNextPage, hasNextPage, isLoading, isFetchingNextPage, error } = useFeed(filter)
   const { data: suggestedUsers } = useSuggestedUsers()
+  const { data: trendingTopics } = useTrending()
   const loadMoreRef = useRef(null)
 
   const posts = data?.pages.flatMap(page => page.data) || []
@@ -37,14 +43,26 @@ function Feed() {
     return () => observer.disconnect()
   }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
-  // Determinar si hay contenido en el sidebar
-  const hasSidebar = suggestedUsers && suggestedUsers.length > 0
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      <div className={`grid grid-cols-1 ${hasSidebar ? 'lg:grid-cols-3' : ''} gap-6`}>
-        {/* Main Feed */}
-        <div className={`${hasSidebar ? 'lg:col-span-2' : 'max-w-2xl mx-auto w-full'} space-y-6`}>
+      <SEO
+        title="Feed"
+        description="Explora las publicaciones de la comunidad de cineastas. Descubre cortometrajes, comparte tu trabajo y conecta con creadores."
+      />
+
+      {/* Layout de 3 columnas en desktop */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        {/* Left Sidebar - Solo desktop */}
+        <div className="hidden lg:block lg:col-span-3">
+          <LeftSidebar />
+        </div>
+
+        {/* Main Feed - Centro */}
+        <div className="lg:col-span-6 space-y-6">
+          {/* Stories Bar */}
+          <StoriesBar />
+
           {/* Create Post */}
           <CreatePost onSuccess={() => {
             // Opcional: scroll to top o mostrar notificación
@@ -87,13 +105,21 @@ function Feed() {
             <div className="lg:hidden bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="font-bold text-sm text-gray-700 dark:text-gray-300">{t('feed.suggestedFilmmakers')}</h2>
-                <button
-                  onClick={() => setShowSuggestedUsers(false)}
-                  className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-                  aria-label={t('common.close')}
-                >
-                  <X className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => navigate('/search?tab=suggested')}
+                    className="text-xs text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 font-medium"
+                  >
+                    {t('common.viewAll')}
+                  </button>
+                  <button
+                    onClick={() => setShowSuggestedUsers(false)}
+                    className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                    aria-label={t('common.close')}
+                  >
+                    <X className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                  </button>
+                </div>
               </div>
               <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                 {suggestedUsers.slice(0, 6).map((user) => (
@@ -136,23 +162,70 @@ function Feed() {
           )}
         </div>
 
-        {/* Sidebar - Solo visible en desktop */}
-        {hasSidebar && (
-          <div className="hidden lg:block space-y-6">
-          {/* Suggested Users */}
-          {suggestedUsers && suggestedUsers.length > 0 && (
+        {/* Right Sidebar - Sugerencias */}
+        <div className="hidden lg:block lg:col-span-3">
+          <div className="sticky top-20 space-y-6">
+            {/* Suggested Users */}
+            {suggestedUsers && suggestedUsers.length > 0 && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="font-bold text-lg text-gray-900 dark:text-white">{t('feed.suggestedFilmmakers')}</h2>
+                  <button
+                    onClick={() => navigate('/search?tab=suggested')}
+                    className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 font-medium"
+                  >
+                    {t('common.viewAll') || 'Ver todas'}
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {suggestedUsers.slice(0, 5).map((user) => (
+                    <UserCard key={user.id} user={user} showFollowButton />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Trending Topics */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
-              <h2 className="font-bold text-lg text-gray-900 dark:text-white mb-4">{t('feed.suggestedFilmmakers')}</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-bold text-lg text-gray-900 dark:text-white">
+                  {t('feed.trending') || 'Tendencias'}
+                </h2>
+                <button
+                  onClick={() => navigate('/search?tab=trending')}
+                  className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 font-medium"
+                >
+                  {t('common.viewAll') || 'Ver todas'}
+                </button>
+              </div>
               <div className="space-y-3">
-                {suggestedUsers.map((user) => (
-                  <UserCard key={user.id} user={user} showFollowButton />
-                ))}
+                {trendingTopics && trendingTopics.length > 0 ? (
+                  trendingTopics.slice(0, 5).map((topic, index) => (
+                    <button
+                      key={topic.hashtag}
+                      onClick={() => navigate(`/search?q=${encodeURIComponent(topic.hashtag)}`)}
+                      className="block w-full text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 p-2 -mx-2 rounded-lg transition-colors"
+                    >
+                      <p className="text-gray-500 dark:text-gray-400 text-xs">
+                        Tendencia #{index + 1}
+                      </p>
+                      <p className="font-medium text-gray-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400">
+                        {topic.hashtag}
+                      </p>
+                      <p className="text-gray-400 dark:text-gray-500 text-xs">
+                        {topic.count} {topic.count === 1 ? 'publicación' : 'publicaciones'}
+                      </p>
+                    </button>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {t('feed.noTrending') || 'No hay tendencias aún'}
+                  </p>
+                )}
               </div>
             </div>
-          )}
-
           </div>
-        )}
+        </div>
       </div>
     </div>
   )

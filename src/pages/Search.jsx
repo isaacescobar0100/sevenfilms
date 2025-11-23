@@ -4,7 +4,7 @@ import { Search as SearchIcon, Film, Users, Play, Eye, FileText, X, Clock, Grid3
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '../lib/supabase'
-import { useSearchUsers } from '../hooks/useProfiles'
+import { useSearchUsers, useSuggestedUsers } from '../hooks/useProfiles'
 import { useSearchPosts, useTrending } from '../hooks/usePosts'
 import { useRecentSearches } from '../hooks/useRecentSearches'
 import { getTranslatedGenre } from '../utils/genreMapper'
@@ -13,6 +13,7 @@ import Post from '../components/social/Post'
 import LoadingSpinner from '../components/common/LoadingSpinner'
 import MoviePlayerModal from '../components/movies/MoviePlayerModal'
 import { useRateLimit } from '../hooks/useRateLimit'
+import SEO from '../components/common/SEO'
 
 function Search() {
   const { t } = useTranslation()
@@ -25,18 +26,23 @@ function Search() {
 
   const { canPerformAction, performAction, limit, resetTime } = useRateLimit('searchRequests')
 
-  // Leer query parameter de la URL
+  // Leer query y tab parameters de la URL
   useEffect(() => {
     const urlQuery = searchParams.get('q')
+    const urlTab = searchParams.get('tab')
     if (urlQuery) {
       // Remover el símbolo # si existe
       const cleanQuery = urlQuery.startsWith('#') ? urlQuery.substring(1) : urlQuery
       setQuery(cleanQuery)
     }
+    if (urlTab && ['all', 'users', 'posts', 'movies', 'trending', 'suggested'].includes(urlTab)) {
+      setActiveTab(urlTab)
+    }
   }, [searchParams])
 
   const { recentSearches, addSearch, removeSearch, clearSearches } = useRecentSearches()
   const { data: trending } = useTrending()
+  const { data: suggestedUsers } = useSuggestedUsers()
 
   // Verificar rate limit antes de hacer la búsqueda
   const shouldEnableSearch = Boolean(query && query.trim().length >= 2 && !searchBlocked)
@@ -99,24 +105,19 @@ function Search() {
     }
   }, [canPerformAction, searchBlocked])
 
-  // Guardar búsqueda cuando hay resultados y el usuario ha buscado
+  // Guardar búsqueda cuando el usuario escribe algo válido
   useEffect(() => {
     if (query && query.trim().length >= 2) {
-      const hasResults =
-        (activeTab === 'users' && users && users.length > 0) ||
-        (activeTab === 'posts' && posts && posts.length > 0) ||
-        (activeTab === 'movies' && movies && movies.length > 0)
+      // Guardar búsqueda con un pequeño delay para evitar guardar cada keystroke
+      const timeoutId = setTimeout(() => {
+        // Determinar el tipo de búsqueda basado en la pestaña actual
+        const searchType = ['users', 'posts', 'movies'].includes(activeTab) ? activeTab : 'general'
+        addSearch(query, searchType)
+      }, 1000)
 
-      if (hasResults) {
-        // Guardar búsqueda con un pequeño delay para evitar guardar cada keystroke
-        const timeoutId = setTimeout(() => {
-          addSearch(query, activeTab)
-        }, 1000)
-
-        return () => clearTimeout(timeoutId)
-      }
+      return () => clearTimeout(timeoutId)
     }
-  }, [query, activeTab, users, posts, movies, addSearch])
+  }, [query, activeTab, addSearch])
 
   // Manejar clic en búsqueda reciente
   const handleRecentSearchClick = (recentQuery, type) => {
@@ -125,6 +126,13 @@ function Search() {
       setActiveTab(type)
     }
     setShowRecentDropdown(false)
+  }
+
+  // Guardar cuando el usuario hace clic en un perfil desde los resultados
+  const handleProfileClick = (user) => {
+    // Guardar el nombre/username del perfil visitado
+    const searchTerm = user.full_name || user.username
+    addSearch(searchTerm, 'users')
   }
 
   // Cerrar dropdown cuando se hace click fuera
@@ -137,7 +145,13 @@ function Search() {
   }, [showRecentDropdown])
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <SEO
+        title="Buscar"
+        description="Busca cineastas, cortometrajes y publicaciones en Seven. Encuentra talento audiovisual y conecta con creadores."
+        noIndex
+      />
+
       {/* Search Header */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">{t('search.title')}</h1>
@@ -323,6 +337,28 @@ function Search() {
               <Film className="h-4 w-4" />
               <span>{t('search.tabs.movies')}</span>
             </button>
+            <button
+              onClick={() => setActiveTab('trending')}
+              className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors flex items-center space-x-2 whitespace-nowrap ${
+                activeTab === 'trending'
+                  ? 'border-primary-600 text-primary-600'
+                  : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-300'
+              }`}
+            >
+              <TrendingUp className="h-4 w-4" />
+              <span>{t('feed.trending')}</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('suggested')}
+              className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors flex items-center space-x-2 whitespace-nowrap ${
+                activeTab === 'suggested'
+                  ? 'border-primary-600 text-primary-600'
+                  : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-300'
+              }`}
+            >
+              <Users className="h-4 w-4" />
+              <span>{t('feed.suggestedFilmmakers')}</span>
+            </button>
           </nav>
         </div>
       </div>
@@ -347,7 +383,7 @@ function Search() {
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {users.slice(0, 4).map((user) => (
-                        <UserCard key={user.id} user={user} />
+                        <UserCard key={user.id} user={user} onProfileClick={handleProfileClick} />
                       ))}
                     </div>
                     {users.length > 4 && (
@@ -489,9 +525,9 @@ function Search() {
                 <LoadingSpinner />
               </div>
             ) : users && users.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {users.map((user) => (
-                  <UserCard key={user.id} user={user} />
+                  <UserCard key={user.id} user={user} onProfileClick={handleProfileClick} />
                 ))}
               </div>
             ) : (
@@ -547,7 +583,7 @@ function Search() {
                 <LoadingSpinner />
               </div>
             ) : movies && movies.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {movies.map((movie) => (
                   <div
                     key={movie.id}
@@ -632,6 +668,65 @@ function Search() {
                 <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
                   {t('search.tryAgain')}
                 </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Trending Tab */}
+        {activeTab === 'trending' && (
+          <div>
+            {trending && trending.length > 0 ? (
+              <div className="space-y-3">
+                {trending.map((topic, index) => (
+                  <button
+                    key={topic.hashtag}
+                    onClick={() => {
+                      const searchTerm = topic.hashtag.startsWith('#') ? topic.hashtag.substring(1) : topic.hashtag
+                      setQuery(searchTerm)
+                      setActiveTab('posts')
+                    }}
+                    className="block w-full text-left bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {t('feed.trending')} #{index + 1}
+                        </p>
+                        <p className="font-bold text-lg text-gray-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400">
+                          {topic.hashtag}
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {topic.count} {topic.count === 1 ? 'publicación' : 'publicaciones'}
+                        </p>
+                      </div>
+                      <TrendingUp className="h-6 w-6 text-primary-500" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <TrendingUp className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
+                <p className="text-gray-600 dark:text-gray-400">{t('feed.noTrending') || 'No hay tendencias aún'}</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Suggested Filmmakers Tab */}
+        {activeTab === 'suggested' && (
+          <div>
+            {suggestedUsers && suggestedUsers.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {suggestedUsers.map((user) => (
+                  <UserCard key={user.id} user={user} showFollowButton onProfileClick={handleProfileClick} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <Users className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
+                <p className="text-gray-600 dark:text-gray-400">{t('search.noUsers')}</p>
               </div>
             )}
           </div>

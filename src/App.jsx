@@ -18,11 +18,15 @@ const Search = lazy(() => import('./pages/Search'))
 const Messages = lazy(() => import('./pages/Messages'))
 const Movies = lazy(() => import('./pages/Movies'))
 const NotFound = lazy(() => import('./pages/NotFound'))
+const Saved = lazy(() => import('./pages/Saved'))
+const Settings = lazy(() => import('./pages/Settings'))
 const PrivacyPolicy = lazy(() => import('./pages/legal/PrivacyPolicy'))
 const TermsOfService = lazy(() => import('./pages/legal/TermsOfService'))
 const AboutUs = lazy(() => import('./pages/legal/AboutUs'))
 const Contact = lazy(() => import('./pages/legal/Contact'))
 const MissionVision = lazy(() => import('./pages/legal/MissionVision'))
+const CreateStory = lazy(() => import('./pages/CreateStory'))
+const Notifications = lazy(() => import('./pages/Notifications'))
 
 function App() {
   const { user, loading } = useAuthStore()
@@ -68,11 +72,15 @@ function App() {
           {/* Protected routes - Red Social */}
           <Route element={<ProtectedRoute />}>
             <Route path="feed" element={<Feed />} />
+            <Route path="stories/create" element={<CreateStory />} />
             <Route path="search" element={<Search />} />
             <Route path="messages" element={<Messages />} />
             <Route path="movies" element={<Movies />} />
             <Route path="profile" element={<Profile />} />
             <Route path="profile/:username" element={<Profile />} />
+            <Route path="saved" element={<Saved />} />
+            <Route path="settings" element={<Settings />} />
+            <Route path="notifications" element={<Notifications />} />
           </Route>
 
           {/* 404 */}

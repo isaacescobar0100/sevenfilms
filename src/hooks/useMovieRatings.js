@@ -5,6 +5,35 @@ import { useTranslation } from 'react-i18next'
 import { captureError } from '../lib/sentry'
 import { CACHE_TIMES } from '../lib/queryConfig'
 
+// Mapeo de reacciones cinematográficas a valores numéricos
+export const MOVIE_REACTION_VALUES = {
+  masterpiece: 5,
+  excellent: 4,
+  popcorn: 3,
+  meh: 2,
+  boring: 1,
+}
+
+// Mapeo inverso: valor numérico a tipo de reacción
+export const VALUE_TO_MOVIE_REACTION = {
+  5: 'masterpiece',
+  4: 'excellent',
+  3: 'popcorn',
+  2: 'meh',
+  1: 'boring',
+}
+
+// Convertir tipo de reacción a valor numérico
+export function reactionToValue(reactionType) {
+  return MOVIE_REACTION_VALUES[reactionType] || 3
+}
+
+// Convertir valor numérico a tipo de reacción
+export function valueToReaction(value) {
+  const roundedValue = Math.round(value)
+  return VALUE_TO_MOVIE_REACTION[roundedValue] || 'popcorn'
+}
+
 // Obtener rating de un usuario para una película específica
 export function useUserMovieRating(movieId) {
   const { user } = useAuthStore()
@@ -66,11 +95,12 @@ export function useUpsertMovieRating() {
     mutationFn: async ({ movieId, rating, review }) => {
       if (!user) throw new Error('User not authenticated')
 
-      // Usar la función RPC que valida ownership
+      // Usar la función RPC que valida ownership (con 4 parámetros para evitar ambigüedad)
       const { data, error } = await supabase.rpc('add_or_update_movie_rating', {
         p_movie_id: movieId,
         p_user_id: user.id,
         p_rating: rating,
+        p_review_text: review || null,
       })
 
       if (error) {

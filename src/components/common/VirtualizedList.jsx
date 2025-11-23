@@ -1,6 +1,34 @@
-import { useRef, useCallback } from 'react'
+import { useRef, useCallback, useState, useEffect } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import LoadingSpinner from './LoadingSpinner'
+
+/**
+ * Hook para detectar el número de columnas basado en el ancho de pantalla
+ */
+function useResponsiveColumns(defaultColumns = 4) {
+  const [columns, setColumns] = useState(defaultColumns)
+
+  useEffect(() => {
+    const updateColumns = () => {
+      const width = window.innerWidth
+      if (width < 640) {
+        setColumns(1) // Mobile: 1 columna
+      } else if (width < 768) {
+        setColumns(2) // Small tablet: 2 columnas
+      } else if (width < 1024) {
+        setColumns(3) // Tablet/small desktop: 3 columnas
+      } else {
+        setColumns(defaultColumns) // Desktop: columnas por defecto
+      }
+    }
+
+    updateColumns()
+    window.addEventListener('resize', updateColumns)
+    return () => window.removeEventListener('resize', updateColumns)
+  }, [defaultColumns])
+
+  return columns
+}
 
 /**
  * Componente de lista virtualizada para rendimiento optimizado
@@ -131,7 +159,7 @@ export function VirtualizedList({
 export function VirtualizedGrid({
   items = [],
   renderItem,
-  columns = 3,
+  columns: defaultColumns = 3,
   estimatedRowHeight = 300,
   getItemKey,
   hasNextPage = false,
@@ -142,6 +170,9 @@ export function VirtualizedGrid({
   overscan = 2,
 }) {
   const parentRef = useRef(null)
+
+  // Usar columnas responsive
+  const columns = useResponsiveColumns(defaultColumns)
 
   // Calcular filas
   const rowCount = Math.ceil(items.length / columns) + (hasNextPage ? 1 : 0)

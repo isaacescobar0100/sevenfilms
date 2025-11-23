@@ -17,6 +17,7 @@ const RATE_LIMITS = {
 
   // Límites por minuto
   likeActions: { limit: 30, windowMs: 60 * 1000 }, // 30 likes por minuto
+  reactionActions: { limit: 30, windowMs: 60 * 1000 }, // 30 reacciones por minuto
   commentActions: { limit: 20, windowMs: 60 * 1000 }, // 20 comentarios por minuto
   followActions: { limit: 20, windowMs: 60 * 1000 }, // 20 follows/unfollows por minuto
 }

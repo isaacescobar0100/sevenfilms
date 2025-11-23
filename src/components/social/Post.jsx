@@ -1,66 +1,111 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Heart, MessageCircle, Share2, MoreVertical, Trash2, Link as LinkIcon, Check, Edit } from 'lucide-react'
+import { MessageCircle, MoreVertical, Trash2, Link as LinkIcon, Check, Edit, Send, Bookmark, Users, Clapperboard } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { formatRelativeTime } from '../../utils/formatters'
-import { useToggleLike, useHasLiked } from '../../hooks/useLikes'
+import { useUserReaction, usePostReactions, useToggleReaction } from '../../hooks/usePostReactions'
 import { useComments, useCreateComment, useUpdateComment, useDeleteComment } from '../../hooks/useComments'
 import { useDeletePost, useUpdatePost } from '../../hooks/usePosts'
+import { useIsPostSaved, useToggleSavePost } from '../../hooks/useSavedPosts'
 import { useAuthStore } from '../../store/authStore'
 import ConfirmDialog from '../common/ConfirmDialog'
 import { useMultipleRateLimits } from '../../hooks/useRateLimit'
+import MediaLightbox from '../common/MediaLightbox'
+import PostDetailPanel from './PostDetailPanel'
 import EmojiGifPicker from '../common/EmojiGifPicker'
+import SharePostModal from './SharePostModal'
+import PostVideoPlayer from '../common/PostVideoPlayer'
+import ReactionPicker from '../common/ReactionPicker'
 
-function Post({ post }) {
+function Post({ post, isSharedView = false }) {
   const { t } = useTranslation()
   const { user } = useAuthStore()
-  const [showComments, setShowComments] = useState(false)
-  const [commentText, setCommentText] = useState('')
+  const [showDetailPanel, setShowDetailPanel] = useState(false)
+  const [detailPanelTab, setDetailPanelTab] = useState('comments')
   const [showMenu, setShowMenu] = useState(false)
   const [showShareMenu, setShowShareMenu] = useState(false)
   const [copied, setCopied] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-  const [showCommentMenu, setShowCommentMenu] = useState(null)
-  const [showDeleteCommentDialog, setShowDeleteCommentDialog] = useState(false)
-  const [commentToDelete, setCommentToDelete] = useState(null)
-  const [editingComment, setEditingComment] = useState(null)
-  const [editCommentText, setEditCommentText] = useState('')
   const [editingPost, setEditingPost] = useState(false)
   const [editPostText, setEditPostText] = useState('')
+  const [showLightbox, setShowLightbox] = useState(false)
+  // Mobile comments (inline)
+  const [showMobileComments, setShowMobileComments] = useState(false)
+  const [commentText, setCommentText] = useState('')
+  const [showCommentMenu, setShowCommentMenu] = useState(null)
+  const [editingComment, setEditingComment] = useState(null)
+  const [editCommentText, setEditCommentText] = useState('')
+  const [showDeleteCommentDialog, setShowDeleteCommentDialog] = useState(false)
+  const [commentToDelete, setCommentToDelete] = useState(null)
+  const [showShareModal, setShowShareModal] = useState(false)
 
-  const { data: hasLiked, isLoading: likeLoading } = useHasLiked(post.id)
-  const toggleLike = useToggleLike()
-  const { data: comments } = useComments(showComments ? post.id : null)
+  const { data: currentReaction, isLoading: reactionLoading } = useUserReaction(post.id)
+  const { data: reactionsData } = usePostReactions(post.id)
+  const toggleReaction = useToggleReaction()
+  const { data: isSaved, isLoading: saveLoading } = useIsPostSaved(post.id)
+  const toggleSave = useToggleSavePost()
+  const deletePost = useDeletePost()
+  const updatePost = useUpdatePost()
+  const { data: comments } = useComments(showMobileComments ? post.id : null)
   const createComment = useCreateComment()
   const updateComment = useUpdateComment()
   const deleteComment = useDeleteComment()
-  const deletePost = useDeletePost()
-  const updatePost = useUpdatePost()
 
-  const rateLimits = useMultipleRateLimits(['likeActions', 'commentActions'])
+  const rateLimits = useMultipleRateLimits(['reactionActions', 'commentActions'])
 
   const isOwnPost = user?.id === post.user_id
 
-  const handleLike = () => {
-    if (likeLoading) return
+  const handleReaction = (reactionType) => {
+    if (reactionLoading) return
 
-    // Verificar rate limit para likes
-    if (!rateLimits.likeActions.canPerformAction) {
-      alert(`Has alcanzado el límite de ${rateLimits.likeActions.limit} likes por minuto. Espera un momento.`)
+    // Verificar rate limit para reacciones
+    if (!rateLimits.reactionActions?.canPerformAction) {
+      alert(`Has alcanzado el límite de reacciones por minuto. Espera un momento.`)
       return
     }
 
-    toggleLike.mutate({ postId: post.id, hasLiked, postOwnerId: post.user_id })
-    rateLimits.likeActions.performAction()
+    toggleReaction.mutate({
+      postId: post.id,
+      reactionType,
+      currentReaction,
+      postOwnerId: post.user_id
+    })
+    rateLimits.reactionActions?.performAction()
+  }
+
+  const handleSave = () => {
+    if (saveLoading || toggleSave.isPending) return
+    toggleSave.mutate({ postId: post.id, isSaved })
+  }
+
+  const handleCommentClick = () => {
+    // Check if we're on desktop (md breakpoint = 768px)
+    const isDesktop = window.innerWidth >= 768
+    if (isDesktop) {
+      setDetailPanelTab('comments')
+      setShowDetailPanel(true)
+    } else {
+      setShowMobileComments(!showMobileComments)
+    }
+  }
+
+  const handleMediaClick = () => {
+    // On desktop, open the detail panel; on mobile, open lightbox
+    const isDesktop = window.innerWidth >= 768
+    if (isDesktop) {
+      setDetailPanelTab('comments')
+      setShowDetailPanel(true)
+    } else {
+      setShowLightbox(true)
+    }
   }
 
   const handleComment = async (e) => {
     e.preventDefault()
     if (!commentText.trim()) return
 
-    // Verificar rate limit para comentarios
     if (!rateLimits.commentActions.canPerformAction) {
-      alert(`Has alcanzado el límite de ${rateLimits.commentActions.limit} comentarios por minuto. Espera un momento.`)
+      alert(`Has alcanzado el límite de ${rateLimits.commentActions.limit} comentarios por minuto.`)
       return
     }
 
@@ -74,6 +119,43 @@ function Post({ post }) {
       setCommentText('')
     } catch (err) {
       console.error('Error creating comment:', err)
+    }
+  }
+
+  const handleEditComment = (comment) => {
+    setEditingComment(comment.id)
+    setEditCommentText(comment.content)
+    setShowCommentMenu(null)
+  }
+
+  const handleSaveComment = async (commentId) => {
+    if (!editCommentText.trim()) return
+    try {
+      await updateComment.mutateAsync({
+        id: commentId,
+        content: editCommentText.trim(),
+        postId: post.id,
+      })
+      setEditingComment(null)
+      setEditCommentText('')
+    } catch (err) {
+      console.error('Error updating comment:', err)
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setEditingComment(null)
+    setEditCommentText('')
+  }
+
+  const handleDeleteComment = async () => {
+    if (!commentToDelete) return
+    try {
+      await deleteComment.mutateAsync({ id: commentToDelete, postId: post.id })
+      setCommentToDelete(null)
+      setShowDeleteCommentDialog(false)
+    } catch (err) {
+      console.error('Error deleting comment:', err)
     }
   }
 
@@ -146,45 +228,6 @@ function Post({ post }) {
     const url = encodeURIComponent(getPostUrl())
     window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank')
     setShowShareMenu(false)
-  }
-
-  const handleEditComment = (comment) => {
-    setEditingComment(comment.id)
-    setEditCommentText(comment.content)
-    setShowCommentMenu(null)
-  }
-
-  const handleSaveComment = async (commentId) => {
-    if (!editCommentText.trim()) return
-
-    try {
-      await updateComment.mutateAsync({
-        id: commentId,
-        content: editCommentText.trim(),
-        postId: post.id,
-      })
-      setEditingComment(null)
-      setEditCommentText('')
-    } catch (err) {
-      console.error('Error updating comment:', err)
-    }
-  }
-
-  const handleCancelEdit = () => {
-    setEditingComment(null)
-    setEditCommentText('')
-  }
-
-  const handleDeleteComment = async () => {
-    if (!commentToDelete) return
-
-    try {
-      await deleteComment.mutateAsync({ id: commentToDelete, postId: post.id })
-      setCommentToDelete(null)
-      setShowDeleteCommentDialog(false)
-    } catch (err) {
-      console.error('Error deleting comment:', err)
-    }
   }
 
   return (
@@ -290,33 +333,59 @@ function Post({ post }) {
       </div>
 
       {/* Media */}
+      {/* Media - Image */}
       {post.media_type === 'image' && post.media_url && (
-        <img
+        <div
+          className="relative cursor-pointer group"
+          onClick={handleMediaClick}
+        >
+          <img
+            src={post.media_url}
+            alt="Post media"
+            className="w-full max-h-[500px] object-contain bg-gray-100 dark:bg-gray-900"
+          />
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+            <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 rounded-full p-3">
+              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Media - Video */}
+      {post.media_type === 'video' && post.media_url && (
+        <PostVideoPlayer
           src={post.media_url}
-          alt="Post media"
-          className="w-full max-h-96 object-cover"
         />
       )}
-      {post.media_type === 'video' && post.media_url && (
-        <video src={post.media_url} className="w-full max-h-96" controls />
+
+      {/* Media Lightbox */}
+      {post.media_url && (
+        <MediaLightbox
+          isOpen={showLightbox}
+          onClose={() => setShowLightbox(false)}
+          mediaUrl={post.media_url}
+          mediaType={post.media_type}
+          alt={`Media de ${post.username}`}
+        />
       )}
 
       {/* Actions */}
       <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between text-gray-600 dark:text-gray-400">
-          <button
-            onClick={handleLike}
-            disabled={likeLoading}
-            className={`flex items-center space-x-2 hover:text-red-600 ${
-              hasLiked ? 'text-red-600' : ''
-            }`}
-          >
-            <Heart className={`h-5 w-5 ${hasLiked ? 'fill-current' : ''}`} />
-            <span>{post.likes_count || 0}</span>
-          </button>
+          {/* Reaction Picker */}
+          <ReactionPicker
+            currentReaction={currentReaction}
+            onReact={handleReaction}
+            reactionCounts={reactionsData?.counts || {}}
+            totalReactions={reactionsData?.total || 0}
+            disabled={reactionLoading || toggleReaction.isPending}
+          />
 
           <button
-            onClick={() => setShowComments(!showComments)}
+            onClick={handleCommentClick}
             className="flex items-center space-x-2 hover:text-primary-600"
           >
             <MessageCircle className="h-5 w-5" />
@@ -328,7 +397,8 @@ function Post({ post }) {
               onClick={() => setShowShareMenu(!showShareMenu)}
               className="flex items-center space-x-2 hover:text-primary-600"
             >
-              <Share2 className="h-5 w-5" />
+              <Send className="h-5 w-5" />
+              <span>{post.shares_count || 0}</span>
             </button>
 
             {/* Share Menu */}
@@ -339,6 +409,20 @@ function Post({ post }) {
                   onClick={() => setShowShareMenu(false)}
                 ></div>
                 <div className="absolute right-0 bottom-full mb-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 z-20 border border-gray-200 dark:border-gray-700">
+                  {/* Compartir en Seven */}
+                  <button
+                    onClick={() => {
+                      setShowShareMenu(false)
+                      setShowShareModal(true)
+                    }}
+                    className="w-full px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-3"
+                  >
+                    <Users className="h-5 w-5 text-primary-600" />
+                    <span>{t('post.shareInSeven', 'Compartir en Seven')}</span>
+                  </button>
+
+                  <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+
                   <button
                     onClick={handleShareWhatsApp}
                     className="w-full px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-3"
@@ -391,6 +475,18 @@ function Post({ post }) {
               </>
             )}
           </div>
+
+          {/* Save Button */}
+          <button
+            onClick={handleSave}
+            disabled={saveLoading || toggleSave.isPending}
+            className={`flex items-center space-x-2 hover:text-primary-600 transition-colors ${
+              isSaved ? 'text-primary-600' : ''
+            }`}
+            title={isSaved ? 'Quitar de guardados' : 'Guardar'}
+          >
+            <Bookmark className={`h-5 w-5 ${isSaved ? 'fill-current' : ''}`} />
+          </button>
         </div>
 
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
@@ -398,21 +494,12 @@ function Post({ post }) {
         </p>
       </div>
 
-      {/* Comments section */}
-      {showComments && (
-        <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-3">
+      {/* Mobile Comments Section (only visible on mobile) */}
+      {showMobileComments && (
+        <div className="md:hidden border-t border-gray-200 dark:border-gray-700 px-4 py-3">
           {/* Comment form */}
           <form onSubmit={handleComment} className="mb-4">
-            <div className="flex space-x-2">
-              <div className="flex-1 relative">
-                <input
-                  type="text"
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  placeholder={t('post.writeComment')}
-                  className="w-full input pr-10"
-                />
-              </div>
+            <div className="flex items-center space-x-2">
               <EmojiGifPicker
                 onSelect={(emoji) => setCommentText(prev => prev + emoji)}
                 onGifSelect={(gifUrl) => {
@@ -433,80 +520,71 @@ function Post({ post }) {
                 }}
                 position="top"
               />
+              <input
+                type="text"
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                placeholder={t('post.writeComment')}
+                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
               <button
                 type="submit"
                 disabled={!commentText.trim() || createComment.isPending}
-                className="btn btn-primary"
+                className="p-2 bg-primary-600 text-white rounded-full hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {t('post.comment')}
+                <Send className="h-4 w-4" />
               </button>
             </div>
           </form>
 
           {/* Comments list */}
-          <div className="space-y-3">
+          <div className="space-y-3 max-h-64 overflow-y-auto">
             {comments?.map((comment) => (
               <div key={comment.id} className="flex space-x-2">
-                <div className="flex-shrink-0">
+                <Link to={`/profile/${comment.profiles?.username}`} className="flex-shrink-0">
                   {comment.profiles?.avatar_url ? (
-                    <img
-                      src={comment.profiles.avatar_url}
-                      alt={comment.profiles.username}
-                      className="h-8 w-8 rounded-full"
-                    />
+                    <img src={comment.profiles.avatar_url} alt={comment.profiles.username} className="h-8 w-8 rounded-full" />
                   ) : (
-                    <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 text-sm">
+                    <div className="h-8 w-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-gray-600 dark:text-gray-300 text-sm">
                       {comment.profiles?.username?.[0] || 'U'}
                     </div>
                   )}
-                </div>
+                </Link>
 
                 {editingComment === comment.id ? (
-                  <div className="flex-1 flex space-x-2">
+                  <div className="flex-1 space-y-2">
                     <input
                       type="text"
                       value={editCommentText}
                       onChange={(e) => setEditCommentText(e.target.value)}
-                      className="flex-1 input"
+                      className="w-full px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
                       autoFocus
                     />
-                    <button
-                      onClick={() => handleSaveComment(comment.id)}
-                      disabled={!editCommentText.trim() || updateComment.isPending}
-                      className="btn btn-primary px-3"
-                    >
-                      {t('common.save')}
-                    </button>
-                    <button
-                      onClick={handleCancelEdit}
-                      className="btn btn-secondary px-3"
-                    >
-                      {t('common.cancel')}
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleSaveComment(comment.id)}
+                        disabled={!editCommentText.trim()}
+                        className="text-xs px-2 py-1 bg-primary-600 text-white rounded hover:bg-primary-700 disabled:opacity-50"
+                      >
+                        {t('common.save')}
+                      </button>
+                      <button onClick={handleCancelEdit} className="text-xs px-2 py-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded">
+                        {t('common.cancel')}
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <>
                     <div className="flex-1 bg-gray-100 dark:bg-gray-700 rounded-lg px-3 py-2">
-                      <Link
-                        to={`/profile/${comment.profiles?.username}`}
-                        className="font-semibold text-sm hover:underline text-gray-900 dark:text-white"
-                      >
+                      <Link to={`/profile/${comment.profiles?.username}`} className="font-semibold text-sm text-gray-900 dark:text-white hover:underline">
                         {comment.profiles?.full_name || comment.profiles?.username}
                       </Link>
-                      {/* Check if content is a GIF/image URL */}
                       {comment.content?.match(/\.(gif|giphy\.com)/i) ? (
-                        <img
-                          src={comment.content}
-                          alt="GIF"
-                          className="max-w-[200px] max-h-[150px] rounded mt-1"
-                          loading="lazy"
-                        />
+                        <img src={comment.content} alt="GIF" className="max-w-[150px] max-h-[100px] rounded mt-1" loading="lazy" />
                       ) : (
                         <p className="text-sm text-gray-900 dark:text-gray-100">{comment.content}</p>
                       )}
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {formatRelativeTime(comment.created_at)}
-                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{formatRelativeTime(comment.created_at)}</p>
                     </div>
                     {user?.id === comment.user_id && (
                       <div className="relative">
@@ -518,16 +596,13 @@ function Post({ post }) {
                         </button>
                         {showCommentMenu === comment.id && (
                           <>
-                            <div
-                              className="fixed inset-0"
-                              onClick={() => setShowCommentMenu(null)}
-                            ></div>
-                            <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 z-20 border border-gray-200 dark:border-gray-700">
+                            <div className="fixed inset-0" onClick={() => setShowCommentMenu(null)}></div>
+                            <div className="absolute right-0 mt-1 w-32 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 z-20 border border-gray-200 dark:border-gray-700">
                               <button
                                 onClick={() => handleEditComment(comment)}
-                                className="w-full px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
+                                className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
                               >
-                                <Edit className="h-4 w-4" />
+                                <Edit className="h-3 w-3" />
                                 <span>{t('common.edit')}</span>
                               </button>
                               <button
@@ -536,9 +611,9 @@ function Post({ post }) {
                                   setShowDeleteCommentDialog(true)
                                   setShowCommentMenu(null)
                                 }}
-                                className="w-full px-4 py-2 text-left text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
+                                className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className="h-3 w-3" />
                                 <span>{t('common.delete')}</span>
                               </button>
                             </div>
@@ -550,6 +625,9 @@ function Post({ post }) {
                 )}
               </div>
             ))}
+            {(!comments || comments.length === 0) && (
+              <p className="text-center text-gray-500 dark:text-gray-400 text-sm py-4">{t('post.noComments')}</p>
+            )}
           </div>
         </div>
       )}
@@ -568,15 +646,27 @@ function Post({ post }) {
       {/* Delete Comment Confirmation Dialog */}
       <ConfirmDialog
         isOpen={showDeleteCommentDialog}
-        onClose={() => {
-          setShowDeleteCommentDialog(false)
-          setCommentToDelete(null)
-        }}
+        onClose={() => { setShowDeleteCommentDialog(false); setCommentToDelete(null) }}
         onConfirm={handleDeleteComment}
         title={t('post.deleteComment')}
         message={t('post.deleteCommentConfirm')}
         confirmText={t('common.delete')}
         type="danger"
+      />
+
+      {/* Post Detail Panel (Comments & Likes) - Desktop only */}
+      <PostDetailPanel
+        post={post}
+        isOpen={showDetailPanel}
+        onClose={() => setShowDetailPanel(false)}
+        initialTab={detailPanelTab}
+      />
+
+      {/* Share Post Modal */}
+      <SharePostModal
+        post={post}
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
       />
     </div>
   )

@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import { createNotification } from './useNotifications'
 
-// Obtener comentarios de un post
+// Obtener comentarios de un post (con soporte para respuestas anidadas)
 export function useComments(postId) {
   return useQuery({
     queryKey: ['comments', postId],
@@ -32,23 +32,44 @@ export function useComments(postId) {
               full_name: 'Usuario Sin Nombre',
               avatar_url: null,
             },
+            replies: [], // Inicializar array de respuestas
           }
         })
       )
 
-      return commentsWithProfiles
+      // Organizar comentarios en estructura jerárquica
+      const commentMap = {}
+      const rootComments = []
+
+      // Primero, crear un mapa de todos los comentarios
+      commentsWithProfiles.forEach(comment => {
+        commentMap[comment.id] = comment
+      })
+
+      // Luego, organizar en jerarquía
+      commentsWithProfiles.forEach(comment => {
+        if (comment.parent_id && commentMap[comment.parent_id]) {
+          // Es una respuesta, agregarla al padre
+          commentMap[comment.parent_id].replies.push(comment)
+        } else {
+          // Es un comentario raíz
+          rootComments.push(comment)
+        }
+      })
+
+      return rootComments
     },
     enabled: !!postId,
   })
 }
 
-// Crear comentario
+// Crear comentario (con soporte para respuestas anidadas)
 export function useCreateComment() {
   const queryClient = useQueryClient()
   const { user } = useAuthStore()
 
   return useMutation({
-    mutationFn: async ({ postId, content, postOwnerId }) => {
+    mutationFn: async ({ postId, content, postOwnerId, parentId = null, parentUserId = null }) => {
       const { data, error } = await supabase
         .from('comments')
         .insert([
@@ -56,6 +77,7 @@ export function useCreateComment() {
             post_id: postId,
             user_id: user?.id,
             content,
+            parent_id: parentId, // ID del comentario padre (null si es comentario raíz)
           },
         ])
         .select()
@@ -63,7 +85,7 @@ export function useCreateComment() {
 
       if (error) throw error
 
-      // Crear notificación para el dueño del post
+      // Crear notificación para el dueño del post (si no es el mismo usuario)
       if (postOwnerId && postOwnerId !== user.id) {
         await createNotification({
           userId: postOwnerId,
@@ -71,6 +93,17 @@ export function useCreateComment() {
           type: 'comment',
           entityType: 'post',
           entityId: postId,
+        })
+      }
+
+      // Crear notificación para el usuario del comentario padre (si es una respuesta)
+      if (parentId && parentUserId && parentUserId !== user.id && parentUserId !== postOwnerId) {
+        await createNotification({
+          userId: parentUserId,
+          actorId: user.id,
+          type: 'reply',
+          entityType: 'comment',
+          entityId: parentId,
         })
       }
 

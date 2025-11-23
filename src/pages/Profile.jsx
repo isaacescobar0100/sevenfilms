@@ -7,15 +7,19 @@ import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 import { useUserStats, useUpdateProfile, uploadAvatar, uploadCover } from '../hooks/useProfiles'
 import { useUserPosts } from '../hooks/usePosts'
+import { useSharedPostsByUser, useSharedPostsToUser } from '../hooks/useSharedPosts'
 import { useIsFollowing, useToggleFollow } from '../hooks/useFollows'
 import { useDeleteMovie } from '../hooks/useMovies'
 import { getTranslatedGenre } from '../utils/genreMapper'
 import Post from '../components/social/Post'
+import SharedPost from '../components/social/SharedPost'
 import LoadingSpinner from '../components/common/LoadingSpinner'
 import EditProfileModal from '../components/social/EditProfileModal'
 import MoviePlayerModal from '../components/movies/MoviePlayerModal'
 import EditMovieModal from '../components/movies/EditMovieModal'
 import ConfirmDialog from '../components/common/ConfirmDialog'
+import FollowersModal from '../components/social/FollowersModal'
+import SEO from '../components/common/SEO'
 
 function Profile() {
   const { t } = useTranslation()
@@ -24,17 +28,19 @@ function Profile() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('posts')
   const [showEditModal, setShowEditModal] = useState(false)
+  const [showFollowersModal, setShowFollowersModal] = useState(null) // 'followers' | 'following' | null
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [uploadingCover, setUploadingCover] = useState(false)
 
   // Determinar si es el perfil del usuario actual o de otro usuario
-  const isOwnProfile = !username
+  // Se determina después de cargar el perfil comparando IDs
+  const isOwnProfileByUrl = !username
 
   // Si es el perfil propio, usar el ID del usuario; si no, usar el username de la URL
   const { data: profile, isLoading: profileLoading, error: profileError } = useQuery({
     queryKey: ['profile', username || user?.id],
     queryFn: async () => {
-      if (isOwnProfile) {
+      if (isOwnProfileByUrl) {
         // Buscar por ID para el perfil propio
         const { data, error } = await supabase
           .from('profiles')
@@ -58,9 +64,15 @@ function Profile() {
     },
     enabled: !!user,
   })
+  // Determinar si es el perfil propio comparando IDs (funciona tanto con /profile como /profile/username)
+  const isOwnProfile = profile?.id === user?.id
+
   const { data: stats } = useUserStats(profile?.id)
   const { data: posts, isLoading: postsLoading } = useUserPosts(profile?.id)
-  const { data: isFollowing } = useIsFollowing(profile?.id)
+  const { data: sharedByUser = [], isLoading: sharedByLoading } = useSharedPostsByUser(profile?.id)
+  const { data: sharedToUser = [], isLoading: sharedToLoading } = useSharedPostsToUser(profile?.id)
+  // Solo verificar follow si NO es el perfil propio
+  const { data: isFollowing } = useIsFollowing(isOwnProfile ? null : profile?.id)
   const toggleFollow = useToggleFollow()
   const updateProfile = useUpdateProfile()
 
@@ -130,6 +142,13 @@ function Profile() {
 
   return (
     <div className="max-w-5xl mx-auto">
+      <SEO
+        title={profile.full_name || profile.username}
+        description={profile.bio || `Perfil de ${profile.full_name || profile.username} en Seven - Red social para cineastas`}
+        image={profile.avatar_url}
+        type="profile"
+      />
+
       {/* Header con Cover y Avatar */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         {/* Cover Image */}
@@ -168,88 +187,86 @@ function Profile() {
 
         {/* Avatar y Info Principal */}
         <div className="px-4 sm:px-6 lg:px-8">
-          <div className="relative -mt-20 mb-4">
-            <div className="flex flex-col sm:flex-row sm:items-end sm:space-x-5">
-              {/* Avatar */}
-              <div className="relative group">
-                {profile.avatar_url ? (
-                  <img
-                    src={profile.avatar_url}
-                    alt={profile.full_name}
-                    className="h-32 w-32 rounded-full border-4 border-white dark:border-gray-800 bg-white dark:bg-gray-800 object-cover"
-                  />
-                ) : (
-                  <div className="h-32 w-32 rounded-full border-4 border-white dark:border-gray-800 bg-primary-600 flex items-center justify-center text-white text-4xl font-bold">
-                    {profile.full_name?.[0] || profile.username?.[0] || 'U'}
-                  </div>
-                )}
-                {isOwnProfile && (
-                  <label
-                    htmlFor="avatar-upload"
-                    className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                  >
-                    {uploadingAvatar ? (
-                      <LoadingSpinner size="sm" />
-                    ) : (
-                      <Camera className="h-8 w-8 text-white" />
-                    )}
-                    <input
-                      id="avatar-upload"
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleAvatarUpload}
-                      disabled={uploadingAvatar}
-                    />
-                  </label>
-                )}
-              </div>
-
-              {/* Nombre y Botones */}
-              <div className="flex-1 mt-6 sm:mt-0 sm:pb-1">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{profile.full_name}</h1>
-                    <p className="text-gray-600 dark:text-gray-400">@{profile.username}</p>
-                  </div>
-                  <div className="flex space-x-2">
-                    {isOwnProfile ? (
-                      <button
-                        onClick={() => setShowEditModal(true)}
-                        className="btn btn-secondary flex items-center space-x-2"
-                      >
-                        <Settings className="h-4 w-4" />
-                        <span className="hidden sm:inline">{t('profile.editProfile')}</span>
-                      </button>
-                    ) : (
-                      <>
-                        <button
-                          onClick={handleOpenChat}
-                          className="btn btn-secondary flex items-center space-x-2"
-                        >
-                          <MessageCircle className="h-4 w-4" />
-                          <span className="hidden sm:inline">{t('profile.message')}</span>
-                        </button>
-                        <button
-                          onClick={handleFollowToggle}
-                          disabled={toggleFollow.isPending}
-                          className={`btn ${
-                            isFollowing ? 'btn-secondary' : 'btn-primary'
-                          } min-w-[100px]`}
-                        >
-                          {toggleFollow.isPending ? (
-                            <LoadingSpinner size="sm" />
-                          ) : isFollowing ? (
-                            t('profile.following')
-                          ) : (
-                            t('profile.follow')
-                          )}
-                        </button>
-                      </>
-                    )}
-                  </div>
+          {/* Avatar - sobresale de la portada */}
+          <div className="relative -mt-16 sm:-mt-20">
+            <div className="relative group inline-block">
+              {profile.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt={profile.full_name}
+                  className="h-24 w-24 sm:h-32 sm:w-32 rounded-full border-4 border-white dark:border-gray-800 bg-white dark:bg-gray-800 object-cover"
+                />
+              ) : (
+                <div className="h-24 w-24 sm:h-32 sm:w-32 rounded-full border-4 border-white dark:border-gray-800 bg-primary-600 flex items-center justify-center text-white text-3xl sm:text-4xl font-bold">
+                  {profile.full_name?.[0] || profile.username?.[0] || 'U'}
                 </div>
-              </div>
+              )}
+              {isOwnProfile && (
+                <label
+                  htmlFor="avatar-upload"
+                  className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                >
+                  {uploadingAvatar ? (
+                    <LoadingSpinner size="sm" />
+                  ) : (
+                    <Camera className="h-8 w-8 text-white" />
+                  )}
+                  <input
+                    id="avatar-upload"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarUpload}
+                    disabled={uploadingAvatar}
+                  />
+                </label>
+              )}
+            </div>
+          </div>
+
+          {/* Nombre, Username y Botones - debajo de la portada */}
+          <div className="flex items-start justify-between mt-3 mb-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{profile.full_name}</h1>
+              <p className="text-gray-600 dark:text-gray-400">@{profile.username}</p>
+            </div>
+
+            {/* Botones */}
+            <div className="flex space-x-2">
+              {isOwnProfile ? (
+                <button
+                  onClick={() => setShowEditModal(true)}
+                  className="btn btn-secondary flex items-center space-x-2"
+                >
+                  <Settings className="h-4 w-4" />
+                  <span className="hidden sm:inline">{t('profile.editProfile')}</span>
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={handleOpenChat}
+                    className="btn btn-secondary flex items-center space-x-2"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    <span className="hidden sm:inline">{t('profile.message')}</span>
+                  </button>
+                  <button
+                    onClick={handleFollowToggle}
+                    disabled={toggleFollow.isPending}
+                    className={`btn ${
+                      isFollowing ? 'btn-secondary' : 'btn-primary'
+                    } min-w-[100px]`}
+                  >
+                    {toggleFollow.isPending ? (
+                      <LoadingSpinner size="sm" />
+                    ) : isFollowing ? (
+                      t('profile.following')
+                    ) : (
+                      t('profile.follow')
+                    )}
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
@@ -297,14 +314,20 @@ function Profile() {
                 <span className="font-bold text-gray-900 dark:text-white">{stats?.movies_count || 0}</span>{' '}
                 <span className="text-gray-600 dark:text-gray-400">{t('profile.stats.movies')}</span>
               </div>
-              <div>
+              <button
+                onClick={() => setShowFollowersModal('followers')}
+                className="hover:underline focus:outline-none"
+              >
                 <span className="font-bold text-gray-900 dark:text-white">{stats?.followers_count || 0}</span>{' '}
                 <span className="text-gray-600 dark:text-gray-400">{t('profile.stats.followers')}</span>
-              </div>
-              <div>
+              </button>
+              <button
+                onClick={() => setShowFollowersModal('following')}
+                className="hover:underline focus:outline-none"
+              >
                 <span className="font-bold text-gray-900 dark:text-white">{stats?.following_count || 0}</span>{' '}
                 <span className="text-gray-600 dark:text-gray-400">{t('profile.stats.following')}</span>
-              </div>
+              </button>
             </div>
           </div>
 
@@ -350,21 +373,39 @@ function Profile() {
       <div className="px-4 sm:px-6 lg:px-8 py-6">
         {activeTab === 'posts' && (
           <div className="space-y-6">
-            {postsLoading ? (
+            {(postsLoading || sharedByLoading || sharedToLoading) ? (
               <div className="flex justify-center py-8">
                 <LoadingSpinner />
               </div>
-            ) : posts && posts.length > 0 ? (
-              posts.map((post) => <Post key={post.id} post={post} />)
-            ) : (
-              <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                <p className="text-gray-600 dark:text-gray-400">
-                  {isOwnProfile
-                    ? t('profile.noPosts')
-                    : t('profile.noPostsOther')}
-                </p>
-              </div>
-            )}
+            ) : (() => {
+              // Combinar posts propios con posts compartidos (por el usuario y hacia el usuario)
+              const ownPosts = (posts || []).map(p => ({ ...p, type: 'post', sortDate: new Date(p.created_at) }))
+              const sharedBy = (sharedByUser || []).map(s => ({ ...s, type: 'shared', sortDate: new Date(s.created_at) }))
+              const sharedTo = (sharedToUser || []).map(s => ({ ...s, type: 'shared', sortDate: new Date(s.created_at) }))
+
+              // Combinar y ordenar por fecha
+              const allContent = [...ownPosts, ...sharedBy, ...sharedTo]
+                .sort((a, b) => b.sortDate - a.sortDate)
+
+              if (allContent.length === 0) {
+                return (
+                  <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <p className="text-gray-600 dark:text-gray-400">
+                      {isOwnProfile
+                        ? t('profile.noPosts')
+                        : t('profile.noPostsOther')}
+                    </p>
+                  </div>
+                )
+              }
+
+              return allContent.map((item) => {
+                if (item.type === 'shared') {
+                  return <SharedPost key={`shared-${item.id}`} sharedPost={item} />
+                }
+                return <Post key={`post-${item.id}`} post={item} />
+              })
+            })()}
           </div>
         )}
 
@@ -411,6 +452,15 @@ function Profile() {
         <EditProfileModal
           profile={profile}
           onClose={() => setShowEditModal(false)}
+        />
+      )}
+
+      {/* Followers/Following Modal */}
+      {showFollowersModal && (
+        <FollowersModal
+          userId={profile?.id}
+          initialTab={showFollowersModal}
+          onClose={() => setShowFollowersModal(null)}
         />
       )}
     </div>

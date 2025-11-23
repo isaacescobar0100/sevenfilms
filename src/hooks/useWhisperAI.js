@@ -27,8 +27,6 @@ export function useWhisperAI() {
       setLoadingModel(true)
       setError(null)
 
-      console.log('Cargando modelo Whisper...')
-
       // Usar modelo tiny (más rápido, menos preciso)
       // Otras opciones: 'Xenova/whisper-base', 'Xenova/whisper-small'
       pipelineRef.current = await pipeline(
@@ -42,7 +40,6 @@ export function useWhisperAI() {
 
       setModelLoaded(true)
       setLoadingModel(false)
-      console.log('Modelo Whisper cargado exitosamente')
 
       return pipelineRef.current
     } catch (err) {
@@ -78,13 +75,10 @@ export function useWhisperAI() {
       const transcriber = await loadModel()
 
       // Extraer audio del video
-      console.log('Extrayendo audio del video...')
       const audioBlob = await extractAudioFromVideo(videoFile)
 
       // Convertir blob a formato compatible
       const audioUrl = URL.createObjectURL(audioBlob)
-
-      console.log('Transcribiendo audio con Whisper...')
 
       // Transcribir el audio
       const result = await transcriber(audioUrl, {
@@ -96,7 +90,6 @@ export function useWhisperAI() {
           if (data.status === 'progress') {
             const progressPercent = Math.round((data.progress || 0) * 100)
             setProgress(progressPercent)
-            console.log(`Progreso: ${progressPercent}%`)
           }
 
           if (onChunkProgress) {
@@ -104,8 +97,6 @@ export function useWhisperAI() {
           }
         },
       })
-
-      console.log('Transcripción completada:', result)
 
       // Limpiar URL temporal
       URL.revokeObjectURL(audioUrl)

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Image, Video, X, Loader } from 'lucide-react'
 import { useCreatePost, uploadMedia } from '../../hooks/usePosts'
 import { useAuthStore } from '../../store/authStore'
+import { useProfile } from '../../hooks/useProfiles'
 import ErrorMessage from '../common/ErrorMessage'
 import { useRateLimit } from '../../hooks/useRateLimit'
 import RateLimitMessage from '../common/RateLimitMessage'
@@ -10,6 +11,7 @@ import RateLimitMessage from '../common/RateLimitMessage'
 function CreatePost({ onSuccess }) {
   const { t } = useTranslation()
   const { user } = useAuthStore()
+  const { data: profile } = useProfile(user?.id)
   const [content, setContent] = useState('')
   const [mediaFile, setMediaFile] = useState(null)
   const [mediaPreview, setMediaPreview] = useState(null)
@@ -110,15 +112,15 @@ function CreatePost({ onSuccess }) {
         <div className="flex space-x-3">
           {/* Avatar */}
           <div className="flex-shrink-0">
-            {user?.user_metadata?.avatar_url ? (
+            {profile?.avatar_url ? (
               <img
-                src={user.user_metadata.avatar_url}
+                src={profile.avatar_url}
                 alt="Avatar"
-                className="h-10 w-10 rounded-full"
+                className="h-10 w-10 rounded-full object-cover"
               />
             ) : (
               <div className="h-10 w-10 rounded-full bg-primary-600 flex items-center justify-center text-white font-semibold">
-                {user?.user_metadata?.name?.[0] || user?.email?.[0] || 'U'}
+                {profile?.username?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
               </div>
             )}
           </div>

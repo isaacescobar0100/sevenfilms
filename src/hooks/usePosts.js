@@ -52,8 +52,6 @@ export function useFeed(filter = 'all') {
             supabase.from('comments').select('id', { count: 'exact', head: true }).eq('post_id', post.id),
           ])
 
-          console.log('Post:', post.id, 'User ID:', post.user_id, 'Profile:', profileResult.data)
-
           return {
             ...post,
             username: profileResult.data?.username || 'Usuario',
@@ -303,7 +301,6 @@ export async function uploadMedia(file, type = 'image') {
     try {
       const result = await optimizePostImage(file)
       optimizedFile = result.file
-      console.log(`[PostImage] Optimizado: ${result.savings.toFixed(1)}% de ahorro`)
     } catch (err) {
       console.warn('[PostImage] No se pudo optimizar, usando original:', err)
     }

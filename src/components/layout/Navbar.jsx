@@ -1,8 +1,9 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Home, Search, Film, User, LogOut, Bell, Mail, Clapperboard, Globe, Moon, Sun } from 'lucide-react'
+import { Home, Search, Film, User, LogOut, Bell, Mail, Clapperboard, Globe, Moon, Sun, Bookmark, Settings, Plus, PenSquare, Video, X, Clock } from 'lucide-react'
 import { useState } from 'react'
 import { useAuthStore } from '../../store/authStore'
+import { useProfile } from '../../hooks/useProfiles'
 import { useUnreadMessagesCount } from '../../hooks/useMessages'
 import { useUnreadNotificationsCount } from '../../hooks/useNotifications'
 import { useThemeStore } from '../../store/themeStore'
@@ -11,10 +12,12 @@ import NotificationsPanel from '../notifications/NotificationsPanel'
 function Navbar() {
   const { t, i18n } = useTranslation()
   const { user, signOut } = useAuthStore()
+  const { data: profile } = useProfile(user?.id)
   const navigate = useNavigate()
   const location = useLocation()
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
+  const [showCreateMenu, setShowCreateMenu] = useState(false)
 
   // Obtener contadores reales
   const { data: unreadMessages = 0 } = useUnreadMessagesCount()
@@ -43,9 +46,9 @@ function Navbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <Link to="/" className="flex items-center space-x-2" aria-label="CineAmateur - Ir al inicio">
+              <Link to="/" className="flex items-center space-x-2" aria-label="Seven - Ir al inicio">
                 <Clapperboard className="h-8 w-8 text-primary-600" aria-hidden="true" />
-                <span className="text-xl font-bold text-gray-900 dark:text-white">CineAmateur</span>
+                <span className="text-xl font-bold text-gray-900 dark:text-white">Seven</span>
               </Link>
             </div>
             <div className="flex items-center space-x-4">
@@ -84,9 +87,9 @@ function Navbar() {
         <div className="flex justify-between h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <Link to="/feed" className="flex items-center space-x-2" aria-label="CineAmateur - Ir al feed">
+            <Link to="/feed" className="flex items-center space-x-2" aria-label="Seven - Ir al feed">
               <Clapperboard className="h-8 w-8 text-primary-600" aria-hidden="true" />
-              <span className="text-xl font-bold text-gray-900 dark:text-white hidden sm:block">CineAmateur</span>
+              <span className="text-xl font-bold text-gray-900 dark:text-white">Seven</span>
             </Link>
           </div>
 
@@ -178,15 +181,15 @@ function Navbar() {
                 aria-expanded={showUserMenu}
                 aria-haspopup="menu"
               >
-                {user?.user_metadata?.avatar_url ? (
+                {profile?.avatar_url ? (
                   <img
-                    src={user.user_metadata.avatar_url}
+                    src={profile.avatar_url}
                     alt="Avatar"
-                    className="h-8 w-8 rounded-full border-2 border-gray-200 hover:border-primary-600"
+                    className="h-8 w-8 rounded-full object-cover border-2 border-gray-200 hover:border-primary-600"
                   />
                 ) : (
                   <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center text-white font-semibold border-2 border-gray-200 hover:border-primary-600">
-                    {user?.user_metadata?.name?.[0] || user?.email?.[0] || 'U'}
+                    {profile?.username?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
                   </div>
                 )}
               </button>
@@ -201,10 +204,10 @@ function Navbar() {
                   <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 z-20 border border-gray-200 dark:border-gray-700">
                     <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
                       <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                        {user?.user_metadata?.name || 'Usuario'}
+                        {profile?.full_name || profile?.username || 'Usuario'}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                        @{user?.user_metadata?.username || user?.email?.split('@')[0]}
+                        @{profile?.username || user?.email?.split('@')[0]}
                       </p>
                     </div>
                     <Link
@@ -214,6 +217,22 @@ function Navbar() {
                     >
                       <User className="h-4 w-4 mr-3" />
                       {t('nav.profile')}
+                    </Link>
+                    <Link
+                      to="/saved"
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      <Bookmark className="h-4 w-4 mr-3" />
+                      {t('nav.saved', 'Guardados')}
+                    </Link>
+                    <Link
+                      to="/settings"
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      <Settings className="h-4 w-4 mr-3" />
+                      {t('nav.settings', 'Configuración')}
                     </Link>
                     <button
                       onClick={toggleLanguage}
@@ -249,45 +268,38 @@ function Navbar() {
 
           {/* Mobile Navigation */}
           <div className="flex md:hidden items-center space-x-4">
-            <div className="relative">
-              <button
-                onClick={() => setShowNotifications(!showNotifications)}
-                className="flex items-center text-gray-600 hover:text-primary-600"
-              >
-                <div className="relative">
-                  <Bell className="h-6 w-6" />
-                  {unreadNotifications > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                      {unreadNotifications > 9 ? '9+' : unreadNotifications}
-                    </span>
-                  )}
-                </div>
-              </button>
-
-              {showNotifications && (
-                <>
-                  <div
-                    className="fixed inset-0 z-10"
-                    onClick={() => setShowNotifications(false)}
-                  ></div>
-                  <NotificationsPanel onClose={() => setShowNotifications(false)} />
-                </>
-              )}
-            </div>
+            {/* En móvil, navegar a página completa de notificaciones */}
+            <Link
+              to="/notifications"
+              className={`flex items-center ${
+                isActive('/notifications')
+                  ? 'text-primary-600'
+                  : 'text-gray-600 hover:text-primary-600'
+              }`}
+            >
+              <div className="relative">
+                <Bell className="h-6 w-6" />
+                {unreadNotifications > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                  </span>
+                )}
+              </div>
+            </Link>
             <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="flex items-center"
               >
-                {user?.user_metadata?.avatar_url ? (
+                {profile?.avatar_url ? (
                   <img
-                    src={user.user_metadata.avatar_url}
+                    src={profile.avatar_url}
                     alt="Avatar"
-                    className="h-8 w-8 rounded-full"
+                    className="h-8 w-8 rounded-full object-cover"
                   />
                 ) : (
                   <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center text-white font-semibold">
-                    {user?.user_metadata?.name?.[0] || 'U'}
+                    {profile?.username?.[0]?.toUpperCase() || 'U'}
                   </div>
                 )}
               </button>
@@ -302,10 +314,10 @@ function Navbar() {
                   <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 z-20 border border-gray-200 dark:border-gray-700">
                     <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
                       <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                        {user?.user_metadata?.name || 'Usuario'}
+                        {profile?.full_name || profile?.username || 'Usuario'}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                        @{user?.user_metadata?.username || user?.email?.split('@')[0]}
+                        @{profile?.username || user?.email?.split('@')[0]}
                       </p>
                     </div>
                     <Link
@@ -315,6 +327,22 @@ function Navbar() {
                     >
                       <User className="h-4 w-4 mr-3" />
                       {t('nav.profile')}
+                    </Link>
+                    <Link
+                      to="/saved"
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      <Bookmark className="h-4 w-4 mr-3" />
+                      {t('nav.saved', 'Guardados')}
+                    </Link>
+                    <Link
+                      to="/settings"
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      <Settings className="h-4 w-4 mr-3" />
+                      {t('nav.settings', 'Configuración')}
                     </Link>
                     <button
                       onClick={toggleLanguage}
@@ -350,23 +378,119 @@ function Navbar() {
         </div>
       </div>
 
+      {/* Create Menu Modal (Mobile) */}
+      {showCreateMenu && (
+        <div className="md:hidden fixed inset-0 z-[60]">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setShowCreateMenu(false)}
+          />
+          {/* Menu */}
+          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 min-w-[200px]">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="font-semibold text-gray-900 dark:text-white">
+                {t('nav.create', 'Crear')}
+              </h3>
+              <button
+                onClick={() => setShowCreateMenu(false)}
+                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="space-y-2">
+              <Link
+                to="/feed"
+                state={{ openCreatePost: true }}
+                onClick={() => setShowCreateMenu(false)}
+                className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-full">
+                  <PenSquare className="h-5 w-5 text-primary-600" />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    {t('nav.createPost', 'Crear Post')}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {t('nav.createPostDesc', 'Comparte texto o imagen')}
+                  </p>
+                </div>
+              </Link>
+              <Link
+                to="/stories/create"
+                onClick={() => setShowCreateMenu(false)}
+                className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full">
+                  <Clock className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    {t('nav.createStory', 'Subir Historia')}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {t('nav.createStoryDesc', 'Desaparece en 24 horas')}
+                  </p>
+                </div>
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Mobile Bottom Navigation */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-50">
         <div className="flex justify-around items-center h-16">
-          {navItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`flex flex-col items-center justify-center flex-1 h-full ${
-                isActive(item.path)
-                  ? 'text-primary-600'
-                  : 'text-gray-600 dark:text-gray-400'
-              }`}
-            >
-              <item.icon className="h-6 w-6" />
-              <span className="text-xs mt-1">{item.label}</span>
-            </Link>
-          ))}
+          {/* Home */}
+          <Link
+            to="/feed"
+            className={`flex flex-col items-center justify-center flex-1 h-full ${
+              isActive('/feed')
+                ? 'text-primary-600'
+                : 'text-gray-600 dark:text-gray-400'
+            }`}
+          >
+            <Home className="h-6 w-6" />
+            <span className="text-xs mt-1">{t('nav.home', 'Inicio')}</span>
+          </Link>
+
+          {/* Search */}
+          <Link
+            to="/search"
+            className={`flex flex-col items-center justify-center flex-1 h-full ${
+              isActive('/search')
+                ? 'text-primary-600'
+                : 'text-gray-600 dark:text-gray-400'
+            }`}
+          >
+            <Search className="h-6 w-6" />
+            <span className="text-xs mt-1">{t('nav.search', 'Buscar')}</span>
+          </Link>
+
+          {/* Create Button (Center) */}
+          <button
+            onClick={() => setShowCreateMenu(true)}
+            className="flex flex-col items-center justify-center flex-1 h-full"
+          >
+            <div className="bg-primary-600 rounded-full p-3 -mt-4 shadow-lg">
+              <Plus className="h-6 w-6 text-white" />
+            </div>
+          </button>
+
+          {/* Movies */}
+          <Link
+            to="/movies"
+            className={`flex flex-col items-center justify-center flex-1 h-full ${
+              isActive('/movies')
+                ? 'text-primary-600'
+                : 'text-gray-600 dark:text-gray-400'
+            }`}
+          >
+            <Film className="h-6 w-6" />
+            <span className="text-xs mt-1">{t('nav.movies', 'Películas')}</span>
+          </Link>
 
           {/* Messages Icon */}
           <Link

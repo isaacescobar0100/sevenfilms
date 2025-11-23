@@ -7,8 +7,9 @@ import { getTranslatedGenre } from '../utils/genreMapper'
 import LoadingSpinner from '../components/common/LoadingSpinner'
 import UploadMovieModal from '../components/movies/UploadMovieModal'
 import MoviePlayerModal from '../components/movies/MoviePlayerModal'
-import MovieRatingStars from '../components/movies/MovieRatingStars'
+import { MovieReactionDisplay } from '../components/movies/MovieReactionPicker'
 import { VirtualizedGrid } from '../components/common/VirtualizedList'
+import SEO from '../components/common/SEO'
 
 function Movies() {
   const { t } = useTranslation()
@@ -74,6 +75,11 @@ function Movies() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <SEO
+        title="Cortometrajes"
+        description="Descubre cortometrajes de cineastas independientes. Drama, comedia, documentales y mas. Sube tu propio trabajo y comparte tu vision."
+      />
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -302,11 +308,10 @@ function MovieCard({ movie, onClick }) {
         {/* Rating */}
         {movie.ratings_count > 0 && (
           <div className="mb-2">
-            <MovieRatingStars
-              rating={movie.average_rating || 0}
-              size="sm"
-              showCount={true}
+            <MovieReactionDisplay
+              averageRating={movie.average_rating || 0}
               count={movie.ratings_count}
+              size="sm"
             />
           </div>
         )}
@@ -377,12 +382,10 @@ function FeaturedMovieCard({ movie, onClick }) {
         {/* Rating */}
         {movie.ratings_count > 0 && (
           <div className="mb-2">
-            <div className="flex items-center gap-1">
-              <MovieRatingStars rating={movie.average_rating || 0} size="sm" />
-              <span className="text-xs text-gray-600 dark:text-gray-400">
-                {movie.average_rating?.toFixed(1) || '0.0'}
-              </span>
-            </div>
+            <MovieReactionDisplay
+              averageRating={movie.average_rating || 0}
+              size="sm"
+            />
           </div>
         )}
 

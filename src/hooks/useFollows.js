@@ -117,22 +117,30 @@ export function useFollowers(userId) {
   return useQuery({
     queryKey: ['followers', userId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Primero obtener los IDs de seguidores
+      const { data: followsData, error: followsError } = await supabase
         .from('follows')
-        .select(`
-          created_at,
-          follower:profiles!follows_follower_id_fkey (
-            id,
-            username,
-            full_name,
-            avatar_url
-          )
-        `)
+        .select('follower_id, created_at')
         .eq('following_id', userId)
         .order('created_at', { ascending: false })
 
-      if (error) throw error
-      return data
+      if (followsError) throw followsError
+      if (!followsData || followsData.length === 0) return []
+
+      // Luego obtener los perfiles de esos usuarios
+      const followerIds = followsData.map(f => f.follower_id)
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url')
+        .in('id', followerIds)
+
+      if (profilesError) throw profilesError
+
+      // Combinar los datos
+      return followsData.map(follow => ({
+        created_at: follow.created_at,
+        follower: profiles.find(p => p.id === follow.follower_id) || null
+      })).filter(f => f.follower)
     },
     enabled: !!userId,
     ...CACHE_TIMES.SOCIAL,
@@ -142,24 +150,32 @@ export function useFollowers(userId) {
 // Obtener usuarios seguidos
 export function useFollowing(userId) {
   return useQuery({
-    queryKey: ['following', userId],
+    queryKey: ['following-list', userId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Primero obtener los IDs de usuarios seguidos
+      const { data: followsData, error: followsError } = await supabase
         .from('follows')
-        .select(`
-          created_at,
-          following:profiles!follows_following_id_fkey (
-            id,
-            username,
-            full_name,
-            avatar_url
-          )
-        `)
+        .select('following_id, created_at')
         .eq('follower_id', userId)
         .order('created_at', { ascending: false })
 
-      if (error) throw error
-      return data
+      if (followsError) throw followsError
+      if (!followsData || followsData.length === 0) return []
+
+      // Luego obtener los perfiles de esos usuarios
+      const followingIds = followsData.map(f => f.following_id)
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url')
+        .in('id', followingIds)
+
+      if (profilesError) throw profilesError
+
+      // Combinar los datos
+      return followsData.map(follow => ({
+        created_at: follow.created_at,
+        following: profiles.find(p => p.id === follow.following_id) || null
+      })).filter(f => f.following)
     },
     enabled: !!userId,
     ...CACHE_TIMES.SOCIAL,

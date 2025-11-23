@@ -17,14 +17,20 @@
     "followers": "Seguidores",
     "following": "Siguiendo",
     "searchPlaceholder": "Buscar usuarios o publicaciones...",
-    "allRightsReserved": "Todos los derechos reservados."
+    "allRightsReserved": "Todos los derechos reservados.",
+    "viewAll": "Ver todas"
   },
   "nav": {
     "home": "Inicio",
+    "feed": "Inicio",
+    "explore": "Explorar",
     "search": "Buscar",
     "messages": "Mensajes",
     "movies": "Películas",
     "profile": "Perfil",
+    "saved": "Guardados",
+    "settings": "Configuración",
+    "quickLinks": "Accesos rápidos",
     "login": "Iniciar Sesión",
     "register": "Registrarse",
     "logout": "Cerrar Sesión",
@@ -295,6 +301,34 @@
     "shareFacebook": "Facebook",
     "shareTwitter": "X (Twitter)",
     "copyLink": "Copiar enlace",
-    "copied": "¡Copiado!"
+    "copied": "¡Copiado!",
+    "likes": "Me gusta",
+    "noLikes": "Aún no hay likes"
+  },
+  "saved": {
+    "title": "Guardados",
+    "subtitle": "Posts que has guardado para ver después",
+    "empty": "No tienes posts guardados",
+    "emptyDescription": "Guarda posts para verlos más tarde haciendo clic en el icono de marcador",
+    "tip": "Consejo",
+    "tipDescription": "Puedes guardar posts haciendo clic en el icono de marcador en cualquier publicación."
+  },
+  "settings": {
+    "title": "Configuración",
+    "subtitle": "Administra tu cuenta y preferencias",
+    "account": "Cuenta",
+    "notifications": "Notificaciones",
+    "notificationsDesc": "Configura cómo quieres recibir notificaciones",
+    "privacy": "Privacidad",
+    "privacyDesc": "Controla quién puede ver tu información",
+    "appearance": "Apariencia",
+    "appearanceDesc": "Personaliza cómo se ve la aplicación",
+    "language": "Idioma",
+    "languageDesc": "Selecciona el idioma de la aplicación",
+    "editProfile": "Editar perfil",
+    "editProfileDesc": "Cambia tu foto, nombre y biografía",
+    "toggleTheme": "Cambiar tema",
+    "logoutTitle": "Cerrar sesión",
+    "logoutMessage": "¿Estás seguro de que quieres cerrar sesión?"
   }
 }

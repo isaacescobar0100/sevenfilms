@@ -4,7 +4,7 @@ import { useAuthStore } from '../../store/authStore'
 import { useRateLimit } from '../../hooks/useRateLimit'
 import { useTranslation } from 'react-i18next'
 
-function UserCard({ user, showFollowButton = false, compact = false }) {
+function UserCard({ user, showFollowButton = false, compact = false, onProfileClick }) {
   const { t } = useTranslation()
   const { user: currentUser } = useAuthStore()
   const { data: isFollowing } = useIsFollowing(user.id)
@@ -24,11 +24,17 @@ function UserCard({ user, showFollowButton = false, compact = false }) {
     performAction()
   }
 
+  const handleClick = () => {
+    if (onProfileClick) {
+      onProfileClick(user)
+    }
+  }
+
   // Versión compacta para carrusel horizontal (móvil)
   if (compact) {
     return (
       <div className="flex-shrink-0 w-28">
-        <Link to={`/profile/${user.username}`} className="block text-center">
+        <Link to={`/profile/${user.username}`} className="block text-center" onClick={handleClick}>
           {user.avatar_url ? (
             <img
               src={user.avatar_url}
@@ -63,7 +69,7 @@ function UserCard({ user, showFollowButton = false, compact = false }) {
   // Versión normal (lista vertical)
   return (
     <div className="flex items-center justify-between">
-      <Link to={`/profile/${user.username}`} className="flex items-center space-x-3 flex-1">
+      <Link to={`/profile/${user.username}`} className="flex items-center space-x-3 flex-1" onClick={handleClick}>
         {user.avatar_url ? (
           <img
             src={user.avatar_url}

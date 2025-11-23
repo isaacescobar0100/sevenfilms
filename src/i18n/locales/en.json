@@ -17,14 +17,20 @@
     "followers": "Followers",
     "following": "Following",
     "searchPlaceholder": "Search users or posts...",
-    "allRightsReserved": "All rights reserved."
+    "allRightsReserved": "All rights reserved.",
+    "viewAll": "View all"
   },
   "nav": {
     "home": "Home",
+    "feed": "Home",
+    "explore": "Explore",
     "search": "Search",
     "messages": "Messages",
     "movies": "Movies",
     "profile": "Profile",
+    "saved": "Saved",
+    "settings": "Settings",
+    "quickLinks": "Quick Links",
     "login": "Login",
     "register": "Register",
     "logout": "Logout",
@@ -295,6 +301,34 @@
     "shareFacebook": "Facebook",
     "shareTwitter": "X (Twitter)",
     "copyLink": "Copy link",
-    "copied": "Copied!"
+    "copied": "Copied!",
+    "likes": "Likes",
+    "noLikes": "No likes yet"
+  },
+  "saved": {
+    "title": "Saved",
+    "subtitle": "Posts you've saved to view later",
+    "empty": "You have no saved posts",
+    "emptyDescription": "Save posts to view them later by clicking the bookmark icon",
+    "tip": "Tip",
+    "tipDescription": "You can save posts by clicking the bookmark icon on any post."
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Manage your account and preferences",
+    "account": "Account",
+    "notifications": "Notifications",
+    "notificationsDesc": "Configure how you want to receive notifications",
+    "privacy": "Privacy",
+    "privacyDesc": "Control who can see your information",
+    "appearance": "Appearance",
+    "appearanceDesc": "Customize how the app looks",
+    "language": "Language",
+    "languageDesc": "Select the app language",
+    "editProfile": "Edit profile",
+    "editProfileDesc": "Change your photo, name and bio",
+    "toggleTheme": "Toggle theme",
+    "logoutTitle": "Log out",
+    "logoutMessage": "Are you sure you want to log out?"
   }
 }
