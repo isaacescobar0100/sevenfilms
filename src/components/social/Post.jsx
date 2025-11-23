@@ -374,7 +374,7 @@ function Post({ post, isSharedView = false }) {
 
       {/* Actions */}
       <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700">
-        <div className="flex items-center justify-between text-gray-600 dark:text-gray-400">
+        <div className="flex items-center justify-between text-gray-600 dark:text-gray-400 gap-2 overflow-visible">
           {/* Reaction Picker */}
           <ReactionPicker
             currentReaction={currentReaction}

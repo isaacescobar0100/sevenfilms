@@ -383,9 +383,9 @@ function ReactionPicker({
         </div>
       )}
 
-      {/* Mini badges de reacciones populares - mostrados después del contador */}
+      {/* Mini badges de reacciones populares - ocultos en móvil para evitar overflow */}
       {totalReactions > 0 && !showPicker && (
-        <div className="absolute -top-1 left-full ml-1 flex -space-x-1.5">
+        <div className="hidden sm:flex absolute -top-1 left-full ml-1 -space-x-1.5">
           {Object.entries(reactionCounts)
             .sort((a, b) => b[1] - a[1])
             .slice(0, 3)
