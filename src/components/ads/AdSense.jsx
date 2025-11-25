@@ -11,7 +11,7 @@ import { useEffect } from 'react'
  *    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXX"
  *            crossorigin="anonymous"></script>
  *
- * 3. Usa este componente en cualquier página:
+ * 3. Usa este componente en cualquier pï¿½gina:
  *    <AdSense slot="1234567890" format="auto" />
  *
  * Props:
@@ -28,13 +28,9 @@ export default function AdSense({
   style = {},
   className = '',
 }) {
-  useEffect(() => {
-    // Solo cargar anuncios si tenemos el client ID configurado
-    if (!import.meta.env.VITE_ADSENSE_CLIENT_ID) {
-      console.warn('AdSense client ID no configurado. Agrega VITE_ADSENSE_CLIENT_ID en las variables de entorno.')
-      return
-    }
+  const clientId = import.meta.env.VITE_ADSENSE_CLIENT_ID || 'ca-pub-2847173521235624'
 
+  useEffect(() => {
     try {
       // Cargar el anuncio
       if (window.adsbygoogle && slot) {
@@ -45,8 +41,8 @@ export default function AdSense({
     }
   }, [slot])
 
-  // No mostrar nada si no hay client ID configurado
-  if (!import.meta.env.VITE_ADSENSE_CLIENT_ID || !slot) {
+  // No mostrar nada si no hay slot
+  if (!slot) {
     return null
   }
 
@@ -58,7 +54,7 @@ export default function AdSense({
           display: 'block',
           ...style,
         }}
-        data-ad-client={import.meta.env.VITE_ADSENSE_CLIENT_ID}
+        data-ad-client={clientId}
         data-ad-slot={slot}
         data-ad-format={format}
         data-full-width-responsive={responsive ? 'true' : 'false'}
@@ -92,7 +88,7 @@ export default function AdSense({
  *   style={{ minHeight: '250px' }}
  * />
  *
- * 4. Rectángulo responsive:
+ * 4. Rectï¿½ngulo responsive:
  * <AdSense
  *   slot="2222222222"
  *   format="rectangle"
@@ -109,7 +105,7 @@ export default function AdSense({
  *    - Banner horizontal arriba del feed de posts
  *    - <AdSense slot="..." format="horizontal" />
  *
- * 3. Detalle de película (src/pages/MovieDetail.jsx):
+ * 3. Detalle de pelï¿½cula (src/pages/MovieDetail.jsx):
  *    - Sidebar derecho con anuncio vertical
  *    - <AdSense slot="..." format="vertical" />
  *
@@ -119,6 +115,6 @@ export default function AdSense({
  *
  * NO PONER ANUNCIOS EN:
  * - Login/Registro (mala experiencia de usuario)
- * - Configuración (puede molestar)
+ * - Configuraciï¿½n (puede molestar)
  * - Primera visita (espera que el usuario explore primero)
  */
