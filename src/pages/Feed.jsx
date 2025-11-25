@@ -13,7 +13,7 @@ import LeftSidebar from '../components/layout/LeftSidebar'
 import StoriesBar from '../components/stories/StoriesBar'
 import SEO from '../components/common/SEO'
 import AdSense from '../components/ads/AdSense'
-import { VirtualizedList, useFlattenedItems } from '../components/common/VirtualizedList'
+import { useFlattenedItems } from '../components/common/VirtualizedList'
 
 function Feed() {
   const { t } = useTranslation()
@@ -129,16 +129,13 @@ function Feed() {
                   </p>
                 </div>
               ) : (
-                <VirtualizedList
-                  items={posts}
-                  renderItem={(post, index) => (
-                    <>
-                      <div className="mb-6">
-                        <Post key={post.id} post={post} />
-                      </div>
+                <div className="space-y-6">
+                  {posts.map((post, index) => (
+                    <div key={post.id}>
+                      <Post post={post} />
                       {/* Mostrar anuncio cada 5 posts */}
-                      {(index + 1) % 5 === 0 && (
-                        <div className="mb-6">
+                      {(index + 1) % 5 === 0 && index < posts.length - 1 && (
+                        <div className="mt-6">
                           <AdSense
                             slot="9983534909"
                             format="auto"
@@ -148,16 +145,31 @@ function Feed() {
                           />
                         </div>
                       )}
-                    </>
+                    </div>
+                  ))}
+
+                  {/* Infinite scroll trigger */}
+                  {hasNextPage && (
+                    <div className="flex justify-center py-8">
+                      {isFetchingNextPage ? (
+                        <LoadingSpinner />
+                      ) : (
+                        <button
+                          onClick={() => fetchNextPage()}
+                          className="text-primary-600 hover:text-primary-700 font-medium"
+                        >
+                          {t('common.loadMore') || 'Cargar más'}
+                        </button>
+                      )}
+                    </div>
                   )}
-                  getItemKey={(post) => post.id}
-                  estimatedItemSize={500}
-                  hasNextPage={hasNextPage}
-                  isFetchingNextPage={isFetchingNextPage}
-                  fetchNextPage={fetchNextPage}
-                  className="h-[calc(100vh-25rem)]"
-                  loadingText={t('feed.noMorePosts')}
-                />
+
+                  {!hasNextPage && posts.length > 0 && (
+                    <p className="text-center text-gray-500 dark:text-gray-400 py-8">
+                      {t('feed.noMorePosts') || 'No hay más publicaciones'}
+                    </p>
+                  )}
+                </div>
               )}
             </>
           )}
