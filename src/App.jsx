@@ -20,11 +20,10 @@ const Movies = lazy(() => import('./pages/Movies'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 const Saved = lazy(() => import('./pages/Saved'))
 const Settings = lazy(() => import('./pages/Settings'))
-const PrivacyPolicy = lazy(() => import('./pages/legal/PrivacyPolicy'))
-const TermsOfService = lazy(() => import('./pages/legal/TermsOfService'))
-const AboutUs = lazy(() => import('./pages/legal/AboutUs'))
+const Privacy = lazy(() => import('./pages/legal/Privacy'))
+const Terms = lazy(() => import('./pages/legal/Terms'))
+const About = lazy(() => import('./pages/legal/About'))
 const Contact = lazy(() => import('./pages/legal/Contact'))
-const MissionVision = lazy(() => import('./pages/legal/MissionVision'))
 const CreateStory = lazy(() => import('./pages/CreateStory'))
 const Notifications = lazy(() => import('./pages/Notifications'))
 
@@ -63,11 +62,10 @@ function App() {
           />
 
           {/* Legal pages - Public */}
-          <Route path="privacy" element={<PrivacyPolicy />} />
-          <Route path="terms" element={<TermsOfService />} />
-          <Route path="about" element={<AboutUs />} />
+          <Route path="privacy" element={<Privacy />} />
+          <Route path="terms" element={<Terms />} />
+          <Route path="about" element={<About />} />
           <Route path="contact" element={<Contact />} />
-          <Route path="mission" element={<MissionVision />} />
 
           {/* Protected routes - Red Social */}
           <Route element={<ProtectedRoute />}>
