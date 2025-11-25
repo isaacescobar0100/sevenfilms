@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback, memo } from 'react'
 import { Link } from 'react-router-dom'
 import { MessageCircle, MoreVertical, Trash2, Link as LinkIcon, Check, Edit, Send, Bookmark, Users, Clapperboard } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -17,7 +17,7 @@ import SharePostModal from './SharePostModal'
 import PostVideoPlayer from '../common/PostVideoPlayer'
 import ReactionPicker from '../common/ReactionPicker'
 
-function Post({ post, isSharedView = false }) {
+const Post = memo(function Post({ post, isSharedView = false }) {
   const { t } = useTranslation()
   const { user } = useAuthStore()
   const [showDetailPanel, setShowDetailPanel] = useState(false)
@@ -55,7 +55,7 @@ function Post({ post, isSharedView = false }) {
 
   const isOwnPost = user?.id === post.user_id
 
-  const handleReaction = (reactionType) => {
+  const handleReaction = useCallback((reactionType) => {
     if (reactionLoading) return
 
     // Verificar rate limit para reacciones
@@ -71,25 +71,25 @@ function Post({ post, isSharedView = false }) {
       postOwnerId: post.user_id
     })
     rateLimits.reactionActions?.performAction()
-  }
+  }, [reactionLoading, rateLimits.reactionActions, toggleReaction, post.id, currentReaction, post.user_id])
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     if (saveLoading || toggleSave.isPending) return
     toggleSave.mutate({ postId: post.id, isSaved })
-  }
+  }, [saveLoading, toggleSave, post.id, isSaved])
 
-  const handleCommentClick = () => {
+  const handleCommentClick = useCallback(() => {
     // Check if we're on desktop (md breakpoint = 768px)
     const isDesktop = window.innerWidth >= 768
     if (isDesktop) {
       setDetailPanelTab('comments')
       setShowDetailPanel(true)
     } else {
-      setShowMobileComments(!showMobileComments)
+      setShowMobileComments(prev => !prev)
     }
-  }
+  }, [showMobileComments])
 
-  const handleMediaClick = () => {
+  const handleMediaClick = useCallback(() => {
     // On desktop, open the detail panel; on mobile, open lightbox
     const isDesktop = window.innerWidth >= 768
     if (isDesktop) {
@@ -98,7 +98,7 @@ function Post({ post, isSharedView = false }) {
     } else {
       setShowLightbox(true)
     }
-  }
+  }, [])
 
   const handleComment = async (e) => {
     e.preventDefault()
@@ -670,6 +670,6 @@ function Post({ post, isSharedView = false }) {
       />
     </div>
   )
-}
+})
 
 export default Post

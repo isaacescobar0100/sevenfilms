@@ -4,6 +4,46 @@ import { useAuthStore } from '../store/authStore'
 import { optimizePostImage } from './useImageOptimization'
 import { CACHE_TIMES, INFINITE_QUERY_CONFIG } from '../lib/queryConfig'
 
+// Helper para enriquecer posts con datos de perfil, likes y comentarios en batch
+async function enrichPostsWithDetails(posts) {
+  if (!posts || posts.length === 0) return []
+
+  const postIds = posts.map(p => p.id)
+  const userIds = [...new Set(posts.map(p => p.user_id))]
+
+  const [profilesResult, likesResult, commentsResult] = await Promise.all([
+    supabase.from('profiles').select('id, username, full_name, avatar_url').in('id', userIds),
+    supabase.from('likes').select('post_id').in('post_id', postIds),
+    supabase.from('comments').select('post_id').in('post_id', postIds),
+  ])
+
+  // Crear mapas para búsqueda O(1)
+  const profilesMap = new Map(profilesResult.data?.map(p => [p.id, p]) || [])
+  const likesCountMap = new Map()
+  const commentsCountMap = new Map()
+
+  likesResult.data?.forEach(like => {
+    likesCountMap.set(like.post_id, (likesCountMap.get(like.post_id) || 0) + 1)
+  })
+
+  commentsResult.data?.forEach(comment => {
+    commentsCountMap.set(comment.post_id, (commentsCountMap.get(comment.post_id) || 0) + 1)
+  })
+
+  // Combinar datos
+  return posts.map(post => {
+    const profile = profilesMap.get(post.user_id)
+    return {
+      ...post,
+      username: profile?.username || 'Usuario',
+      full_name: profile?.full_name || 'Usuario Sin Nombre',
+      avatar_url: profile?.avatar_url || null,
+      likes_count: likesCountMap.get(post.id) || 0,
+      comments_count: commentsCountMap.get(post.id) || 0,
+    }
+  })
+}
+
 // Obtener feed de posts (todos los posts o solo de seguidos)
 export function useFeed(filter = 'all') {
   const { user } = useAuthStore()
@@ -43,25 +83,8 @@ export function useFeed(filter = 'all') {
 
       if (error) throw error
 
-      // Obtener datos de perfil, likes y comentarios para cada post
-      const postsWithDetails = await Promise.all(
-        posts.map(async (post) => {
-          const [profileResult, likesResult, commentsResult] = await Promise.all([
-            supabase.from('profiles').select('id, username, full_name, avatar_url').eq('id', post.user_id).maybeSingle(),
-            supabase.from('likes').select('id', { count: 'exact', head: true }).eq('post_id', post.id),
-            supabase.from('comments').select('id', { count: 'exact', head: true }).eq('post_id', post.id),
-          ])
-
-          return {
-            ...post,
-            username: profileResult.data?.username || 'Usuario',
-            full_name: profileResult.data?.full_name || 'Usuario Sin Nombre',
-            avatar_url: profileResult.data?.avatar_url || null,
-            likes_count: likesResult.count || 0,
-            comments_count: commentsResult.count || 0,
-          }
-        })
-      )
+      // Enriquecer posts con datos en batch (optimizado)
+      const postsWithDetails = await enrichPostsWithDetails(posts)
 
       return {
         data: postsWithDetails,
@@ -89,27 +112,8 @@ export function useUserPosts(userId) {
 
       if (error) throw error
 
-      // Obtener datos de perfil, likes y comentarios para cada post
-      const postsWithDetails = await Promise.all(
-        posts.map(async (post) => {
-          const [profileResult, likesResult, commentsResult] = await Promise.all([
-            supabase.from('profiles').select('id, username, full_name, avatar_url').eq('id', post.user_id).maybeSingle(),
-            supabase.from('likes').select('id', { count: 'exact', head: true }).eq('post_id', post.id),
-            supabase.from('comments').select('id', { count: 'exact', head: true }).eq('post_id', post.id),
-          ])
-
-          return {
-            ...post,
-            username: profileResult.data?.username || 'Usuario',
-            full_name: profileResult.data?.full_name || 'Usuario Sin Nombre',
-            avatar_url: profileResult.data?.avatar_url || null,
-            likes_count: likesResult.count || 0,
-            comments_count: commentsResult.count || 0,
-          }
-        })
-      )
-
-      return postsWithDetails
+      // Enriquecer posts con datos en batch (optimizado)
+      return await enrichPostsWithDetails(posts)
     },
     enabled: !!userId,
     ...CACHE_TIMES.FEED,
@@ -263,27 +267,8 @@ export function useSearchPosts(query) {
 
       if (error) throw error
 
-      // Obtener datos de perfil, likes y comentarios para cada post
-      const postsWithDetails = await Promise.all(
-        posts.map(async (post) => {
-          const [profileResult, likesResult, commentsResult] = await Promise.all([
-            supabase.from('profiles').select('id, username, full_name, avatar_url').eq('id', post.user_id).maybeSingle(),
-            supabase.from('likes').select('id', { count: 'exact', head: true }).eq('post_id', post.id),
-            supabase.from('comments').select('id', { count: 'exact', head: true }).eq('post_id', post.id),
-          ])
-
-          return {
-            ...post,
-            username: profileResult.data?.username || 'Usuario',
-            full_name: profileResult.data?.full_name || 'Usuario Sin Nombre',
-            avatar_url: profileResult.data?.avatar_url || null,
-            likes_count: likesResult.count || 0,
-            comments_count: commentsResult.count || 0,
-          }
-        })
-      )
-
-      return postsWithDetails
+      // Enriquecer posts con datos en batch (optimizado)
+      return await enrichPostsWithDetails(posts)
     },
     enabled: !!query && query.length >= 2,
     ...CACHE_TIMES.SEARCH,

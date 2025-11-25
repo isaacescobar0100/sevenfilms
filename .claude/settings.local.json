@@ -34,7 +34,10 @@
       "Bash(git reset:*)",
       "Bash(del nul 2)",
       "Bash(del /q \"src\\store\\authStore.test.js\" \"src\\components\\common\\LoadingSpinner.test.jsx\" \"src\\hooks\\useRateLimit.test.js\" \"src\\hooks\\useMovies.test.jsx\" \"src\\hooks\\useMessages.test.jsx\" \"src\\hooks\\usePosts.test.jsx\" \"src\\hooks\\useProfiles.test.jsx\" \"vitest.config.js\" 2)",
-      "Bash(del /q \"src\\hooks\\useFFmpeg.js\" 2)"
+      "Bash(del /q \"src\\hooks\\useFFmpeg.js\" 2)",
+      "Bash(echo:*)",
+      "Bash(vercel.json)",
+      "Bash(timeout /t 3 /nobreak)"
     ],
     "deny": [],
     "ask": []

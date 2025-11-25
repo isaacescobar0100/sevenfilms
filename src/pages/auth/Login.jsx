@@ -3,15 +3,18 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslation } from 'react-i18next'
+import { useQueryClient } from '@tanstack/react-query'
 import { Film } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 import { loginSchema } from '../../utils/validation'
 import ErrorMessage from '../../components/common/ErrorMessage'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
+import { supabase } from '../../lib/supabase'
 
 function Login() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { signIn } = useAuthStore()
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -30,6 +33,20 @@ function Login() {
 
     try {
       await signIn(data.email, data.password)
+
+      // Prefetch del feed para mejorar la experiencia
+      queryClient.prefetchQuery({
+        queryKey: ['posts', 'feed'],
+        queryFn: async () => {
+          const { data: posts } = await supabase
+            .from('posts')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(10)
+          return posts
+        },
+      })
+
       navigate('/feed')
     } catch (err) {
       console.error('Login error:', err)

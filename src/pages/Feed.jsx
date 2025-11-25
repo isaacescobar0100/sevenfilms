@@ -12,36 +12,20 @@ import UserCard from '../components/social/UserCard'
 import LeftSidebar from '../components/layout/LeftSidebar'
 import StoriesBar from '../components/stories/StoriesBar'
 import SEO from '../components/common/SEO'
+import { VirtualizedList, useFlattenedItems } from '../components/common/VirtualizedList'
 
 function Feed() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [filter, setFilter] = useState('all') // 'all' or 'following'
   const [showSuggestedUsers, setShowSuggestedUsers] = useState(true)
-  const { data, fetchNextPage, hasNextPage, isLoading, isFetchingNextPage, error } = useFeed(filter)
+  const feedQuery = useFeed(filter)
   const { data: suggestedUsers } = useSuggestedUsers()
   const { data: trendingTopics } = useTrending()
-  const loadMoreRef = useRef(null)
 
-  const posts = data?.pages.flatMap(page => page.data) || []
-
-  // Infinite scroll con Intersection Observer (como Facebook)
-  useEffect(() => {
-    if (!loadMoreRef.current || !hasNextPage || isFetchingNextPage) return
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
-          fetchNextPage()
-        }
-      },
-      { threshold: 0.1, rootMargin: '100px' }
-    )
-
-    observer.observe(loadMoreRef.current)
-
-    return () => observer.disconnect()
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
+  // Usar helper para aplanar posts de infinite query
+  const { items: posts, hasNextPage, isFetchingNextPage, fetchNextPage } = useFlattenedItems(feedQuery)
+  const { isLoading, error } = feedQuery
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -134,7 +118,7 @@ function Feed() {
           {error && <ErrorMessage message="Error al cargar el feed" />}
 
           {!isLoading && !error && (
-            <div className="space-y-6">
+            <>
               {posts.length === 0 ? (
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 text-center">
                   <p className="text-gray-600 dark:text-gray-400">
@@ -144,21 +128,23 @@ function Feed() {
                   </p>
                 </div>
               ) : (
-                <>
-                  {posts.map((post) => (
-                    <Post key={post.id} post={post} />
-                  ))}
-
-                  {/* Load more trigger */}
-                  <div ref={loadMoreRef} className="py-4 flex justify-center">
-                    {isFetchingNextPage && <LoadingSpinner size="sm" />}
-                    {!hasNextPage && posts.length > 0 && (
-                      <p className="text-gray-500 dark:text-gray-400 text-sm">{t('feed.noMorePosts')}</p>
-                    )}
-                  </div>
-                </>
+                <VirtualizedList
+                  items={posts}
+                  renderItem={(post) => (
+                    <div className="mb-6">
+                      <Post key={post.id} post={post} />
+                    </div>
+                  )}
+                  getItemKey={(post) => post.id}
+                  estimatedItemSize={500}
+                  hasNextPage={hasNextPage}
+                  isFetchingNextPage={isFetchingNextPage}
+                  fetchNextPage={fetchNextPage}
+                  className="h-[calc(100vh-25rem)]"
+                  loadingText={t('feed.noMorePosts')}
+                />
               )}
-            </div>
+            </>
           )}
         </div>
 

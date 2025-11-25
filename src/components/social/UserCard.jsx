@@ -1,10 +1,11 @@
+import { memo, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { useIsFollowing, useToggleFollow } from '../../hooks/useFollows'
 import { useAuthStore } from '../../store/authStore'
 import { useRateLimit } from '../../hooks/useRateLimit'
 import { useTranslation } from 'react-i18next'
 
-function UserCard({ user, showFollowButton = false, compact = false, onProfileClick }) {
+const UserCard = memo(function UserCard({ user, showFollowButton = false, compact = false, onProfileClick }) {
   const { t } = useTranslation()
   const { user: currentUser } = useAuthStore()
   const { data: isFollowing } = useIsFollowing(user.id)
@@ -13,7 +14,7 @@ function UserCard({ user, showFollowButton = false, compact = false, onProfileCl
 
   const isOwnProfile = currentUser?.id === user.id
 
-  const handleFollow = () => {
+  const handleFollow = useCallback(() => {
     // Verificar rate limit para follow/unfollow
     if (!canPerformAction) {
       alert(`Has alcanzado el límite de ${limit} acciones de seguir/dejar de seguir por minuto. Espera un momento.`)
@@ -22,13 +23,13 @@ function UserCard({ user, showFollowButton = false, compact = false, onProfileCl
 
     toggleFollow.mutate({ userId: user.id, isFollowing })
     performAction()
-  }
+  }, [canPerformAction, limit, toggleFollow, user.id, isFollowing, performAction])
 
-  const handleClick = () => {
+  const handleClick = useCallback(() => {
     if (onProfileClick) {
       onProfileClick(user)
     }
-  }
+  }, [onProfileClick, user])
 
   // Versión compacta para carrusel horizontal (móvil)
   if (compact) {
@@ -40,6 +41,8 @@ function UserCard({ user, showFollowButton = false, compact = false, onProfileCl
               src={user.avatar_url}
               alt={user.username}
               className="h-16 w-16 rounded-full mx-auto mb-2 object-cover"
+              loading="lazy"
+              fetchPriority="high"
             />
           ) : (
             <div className="h-16 w-16 rounded-full bg-primary-600 flex items-center justify-center text-white font-bold text-xl mx-auto mb-2">
@@ -102,6 +105,6 @@ function UserCard({ user, showFollowButton = false, compact = false, onProfileCl
       )}
     </div>
   )
-}
+})
 
 export default UserCard

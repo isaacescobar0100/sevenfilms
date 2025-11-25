@@ -13,6 +13,63 @@ export const REACTIONS = {
   boring: { emoji: '💤', label: 'Aburrido', value: 1, color: '#6B7280' },
 }
 
+// OPTIMIZADO: Obtener reacciones del usuario para múltiples posts a la vez
+export function useBatchUserReactions(postIds) {
+  const { user } = useAuthStore()
+
+  return useQuery({
+    queryKey: ['batch-post-reactions', postIds, user?.id],
+    queryFn: async () => {
+      if (!user || !postIds || postIds.length === 0) return new Map()
+
+      const { data, error } = await supabase
+        .from('post_reactions')
+        .select('post_id, reaction_type')
+        .in('post_id', postIds)
+        .eq('user_id', user.id)
+
+      if (error) throw error
+
+      // Retornar Map para búsqueda O(1)
+      return new Map(data?.map(r => [r.post_id, r.reaction_type]) || [])
+    },
+    enabled: !!user && !!postIds && postIds.length > 0,
+    ...CACHE_TIMES.SOCIAL,
+  })
+}
+
+// OPTIMIZADO: Obtener conteos de reacciones para múltiples posts
+export function useBatchPostReactions(postIds) {
+  return useQuery({
+    queryKey: ['batch-post-reactions-counts', postIds],
+    queryFn: async () => {
+      if (!postIds || postIds.length === 0) return new Map()
+
+      const { data, error } = await supabase
+        .from('post_reactions')
+        .select('post_id, reaction_type')
+        .in('post_id', postIds)
+
+      if (error) throw error
+
+      // Agrupar por post y contar
+      const reactionsMap = new Map()
+      data?.forEach(r => {
+        if (!reactionsMap.has(r.post_id)) {
+          reactionsMap.set(r.post_id, { counts: {}, total: 0 })
+        }
+        const postReactions = reactionsMap.get(r.post_id)
+        postReactions.counts[r.reaction_type] = (postReactions.counts[r.reaction_type] || 0) + 1
+        postReactions.total++
+      })
+
+      return reactionsMap
+    },
+    enabled: !!postIds && postIds.length > 0,
+    ...CACHE_TIMES.SOCIAL,
+  })
+}
+
 // Obtener la reacción del usuario actual en un post
 export function useUserReaction(postId) {
   const { user } = useAuthStore()

@@ -2,6 +2,30 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../store/authStore'
 
+// OPTIMIZADO: Verificar si múltiples posts están guardados en una sola query
+export function useBatchSavedPosts(postIds) {
+  const { user } = useAuthStore()
+
+  return useQuery({
+    queryKey: ['batch-saved-posts', postIds, user?.id],
+    queryFn: async () => {
+      if (!user || !postIds || postIds.length === 0) return new Map()
+
+      const { data, error } = await supabase
+        .from('saved_posts')
+        .select('post_id')
+        .eq('user_id', user.id)
+        .in('post_id', postIds)
+
+      if (error) throw error
+
+      // Retornar Set para búsqueda O(1)
+      return new Set(data?.map(s => s.post_id) || [])
+    },
+    enabled: !!user && !!postIds && postIds.length > 0,
+  })
+}
+
 // Obtener posts guardados del usuario
 export function useSavedPosts() {
   const { user } = useAuthStore()

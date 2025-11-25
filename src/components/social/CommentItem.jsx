@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, memo } from 'react'
 import { Link } from 'react-router-dom'
 import { MoreVertical, Edit, Trash2, MessageCircle, Send, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -9,7 +9,7 @@ import CommentReactionPicker from '../common/CommentReactionPicker'
 import MentionInput from '../common/MentionInput'
 import CommentContent from '../common/CommentContent'
 
-function CommentItem({
+const CommentItem = memo(function CommentItem({
   comment,
   onClose,
   onEdit,
@@ -284,6 +284,6 @@ function CommentItem({
       )}
     </div>
   )
-}
+})
 
 export default CommentItem
