@@ -201,7 +201,7 @@ function Feed() {
               </div>
               <div className="space-y-3">
                 {trendingTopics && trendingTopics.length > 0 ? (
-                  trendingTopics.slice(0, 5).map((topic, index) => (
+                  trendingTopics.slice(0, 3).map((topic, index) => (
                     <button
                       key={topic.hashtag}
                       onClick={() => navigate(`/search?q=${encodeURIComponent(topic.hashtag)}`)}
