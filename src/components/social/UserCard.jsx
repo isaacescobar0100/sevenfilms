@@ -34,7 +34,7 @@ const UserCard = memo(function UserCard({ user, showFollowButton = false, compac
   // Versión compacta para carrusel horizontal (móvil)
   if (compact) {
     return (
-      <div className="flex-shrink-0 w-28">
+      <div className="flex-shrink-0 w-32">
         <Link to={`/profile/${user.username}`} className="block text-center" onClick={handleClick}>
           {user.avatar_url ? (
             <img
@@ -49,8 +49,8 @@ const UserCard = memo(function UserCard({ user, showFollowButton = false, compac
               {user.full_name?.[0] || user.username?.[0] || 'U'}
             </div>
           )}
-          <p className="font-medium text-sm truncate text-gray-900 dark:text-white">{user.full_name || user.username}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">@{user.username}</p>
+          <p className="font-medium text-sm truncate px-1 text-gray-900 dark:text-white">{user.full_name || user.username}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 truncate px-1">@{user.username}</p>
         </Link>
         {showFollowButton && !isOwnProfile && (
           <button
