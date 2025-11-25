@@ -87,7 +87,7 @@ function Feed() {
 
           {/* Cineastas sugeridos - Carrusel horizontal solo en móvil */}
           {suggestedUsers && suggestedUsers.length > 0 && showSuggestedUsers && (
-            <div className="lg:hidden bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+            <div className="lg:hidden bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 overflow-hidden">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="font-bold text-sm text-gray-700 dark:text-gray-300">{t('feed.suggestedFilmmakers')}</h2>
                 <div className="flex items-center gap-2">
@@ -106,7 +106,7 @@ function Feed() {
                   </button>
                 </div>
               </div>
-              <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
                 {suggestedUsers.slice(0, 6).map((user) => (
                   <UserCard key={user.id} user={user} showFollowButton compact />
                 ))}
