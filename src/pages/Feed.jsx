@@ -12,6 +12,7 @@ import UserCard from '../components/social/UserCard'
 import LeftSidebar from '../components/layout/LeftSidebar'
 import StoriesBar from '../components/stories/StoriesBar'
 import SEO from '../components/common/SEO'
+import AdSense from '../components/ads/AdSense'
 import { VirtualizedList, useFlattenedItems } from '../components/common/VirtualizedList'
 
 function Feed() {
@@ -130,10 +131,24 @@ function Feed() {
               ) : (
                 <VirtualizedList
                   items={posts}
-                  renderItem={(post) => (
-                    <div className="mb-6">
-                      <Post key={post.id} post={post} />
-                    </div>
+                  renderItem={(post, index) => (
+                    <>
+                      <div className="mb-6">
+                        <Post key={post.id} post={post} />
+                      </div>
+                      {/* Mostrar anuncio cada 5 posts */}
+                      {(index + 1) % 5 === 0 && (
+                        <div className="mb-6">
+                          <AdSense
+                            slot="9983534909"
+                            format="auto"
+                            responsive={true}
+                            style={{ minHeight: '250px' }}
+                            className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden"
+                          />
+                        </div>
+                      )}
+                    </>
                   )}
                   getItemKey={(post) => post.id}
                   estimatedItemSize={500}
