@@ -46,9 +46,9 @@ function Navbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <Link to="/" className="flex items-center space-x-2" aria-label="Seven - Ir al inicio">
+              <Link to="/" className="flex items-center space-x-2" aria-label="Seven Art - Ir al inicio">
                 <Clapperboard className="h-8 w-8 text-primary-600" aria-hidden="true" />
-                <span className="text-xl font-bold text-gray-900 dark:text-white">Seven</span>
+                <span className="text-xl font-bold text-gray-900 dark:text-white">Seven Art</span>
               </Link>
             </div>
             <div className="flex items-center space-x-4">
@@ -87,9 +87,9 @@ function Navbar() {
         <div className="flex justify-between h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <Link to="/feed" className="flex items-center space-x-2" aria-label="Seven - Ir al feed">
+            <Link to="/feed" className="flex items-center space-x-2" aria-label="Seven Art - Ir al feed">
               <Clapperboard className="h-8 w-8 text-primary-600" aria-hidden="true" />
-              <span className="text-xl font-bold text-gray-900 dark:text-white">Seven</span>
+              <span className="text-xl font-bold text-gray-900 dark:text-white">Seven Art</span>
             </Link>
           </div>
 
