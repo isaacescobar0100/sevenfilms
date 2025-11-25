@@ -83,29 +83,81 @@ function PrivacyPolicy() {
 
             <section className="mb-8">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                4. Publicidad
+                4. Publicidad y Cookies de Terceros
               </h2>
+
+              <h3 className="text-lg font-medium text-gray-800 mb-2">
+                4.1 Google AdSense
+              </h3>
               <p className="text-gray-600 mb-4">
-                Seven Cineamateur utiliza servicios de publicidad de terceros, incluyendo
-                Google AdSense, para mostrar anuncios en nuestra plataforma. Estos servicios
-                pueden utilizar cookies y tecnologias similares para:
+                Seven Cineamateur utiliza Google AdSense para mostrar anuncios publicitarios.
+                Google AdSense utiliza cookies (como la cookie DoubleClick) para mostrar anuncios
+                basados en tus visitas previas a este sitio web y otros sitios en Internet.
+              </p>
+              <p className="text-gray-600 mb-4">
+                Los proveedores externos, incluido Google, utilizan cookies para mostrar anuncios
+                en funcion de las visitas anteriores de un usuario a este sitio web u otros sitios web.
+                Google utiliza cookies publicitarias para habilitar a Google y a sus socios mostrar
+                anuncios basados en tu visita a este sitio y/o a otros sitios de Internet.
+              </p>
+
+              <h3 className="text-lg font-medium text-gray-800 mb-2 mt-4">
+                4.2 Que informacion recopila Google AdSense
+              </h3>
+              <ul className="list-disc pl-6 text-gray-600 space-y-2">
+                <li>Direccion IP y ubicacion geografica aproximada</li>
+                <li>Informacion del navegador y dispositivo</li>
+                <li>Paginas visitadas en nuestro sitio</li>
+                <li>Tiempo de permanencia en las paginas</li>
+                <li>Interacciones con anuncios</li>
+                <li>Cookies de seguimiento publicitario</li>
+              </ul>
+
+              <h3 className="text-lg font-medium text-gray-800 mb-2 mt-4">
+                4.3 Como desactivar la publicidad personalizada
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Puedes inhabilitar el uso de cookies de publicidad personalizada visitando:
               </p>
               <ul className="list-disc pl-6 text-gray-600 space-y-2">
-                <li>Mostrar anuncios basados en tus intereses</li>
-                <li>Limitar el numero de veces que ves un anuncio</li>
-                <li>Medir la efectividad de las campanas publicitarias</li>
+                <li>
+                  <strong>Configuracion de anuncios de Google:</strong>{' '}
+                  <a
+                    href="https://www.google.com/settings/ads"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary-600 hover:underline"
+                  >
+                    google.com/settings/ads
+                  </a>
+                </li>
+                <li>
+                  <strong>Inhabilitar cookies de DoubleClick:</strong>{' '}
+                  <a
+                    href="https://adssettings.google.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary-600 hover:underline"
+                  >
+                    adssettings.google.com
+                  </a>
+                </li>
+                <li>
+                  <strong>Network Advertising Initiative:</strong>{' '}
+                  <a
+                    href="https://www.networkadvertising.org/choices/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary-600 hover:underline"
+                  >
+                    networkadvertising.org/choices
+                  </a>
+                </li>
               </ul>
               <p className="text-gray-600 mt-4">
-                Puedes optar por no recibir publicidad personalizada visitando la
-                configuracion de anuncios de Google en{' '}
-                <a
-                  href="https://www.google.com/settings/ads"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary-600 hover:underline"
-                >
-                  google.com/settings/ads
-                </a>.
+                Ten en cuenta que desactivar las cookies publicitarias no significa que dejaras
+                de ver anuncios, sino que los anuncios que veas no estaran personalizados segun
+                tus intereses.
               </p>
             </section>
 
