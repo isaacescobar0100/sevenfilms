@@ -328,7 +328,7 @@ const Post = memo(function Post({ post, isSharedView = false }) {
             </div>
           </div>
         ) : (
-          <p className="text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{post.content}</p>
+          <p className="text-gray-900 dark:text-white whitespace-pre-wrap">{post.content}</p>
         )}
       </div>
 

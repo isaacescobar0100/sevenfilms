@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Users, Compass, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useFeed, useTrending } from '../hooks/usePosts'
@@ -18,15 +18,26 @@ import { useFlattenedItems } from '../components/common/VirtualizedList'
 function Feed() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const location = useLocation()
   const [filter, setFilter] = useState('all') // 'all' or 'following'
   const [showSuggestedUsers, setShowSuggestedUsers] = useState(true)
   const feedQuery = useFeed(filter)
   const { data: suggestedUsers } = useSuggestedUsers()
   const { data: trendingTopics } = useTrending()
+  const createPostRef = useRef(null)
 
   // Usar helper para aplanar posts de infinite query
   const { items: posts, hasNextPage, isFetchingNextPage, fetchNextPage } = useFlattenedItems(feedQuery)
   const { isLoading, error } = feedQuery
+
+  // Scroll to CreatePost when navigating from mobile menu
+  useEffect(() => {
+    if (location.state?.openCreatePost && createPostRef.current) {
+      createPostRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      // Limpiar el estado después de usar
+      window.history.replaceState({}, document.title)
+    }
+  }, [location.state])
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -49,9 +60,11 @@ function Feed() {
           <StoriesBar />
 
           {/* Create Post */}
-          <CreatePost onSuccess={() => {
-            // Opcional: scroll to top o mostrar notificación
-          }} />
+          <div ref={createPostRef}>
+            <CreatePost onSuccess={() => {
+              // Opcional: scroll to top o mostrar notificación
+            }} />
+          </div>
 
           {/* Filter Tabs */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md">
