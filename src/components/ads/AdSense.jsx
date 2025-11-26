@@ -29,23 +29,56 @@ export default function AdSense({
   className = '',
 }) {
   const clientId = import.meta.env.VITE_ADSENSE_CLIENT_ID || 'ca-pub-2847173521235624'
+  const isProduction = import.meta.env.PROD
+  const isDevelopment = import.meta.env.DEV
 
   useEffect(() => {
     try {
-      // Cargar el anuncio
-      if (window.adsbygoogle && slot) {
+      // Cargar el anuncio solo en producción
+      if (isProduction && window.adsbygoogle && slot) {
         (window.adsbygoogle = window.adsbygoogle || []).push({})
       }
     } catch (error) {
       console.error('Error al cargar AdSense:', error)
     }
-  }, [slot])
+  }, [slot, isProduction])
 
   // No mostrar nada si no hay slot
   if (!slot) {
     return null
   }
 
+  // En desarrollo, mostrar placeholder visual
+  if (isDevelopment) {
+    return (
+      <div
+        className={`adsense-placeholder ${className}`}
+        style={{
+          backgroundColor: '#f3f4f6',
+          border: '2px dashed #d1d5db',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: style.minHeight || '250px',
+          ...style,
+        }}
+      >
+        <div style={{ textAlign: 'center', color: '#6b7280', padding: '20px' }}>
+          <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '8px' }}>
+            AdSense Placeholder
+          </div>
+          <div style={{ fontSize: '12px' }}>
+            Slot: {slot} • {format}
+          </div>
+          <div style={{ fontSize: '11px', marginTop: '8px', opacity: 0.7 }}>
+            Los anuncios solo se muestran en producción
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // En producción, mostrar anuncio real
   return (
     <div className={`adsense-container ${className}`} style={style}>
       <ins
