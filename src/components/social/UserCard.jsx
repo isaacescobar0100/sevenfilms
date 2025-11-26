@@ -33,36 +33,32 @@ const UserCard = memo(function UserCard({ user, showFollowButton = false, compac
 
   // Versión compacta para carrusel horizontal (móvil)
   if (compact) {
-    const displayName = user.full_name || user.username
-    // Truncar nombre si es muy largo (máximo 12 caracteres para dar espacio al botón)
-    const truncatedName = displayName.length > 12 ? displayName.substring(0, 12) + '...' : displayName
-
     return (
-      <div className="flex-shrink-0 w-24">
+      <div className="flex-shrink-0 w-32">
         <Link to={`/profile/${user.username}`} className="block text-center" onClick={handleClick}>
           {user.avatar_url ? (
             <img
               src={user.avatar_url}
               alt={user.username}
-              className="h-14 w-14 rounded-full mx-auto mb-2 object-cover"
+              className="h-16 w-16 rounded-full mx-auto mb-2 object-cover"
               loading="lazy"
               fetchPriority="high"
             />
           ) : (
-            <div className="h-14 w-14 rounded-full bg-primary-600 flex items-center justify-center text-white font-bold text-lg mx-auto mb-2">
+            <div className="h-16 w-16 rounded-full bg-primary-600 flex items-center justify-center text-white font-bold text-xl mx-auto mb-2">
               {user.full_name?.[0] || user.username?.[0] || 'U'}
             </div>
           )}
-          <p className="font-medium text-xs text-gray-900 dark:text-white leading-tight mb-1" title={displayName}>
-            {truncatedName}
+          <p className="font-medium text-xs text-gray-900 dark:text-white leading-tight mb-1 line-clamp-2 px-1" title={user.full_name || user.username}>
+            {user.full_name || user.username}
           </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">@{user.username}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 truncate px-1">@{user.username}</p>
         </Link>
         {showFollowButton && !isOwnProfile && (
           <button
             onClick={handleFollow}
             disabled={toggleFollow.isPending}
-            className={`mt-2 w-full text-xs py-1 px-1.5 rounded-full font-medium transition-colors ${
+            className={`mt-2 w-full text-xs py-1.5 px-2 rounded-full font-medium transition-colors ${
               isFollowing
                 ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
                 : 'bg-primary-600 text-white hover:bg-primary-700'
