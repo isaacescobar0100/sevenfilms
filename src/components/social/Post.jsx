@@ -597,13 +597,13 @@ const Post = memo(function Post({ post, isSharedView = false }) {
                         {showCommentMenu === comment.id && (
                           <>
                             <div className="fixed inset-0" onClick={() => setShowCommentMenu(null)}></div>
-                            <div className="absolute right-0 mt-1 w-32 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 z-20 border border-gray-200 dark:border-gray-700">
+                            <div className="absolute right-0 mt-1 w-44 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 z-20 border border-gray-200 dark:border-gray-700">
                               <button
                                 onClick={() => handleEditComment(comment)}
-                                className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
+                                className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors"
                               >
-                                <Edit className="h-3 w-3" />
-                                <span>{t('common.edit')}</span>
+                                <Edit className="h-4 w-4 flex-shrink-0" />
+                                <span className="flex-1">{t('common.edit')}</span>
                               </button>
                               <button
                                 onClick={() => {
@@ -611,10 +611,10 @@ const Post = memo(function Post({ post, isSharedView = false }) {
                                   setShowDeleteCommentDialog(true)
                                   setShowCommentMenu(null)
                                 }}
-                                className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
+                                className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors"
                               >
-                                <Trash2 className="h-3 w-3" />
-                                <span>{t('common.delete')}</span>
+                                <Trash2 className="h-4 w-4 flex-shrink-0" />
+                                <span className="flex-1">{t('common.delete')}</span>
                               </button>
                             </div>
                           </>
