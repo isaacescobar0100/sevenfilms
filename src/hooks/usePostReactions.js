@@ -222,35 +222,8 @@ export function useToggleReaction() {
         if (error) throw error
       }
 
-      // Crear o actualizar notificación (upsert) - evita duplicados
-      // Solo si no es el dueño del post
-      if (postOwnerId && postOwnerId !== user.id) {
-        // Primero verificar si ya existe una notificación para esta combinación
-        const { data: existingNotif } = await supabase
-          .from('notifications')
-          .select('id')
-          .eq('user_id', postOwnerId)
-          .eq('actor_id', user.id)
-          .eq('type', 'reaction')
-          .eq('entity_type', 'post')
-          .eq('entity_id', postId)
-          .maybeSingle()
-
-        if (!existingNotif) {
-          // Solo crear si no existe
-          await supabase
-            .from('notifications')
-            .insert({
-              user_id: postOwnerId,
-              actor_id: user.id,
-              type: 'reaction',
-              entity_type: 'post',
-              entity_id: postId,
-              is_read: false
-            })
-        }
-        // Si ya existe, no hacer nada (mantener la notificación existente)
-      }
+      // Las notificaciones ahora se crean automáticamente mediante triggers en la base de datos
+      // No es necesario crearlas manualmente aquí
 
       return { postId, reaction: reactionType }
     },

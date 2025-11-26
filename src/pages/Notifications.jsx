@@ -5,6 +5,7 @@ import { useNotifications, useMarkNotificationAsRead, useMarkAllNotificationsAsR
 import { formatRelativeTime } from '../utils/formatters'
 import LoadingSpinner from '../components/common/LoadingSpinner'
 import SEO from '../components/common/SEO'
+import { REACTIONS, MOVIE_REACTIONS } from '../hooks/usePostReactions'
 
 function Notifications() {
   const { t } = useTranslation()
@@ -39,7 +40,27 @@ function Notifications() {
     }
   }
 
-  const getNotificationIcon = (type) => {
+  const getNotificationIcon = (notification) => {
+    const { type, metadata } = notification
+
+    // Si es una reacción, mostrar el emoji correspondiente
+    if (type === 'reaction') {
+      if (metadata?.reaction) {
+        // Intentar primero con reacciones de posts
+        const postReaction = REACTIONS[metadata.reaction]
+        if (postReaction) {
+          return <span className="text-lg">{postReaction.emoji}</span>
+        }
+        // Si no, intentar con reacciones de películas
+        const movieReaction = MOVIE_REACTIONS[metadata.reaction]
+        if (movieReaction) {
+          return <span className="text-lg">{movieReaction.emoji}</span>
+        }
+      }
+      // Reacción sin metadata, mostrar emoji por defecto
+      return <span className="text-lg">👍</span>
+    }
+
     switch (type) {
       case 'like':
         return <Heart className="h-4 w-4 text-red-500" />
@@ -56,6 +77,23 @@ function Notifications() {
 
   const getNotificationMessage = (notification) => {
     const actorName = notification.actor?.full_name || notification.actor?.username || 'Alguien'
+    const { type, metadata } = notification
+
+    // Si es una reacción
+    if (type === 'reaction') {
+      if (metadata?.reaction) {
+        // Intentar primero con reacciones de posts
+        let reactionData = REACTIONS[metadata.reaction]
+        // Si no, intentar con reacciones de películas
+        if (!reactionData) {
+          reactionData = MOVIE_REACTIONS[metadata.reaction]
+        }
+        const reactionLabel = reactionData?.label || metadata.reaction
+        return `${actorName} reaccionó con ${reactionLabel} a tu publicación`
+      }
+      // Reacción sin metadata
+      return `${actorName} reaccionó a tu publicación`
+    }
 
     switch (notification.type) {
       case 'like':
@@ -167,7 +205,7 @@ function Notifications() {
                     )}
                     {/* Icono de tipo */}
                     <div className="absolute -bottom-1 -right-1 bg-white dark:bg-gray-800 rounded-full p-1 shadow-sm">
-                      {getNotificationIcon(notification.type)}
+                      {getNotificationIcon(notification)}
                     </div>
                   </div>
 
