@@ -79,12 +79,14 @@ export default function AdSense({
   }
 
   // En producción, mostrar anuncio real
+  // NOTA: Los anuncios solo aparecerán cuando AdSense apruebe tu sitio
   return (
     <div className={`adsense-container ${className}`} style={style}>
       <ins
         className="adsbygoogle"
         style={{
           display: 'block',
+          minHeight: '1px', // Evitar espacio vacío mientras no hay anuncios
           ...style,
         }}
         data-ad-client={clientId}
