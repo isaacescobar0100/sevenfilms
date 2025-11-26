@@ -1,145 +1,129 @@
 import { useState, useRef, useEffect } from 'react'
-import { Clapperboard } from 'lucide-react'
 import { REACTIONS } from '../../hooks/usePostReactions'
 
-// Iconos SVG personalizados para cada reacción (exportados para usar en otros componentes)
-export const ReactionIcons = {
-  // Trofeo Oscar - Obra Maestra
-  masterpiece: ({ className, isActive, isHovered }) => (
-    <svg viewBox="0 0 24 24" className={className} fill="none">
-      <defs>
-        <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#FFD700" />
-          <stop offset="50%" stopColor="#FFA500" />
-          <stop offset="100%" stopColor="#FFD700" />
-        </linearGradient>
-      </defs>
-      <path
-        d="M12 2L14.5 7.5L20.5 8L16 12.5L17.5 18.5L12 15.5L6.5 18.5L8 12.5L3.5 8L9.5 7.5L12 2Z"
-        fill={isActive || isHovered ? "url(#goldGradient)" : "currentColor"}
-        className={`transition-all duration-300 ${isActive ? 'drop-shadow-[0_0_8px_rgba(255,215,0,0.8)]' : ''}`}
-      />
-      <circle cx="12" cy="21" r="2" fill={isActive || isHovered ? "#FFD700" : "currentColor"} />
-      <rect x="11" y="17" width="2" height="4" fill={isActive || isHovered ? "#FFD700" : "currentColor"} />
-    </svg>
-  ),
+// Iconos SVG estilo Facebook con animaciones
+const ReactionIcon = ({ type, size = 38, isActive = false, isHovered = false }) => {
+  const scale = isActive ? 1.1 : 1
 
-  // Estrella brillante - Excelente
-  excellent: ({ className, isActive, isHovered }) => (
-    <svg viewBox="0 0 24 24" className={className} fill="none">
-      <defs>
-        <linearGradient id="starGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#FFA500" />
-          <stop offset="100%" stopColor="#FF6B00" />
-        </linearGradient>
-      </defs>
-      <path
-        d="M12 2L14.09 8.26L21 9.27L16 14.14L17.18 21.02L12 17.77L6.82 21.02L8 14.14L3 9.27L9.91 8.26L12 2Z"
-        fill={isActive || isHovered ? "url(#starGradient)" : "currentColor"}
-        className={`transition-all duration-300 ${isActive ? 'drop-shadow-[0_0_8px_rgba(255,165,0,0.8)]' : ''}`}
-      />
-      {(isActive || isHovered) && (
-        <>
-          <circle cx="6" cy="4" r="1" fill="#FFA500" className="animate-ping" />
-          <circle cx="18" cy="6" r="1" fill="#FFA500" className="animate-ping" style={{ animationDelay: '0.2s' }} />
-        </>
-      )}
-    </svg>
-  ),
+  const getAnimationStyles = () => {
+    if (!isHovered) return {}
 
-  // Palomitas - Entretenido
-  popcorn: ({ className, isActive, isHovered }) => (
-    <svg viewBox="0 0 24 24" className={className} fill="none">
-      <defs>
-        <linearGradient id="popcornGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#FF6B6B" />
-          <stop offset="100%" stopColor="#EE5A5A" />
-        </linearGradient>
-        <linearGradient id="cornGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#FFF8DC" />
-          <stop offset="100%" stopColor="#F5DEB3" />
-        </linearGradient>
-      </defs>
-      {/* Caja de palomitas */}
-      <path
-        d="M6 10L4 22H20L18 10H6Z"
-        fill={isActive || isHovered ? "url(#popcornGradient)" : "currentColor"}
-        className="transition-all duration-300"
-      />
-      {/* Rayas de la caja */}
-      <path d="M8 10L7 22M12 10V22M16 10L17 22" stroke={isActive || isHovered ? "#fff" : "currentColor"} strokeWidth="0.5" opacity="0.5" />
-      {/* Palomitas */}
-      <circle cx="9" cy="6" r="2.5" fill={isActive || isHovered ? "url(#cornGradient)" : "currentColor"} />
-      <circle cx="15" cy="6" r="2.5" fill={isActive || isHovered ? "url(#cornGradient)" : "currentColor"} />
-      <circle cx="12" cy="4" r="2.5" fill={isActive || isHovered ? "url(#cornGradient)" : "currentColor"} />
-      <circle cx="12" cy="8" r="2" fill={isActive || isHovered ? "url(#cornGradient)" : "currentColor"} />
-    </svg>
-  ),
+    switch (type) {
+      case 'like':
+        return { animation: 'thumbs-up 0.6s ease-in-out' }
+      case 'love':
+        return { animation: 'heart-beat 0.6s ease-in-out' }
+      case 'haha':
+        return { animation: 'shake 0.6s ease-in-out' }
+      case 'wow':
+        return { animation: 'zoom-shake 0.6s ease-in-out' }
+      case 'sad':
+        return { animation: 'sad-bounce 0.6s ease-in-out' }
+      case 'angry':
+        return { animation: 'angry-shake 0.6s ease-in-out' }
+      default:
+        return {}
+    }
+  }
 
-  // Pulgar abajo estilizado - Meh
-  meh: ({ className, isActive, isHovered }) => (
-    <svg viewBox="0 0 24 24" className={className} fill="none">
-      <path
-        d="M10 15V8C10 6.89543 10.8954 6 12 6C13.1046 6 14 6.89543 14 8V15"
-        stroke={isActive || isHovered ? "#9CA3AF" : "currentColor"}
-        strokeWidth="2"
-        strokeLinecap="round"
-        fill="none"
-      />
-      <path
-        d="M6 15H18C19.1046 15 20 15.8954 20 17V18C20 19.1046 19.1046 20 18 20H12C9.79086 20 8 18.2091 8 16V15H6C4.89543 15 4 14.1046 4 13V12C4 10.8954 4.89543 10 6 10H8"
-        fill={isActive || isHovered ? "#9CA3AF" : "currentColor"}
-        className="transition-all duration-300"
-      />
-    </svg>
-  ),
+  const animationStyles = getAnimationStyles()
 
-  // Zzz - Aburrido
-  boring: ({ className, isActive, isHovered }) => (
-    <svg viewBox="0 0 24 24" className={className} fill="none">
-      <text
-        x="4"
-        y="20"
-        fontSize="10"
-        fontWeight="bold"
-        fill={isActive || isHovered ? "#6B7280" : "currentColor"}
-        className={`transition-all duration-300 ${isActive || isHovered ? 'animate-pulse' : ''}`}
-      >
-        Z
-      </text>
-      <text
-        x="10"
-        y="14"
-        fontSize="8"
-        fontWeight="bold"
-        fill={isActive || isHovered ? "#9CA3AF" : "currentColor"}
-        className={`transition-all duration-300 ${isActive || isHovered ? 'animate-pulse' : ''}`}
-        style={{ animationDelay: '0.1s' }}
-      >
-        z
-      </text>
-      <text
-        x="15"
-        y="9"
-        fontSize="6"
-        fontWeight="bold"
-        fill={isActive || isHovered ? "#D1D5DB" : "currentColor"}
-        className={`transition-all duration-300 ${isActive || isHovered ? 'animate-pulse' : ''}`}
-        style={{ animationDelay: '0.2s' }}
-      >
-        z
-      </text>
-    </svg>
-  ),
+  switch (type) {
+    case 'like':
+      return (
+        <svg width={size} height={size} viewBox="0 0 38 38" style={{ ...animationStyles, transform: `scale(${scale})`, transition: 'transform 0.2s' }}>
+          <circle cx="19" cy="19" r="19" fill="#3b82f6"/>
+          <path d="M24.5 15.5c0-1.103-.897-2-2-2h-3.5l.5-3c.034-.167.05-.334.05-.5 0-.413-.167-.789-.438-1.061l-1.061-1.06-5.78 5.78c-.289.288-.469.686-.469 1.122v9.219c0 1.103.897 2 2 2h7.5c.828 0 1.547-.5 1.859-1.219l2.344-5.625c.063-.156.097-.328.097-.5v-2c0-1.103-.897-2-2-2h-1.5l2.398-3.136z" fill="white"/>
+        </svg>
+      )
+    case 'love':
+      return (
+        <svg width={size} height={size} viewBox="0 0 38 38" style={{ ...animationStyles, transform: `scale(${scale})`, transition: 'transform 0.2s' }}>
+          <defs>
+            <radialGradient id="love-gradient" cx="30%" cy="30%">
+              <stop offset="0%" stopColor="#ff6b9d"/>
+              <stop offset="100%" stopColor="#c94b6e"/>
+            </radialGradient>
+          </defs>
+          <circle cx="19" cy="19" r="19" fill="url(#love-gradient)"/>
+          <path d="M19 28.5l-1.45-1.32C12.4 22.36 9 19.28 9 15.5c0-3.08 2.42-5.5 5.5-5.5 1.74 0 3.41.81 4.5 2.09C20.09 10.81 21.76 10 23.5 10c3.08 0 5.5 2.42 5.5 5.5 0 3.78-3.4 6.86-8.55 11.68L19 28.5z" fill="white"/>
+        </svg>
+      )
+    case 'haha':
+      return (
+        <svg width={size} height={size} viewBox="0 0 38 38" style={{ ...animationStyles, transform: `scale(${scale})`, transition: 'transform 0.2s' }}>
+          <defs>
+            <radialGradient id="haha-gradient" cx="30%" cy="30%">
+              <stop offset="0%" stopColor="#ffda6a"/>
+              <stop offset="100%" stopColor="#f7b125"/>
+            </radialGradient>
+          </defs>
+          <circle cx="19" cy="19" r="19" fill="url(#haha-gradient)"/>
+          <path d="M12.5 13.5a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm17 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0z" fill="#8b5a00"/>
+          <path d="M19 27c-4.5 0-8-2.5-8-6h16c0 3.5-3.5 6-8 6z" fill="#8b5a00"/>
+          <path d="M19 24c-3 0-5.5-1.5-5.5-4h11c0 2.5-2.5 4-5.5 4z" fill="white"/>
+        </svg>
+      )
+    case 'wow':
+      return (
+        <svg width={size} height={size} viewBox="0 0 38 38" style={{ ...animationStyles, transform: `scale(${scale})`, transition: 'transform 0.2s' }}>
+          <defs>
+            <radialGradient id="wow-gradient" cx="30%" cy="30%">
+              <stop offset="0%" stopColor="#ffda6a"/>
+              <stop offset="100%" stopColor="#f7b125"/>
+            </radialGradient>
+          </defs>
+          <circle cx="19" cy="19" r="19" fill="url(#wow-gradient)"/>
+          <ellipse cx="12" cy="14" rx="2.5" ry="3.5" fill="#8b5a00"/>
+          <ellipse cx="26" cy="14" rx="2.5" ry="3.5" fill="#8b5a00"/>
+          <ellipse cx="19" cy="25" rx="4" ry="5" fill="#8b5a00"/>
+          <ellipse cx="19" cy="25" rx="2.5" ry="3.5" fill="white" opacity="0.7"/>
+        </svg>
+      )
+    case 'sad':
+      return (
+        <svg width={size} height={size} viewBox="0 0 38 38" style={{ ...animationStyles, transform: `scale(${scale})`, transition: 'transform 0.2s' }}>
+          <defs>
+            <radialGradient id="sad-gradient" cx="30%" cy="30%">
+              <stop offset="0%" stopColor="#ffda6a"/>
+              <stop offset="100%" stopColor="#f7b125"/>
+            </radialGradient>
+          </defs>
+          <circle cx="19" cy="19" r="19" fill="url(#sad-gradient)"/>
+          <ellipse cx="12" cy="13" rx="2" ry="2.5" fill="#8b5a00"/>
+          <ellipse cx="26" cy="13" rx="2" ry="2.5" fill="#8b5a00"/>
+          <path d="M12 26c0-3 3-5 7-5s7 2 7 5" stroke="#8b5a00" strokeWidth="2" fill="none" strokeLinecap="round" transform="scale(1,-1) translate(0,-50)"/>
+          <path d="M14 11l-3-2m16 2l3-2" stroke="#8b5a00" strokeWidth="1.5" strokeLinecap="round"/>
+          <ellipse cx="16" cy="17" rx="1" ry="3" fill="#4a90e2" opacity="0.8"/>
+        </svg>
+      )
+    case 'angry':
+      return (
+        <svg width={size} height={size} viewBox="0 0 38 38" style={{ ...animationStyles, transform: `scale(${scale})`, transition: 'transform 0.2s' }}>
+          <defs>
+            <radialGradient id="angry-gradient" cx="30%" cy="30%">
+              <stop offset="0%" stopColor="#ff8c5a"/>
+              <stop offset="100%" stopColor="#f4693b"/>
+            </radialGradient>
+          </defs>
+          <circle cx="19" cy="19" r="19" fill="url(#angry-gradient)"/>
+          <ellipse cx="12" cy="16" rx="2" ry="2.5" fill="#8b2500"/>
+          <ellipse cx="26" cy="16" rx="2" ry="2.5" fill="#8b2500"/>
+          <path d="M10 12l4 2m10-2l-4 2" stroke="#8b2500" strokeWidth="2" strokeLinecap="round"/>
+          <path d="M12 26c0-3 3-5 7-5s7 2 7 5" stroke="#8b2500" strokeWidth="2" fill="none" strokeLinecap="round" transform="scale(1,-1) translate(0,-50)"/>
+        </svg>
+      )
+    default:
+      return (
+        <svg width={size} height={size} viewBox="0 0 38 38">
+          <circle cx="19" cy="19" r="19" fill="#3b82f6"/>
+        </svg>
+      )
+  }
 }
 
-// Icono de claqueta por defecto usando Lucide
-const ClapperboardIcon = ({ className }) => (
-  <Clapperboard className={className} />
-)
-
 /**
- * Selector de reacciones cinematográficas con iconos SVG personalizados
+ * Selector de reacciones estilo Facebook
  */
 function ReactionPicker({
   currentReaction,
@@ -150,22 +134,17 @@ function ReactionPicker({
 }) {
   const [showPicker, setShowPicker] = useState(false)
   const [hoveredReaction, setHoveredReaction] = useState(null)
-  const [isLongPressing, setIsLongPressing] = useState(false)
   const [animateButton, setAnimateButton] = useState(false)
-  const [isDragging, setIsDragging] = useState(false)
   const containerRef = useRef(null)
   const pickerRef = useRef(null)
-  const longPressTimer = useRef(null)
   const hideTimer = useRef(null)
-  const touchStartPos = useRef({ x: 0, y: 0 })
 
   const currentReactionData = currentReaction ? REACTIONS[currentReaction] : null
   const reactionsList = Object.entries(REACTIONS)
 
-  // Limpiar timers al desmontar
+  // Limpiar timers
   useEffect(() => {
     return () => {
-      if (longPressTimer.current) clearTimeout(longPressTimer.current)
       if (hideTimer.current) clearTimeout(hideTimer.current)
     }
   }, [])
@@ -192,7 +171,7 @@ function ReactionPicker({
   useEffect(() => {
     if (currentReaction) {
       setAnimateButton(true)
-      const timer = setTimeout(() => setAnimateButton(false), 500)
+      const timer = setTimeout(() => setAnimateButton(false), 300)
       return () => clearTimeout(timer)
     }
   }, [currentReaction])
@@ -200,7 +179,7 @@ function ReactionPicker({
   const handleMouseEnter = () => {
     if (disabled) return
     if (hideTimer.current) clearTimeout(hideTimer.current)
-    hideTimer.current = setTimeout(() => setShowPicker(true), 300)
+    hideTimer.current = setTimeout(() => setShowPicker(true), 400)
   }
 
   const handleMouseLeave = () => {
@@ -211,92 +190,14 @@ function ReactionPicker({
     }, 300)
   }
 
-  // Touch handlers para móvil estilo Facebook
-  const handleTouchStart = (e) => {
+  const handleClick = (e) => {
+    e.stopPropagation()
     if (disabled) return
-    const touch = e.touches[0]
-    touchStartPos.current = { x: touch.clientX, y: touch.clientY }
-    setIsLongPressing(false)
-    setIsDragging(false)
 
-    longPressTimer.current = setTimeout(() => {
-      setIsLongPressing(true)
-      setShowPicker(true)
-      // Vibración haptica si está disponible
-      if (navigator.vibrate) navigator.vibrate(50)
-    }, 400)
-  }
-
-  const handleTouchMove = (e) => {
-    if (!showPicker || !isLongPressing) {
-      // Si no está el picker abierto, cancelar long press si se mueve mucho
-      const touch = e.touches[0]
-      const deltaX = Math.abs(touch.clientX - touchStartPos.current.x)
-      const deltaY = Math.abs(touch.clientY - touchStartPos.current.y)
-      if (deltaX > 10 || deltaY > 10) {
-        if (longPressTimer.current) clearTimeout(longPressTimer.current)
-      }
-      return
-    }
-
-    setIsDragging(true)
-    const touch = e.touches[0]
-
-    // Encontrar qué reacción está bajo el dedo
-    if (pickerRef.current) {
-      const buttons = pickerRef.current.querySelectorAll('[data-reaction]')
-      buttons.forEach(button => {
-        const rect = button.getBoundingClientRect()
-        if (
-          touch.clientX >= rect.left &&
-          touch.clientX <= rect.right &&
-          touch.clientY >= rect.top &&
-          touch.clientY <= rect.bottom
-        ) {
-          const reactionType = button.getAttribute('data-reaction')
-          setHoveredReaction(reactionType)
-        }
-      })
-    }
-  }
-
-  const handleTouchEnd = () => {
-    if (longPressTimer.current) clearTimeout(longPressTimer.current)
-
-    if (isLongPressing && showPicker) {
-      // Si estaba arrastrando y hay una reacción seleccionada
-      if (hoveredReaction) {
-        onReact(hoveredReaction)
-        if (navigator.vibrate) navigator.vibrate(30)
-      }
-      setShowPicker(false)
-      setHoveredReaction(null)
-      setIsLongPressing(false)
-      setIsDragging(false)
-      return
-    }
-
-    setIsLongPressing(false)
-    setIsDragging(false)
-
-    // Tap simple
-    if (!showPicker) {
-      if (currentReaction) {
-        onReact(currentReaction)
-      } else {
-        onReact('popcorn')
-      }
-    }
-  }
-
-  const handleClick = () => {
-    if (disabled) return
-    if (!showPicker && window.innerWidth >= 768) {
-      if (currentReaction) {
-        onReact(currentReaction)
-      } else {
-        onReact('popcorn')
-      }
+    if (currentReaction) {
+      onReact(currentReaction)
+    } else {
+      onReact('like')
     }
   }
 
@@ -306,174 +207,163 @@ function ReactionPicker({
     setHoveredReaction(null)
   }
 
-  // Renderizar el icono actual
-  const renderCurrentIcon = () => {
-    if (currentReaction && ReactionIcons[currentReaction]) {
-      const IconComponent = ReactionIcons[currentReaction]
-      return <IconComponent className="w-6 h-6" isActive={true} isHovered={false} />
-    }
-    return <ClapperboardIcon className="w-6 h-6" />
-  }
-
   return (
     <div
       ref={containerRef}
-      className="relative"
+      className="relative inline-block"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
       {/* Botón principal */}
       <button
         onClick={handleClick}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        onTouchMove={handleTouchMove}
         disabled={disabled}
-        className={`flex items-center space-x-2 transition-all duration-300 select-none group touch-none
-          ${currentReactionData ? 'text-primary-600' : 'text-gray-500 dark:text-gray-400'}
-          ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-105'}
-          ${animateButton ? 'scale-125' : ''}
-          ${isLongPressing ? 'scale-110' : ''}
+        className={`flex items-center space-x-1.5 px-2 py-1 rounded transition-all duration-200 select-none group
+          ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+          ${animateButton ? 'scale-110' : ''}
         `}
       >
-        {/* Icono con efecto de brillo */}
-        <div className={`relative transition-transform duration-300 ${animateButton ? 'animate-bounce' : ''}`}>
-          {renderCurrentIcon()}
-
-          {/* Efecto de partículas al reaccionar */}
-          {animateButton && currentReaction && (
-            <div className="absolute inset-0 pointer-events-none">
-              {[...Array(6)].map((_, i) => (
-                <span
-                  key={i}
-                  className="absolute w-1 h-1 rounded-full bg-primary-500 animate-ping"
-                  style={{
-                    left: `${50 + Math.cos(i * 60 * Math.PI / 180) * 20}%`,
-                    top: `${50 + Math.sin(i * 60 * Math.PI / 180) * 20}%`,
-                    animationDelay: `${i * 50}ms`,
-                    animationDuration: '0.5s'
-                  }}
-                />
-              ))}
+        {/* Icono actual */}
+        <div className={`transition-transform duration-200 ${animateButton ? 'animate-bounce-small' : ''}`}>
+          {currentReactionData ? (
+            <div className="flex items-center">
+              <ReactionIcon type={currentReaction} size={20} isActive={true} />
             </div>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 20 20" className="text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-300">
+              <path fill="currentColor" d="M10 3c-3.866 0-7 3.134-7 7s3.134 7 7 7 7-3.134 7-7-3.134-7-7-7zm0 12.5c-3.038 0-5.5-2.462-5.5-5.5S6.962 4.5 10 4.5s5.5 2.462 5.5 5.5-2.462 5.5-5.5 5.5z"/>
+              <path fill="currentColor" d="M13.5 8.5c0-.828-.672-1.5-1.5-1.5s-1.5.672-1.5 1.5.672 1.5 1.5 1.5 1.5-.672 1.5-1.5zm-5 0c0-.828-.672-1.5-1.5-1.5S5.5 7.672 5.5 8.5 6.172 10 7 10s1.5-.672 1.5-1.5zm1.5 4.5c-1.381 0-2.5-.896-2.5-2h-1c0 1.654 1.346 3 3 3s3-1.346 3-3h-1c0 1.104-1.119 2-2.5 2z"/>
+            </svg>
           )}
         </div>
 
         {/* Contador */}
-        <span className={`text-sm font-semibold transition-colors duration-200
-          ${currentReaction ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}
-        `}>
-          {totalReactions > 0 ? totalReactions : ''}
-        </span>
+        {totalReactions > 0 && (
+          <span
+            className="text-sm font-semibold transition-all duration-200"
+            style={{
+              color: currentReactionData ? currentReactionData.color : '#6B7280'
+            }}
+          >
+            {totalReactions}
+          </span>
+        )}
       </button>
 
-      {/* Picker de reacciones */}
+      {/* Picker estilo Facebook */}
       {showPicker && (
         <div
           ref={pickerRef}
-          className="absolute bottom-full left-0 mb-3 z-50"
+          className="absolute bottom-full left-0 mb-2 z-50 animate-scale-in"
           onMouseEnter={() => { if (hideTimer.current) clearTimeout(hideTimer.current) }}
           onMouseLeave={handleMouseLeave}
         >
-          {/* Contenedor con efecto glassmorphism */}
-          <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg rounded-2xl shadow-2xl
-            border border-gray-200/50 dark:border-gray-700/50 px-2 sm:px-3 py-2 flex items-center gap-0.5 sm:gap-1
-            animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-200">
+          {/* Contenedor con sombra estilo Facebook */}
+          <div className="relative bg-white dark:bg-gray-800 rounded-full shadow-2xl px-2 py-2 flex items-center gap-1"
+            style={{
+              boxShadow: '0 0 0 1px rgba(0,0,0,.05), 0 1px 2px rgba(0,0,0,.15), 0 2px 8px rgba(0,0,0,.15)'
+            }}>
 
-            {reactionsList.map(([type, data], index) => {
-              const IconComponent = ReactionIcons[type]
+            {reactionsList.map(([type]) => {
               const isHovered = hoveredReaction === type
-              const isActive = currentReaction === type
 
               return (
                 <button
                   key={type}
-                  data-reaction={type}
                   onClick={() => handleSelectReaction(type)}
                   onMouseEnter={() => setHoveredReaction(type)}
                   onMouseLeave={() => setHoveredReaction(null)}
-                  className={`relative p-1.5 sm:p-2 rounded-xl transition-all duration-200 ease-out touch-none
-                    ${isHovered ? 'scale-150 -translate-y-6 z-10' : 'scale-100'}
-                    ${isActive ? 'bg-primary-100 dark:bg-primary-900/40' : 'hover:bg-gray-100 dark:hover:bg-gray-700/50'}
+                  className={`relative transition-all duration-150 ease-out
+                    ${isHovered ? 'animate-reaction-bounce' : ''}
                   `}
                   style={{
-                    animation: `popIn 0.3s ease-out ${index * 50}ms both`
+                    transform: isHovered ? 'scale(1.5) translateY(-8px)' : 'scale(1)',
+                    transformOrigin: 'bottom',
+                    zIndex: isHovered ? 10 : 1
                   }}
                 >
-                  {/* Tooltip - siempre visible en móvil cuando está seleccionado */}
-                  {isHovered && (
-                    <div className="absolute -top-12 left-1/2 -translate-x-1/2 px-3 py-1.5
-                      bg-gray-900 dark:bg-gray-700 text-white text-xs font-medium rounded-lg
-                      whitespace-nowrap shadow-lg animate-in fade-in zoom-in-95 duration-150 pointer-events-none">
-                      {data.label}
-                      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2
-                        bg-gray-900 dark:bg-gray-700 rotate-45" />
-                    </div>
-                  )}
-
-                  {/* Icono SVG */}
-                  <div className={`w-7 h-7 sm:w-8 sm:h-8 transition-transform duration-200 ${isHovered ? 'animate-wiggle' : ''}`}>
-                    <IconComponent
-                      className="w-full h-full"
-                      isActive={isActive}
-                      isHovered={isHovered}
-                    />
-                  </div>
-
-                  {/* Indicador de seleccionado */}
-                  {isActive && !isHovered && (
-                    <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5
-                      bg-primary-500 rounded-full" />
-                  )}
+                  <ReactionIcon type={type} size={38} isActive={isHovered} isHovered={isHovered} />
                 </button>
               )
             })}
           </div>
-
-          {/* Flecha apuntando al botón */}
-          <div className="absolute -bottom-2 left-4 w-4 h-4
-            bg-white/95 dark:bg-gray-800/95 rotate-45 border-r border-b
-            border-gray-200/50 dark:border-gray-700/50" />
         </div>
       )}
 
-      {/* Mini badges de reacciones populares - ocultos en móvil para evitar overflow */}
-      {totalReactions > 0 && !showPicker && (
-        <div className="hidden sm:flex absolute -top-1 left-full ml-1 -space-x-1.5">
-          {Object.entries(reactionCounts)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 3)
-            .map(([type], index) => {
-              const IconComponent = ReactionIcons[type]
-              return (
-                <div
-                  key={type}
-                  className="w-4 h-4 bg-white dark:bg-gray-700 rounded-full p-0.5
-                    shadow-sm border border-gray-200 dark:border-gray-600"
-                  style={{ zIndex: 3 - index }}
-                >
-                  <IconComponent className="w-full h-full" isActive={true} isHovered={false} />
-                </div>
-              )
-            })
+      {/* Animaciones CSS */}
+      <style jsx>{`
+        @keyframes scale-in {
+          from {
+            transform: scale(0) translateY(10px);
+            opacity: 0;
           }
-        </div>
-      )}
+          to {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+          }
+        }
 
-      {/* CSS para animaciones personalizadas */}
-      <style>{`
-        @keyframes popIn {
-          0% { transform: scale(0) translateY(10px); opacity: 0; }
-          70% { transform: scale(1.1) translateY(-2px); }
-          100% { transform: scale(1) translateY(0); opacity: 1; }
+        @keyframes reaction-bounce {
+          0%, 100% { transform: scale(1.5) translateY(-8px); }
+          50% { transform: scale(1.6) translateY(-10px); }
         }
-        @keyframes wiggle {
-          0%, 100% { transform: rotate(0deg); }
-          25% { transform: rotate(-10deg); }
-          75% { transform: rotate(10deg); }
+
+        @keyframes bounce-small {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.2); }
         }
-        .animate-wiggle {
-          animation: wiggle 0.3s ease-in-out;
+
+        @keyframes thumbs-up {
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          25% { transform: translateY(-6px) rotate(-15deg); }
+          50% { transform: translateY(-8px) rotate(0deg); }
+          75% { transform: translateY(-6px) rotate(15deg); }
+        }
+
+        @keyframes heart-beat {
+          0%, 100% { transform: scale(1); }
+          10% { transform: scale(1.2); }
+          20% { transform: scale(1.1); }
+          30% { transform: scale(1.3); }
+          40% { transform: scale(1.1); }
+        }
+
+        @keyframes shake {
+          0%, 100% { transform: translateX(0) rotate(0deg); }
+          10%, 30%, 50%, 70%, 90% { transform: translateX(-3px) rotate(-5deg); }
+          20%, 40%, 60%, 80% { transform: translateX(3px) rotate(5deg); }
+        }
+
+        @keyframes zoom-shake {
+          0%, 100% { transform: scale(1) rotate(0deg); }
+          25% { transform: scale(1.2) rotate(-8deg); }
+          50% { transform: scale(1.3) rotate(8deg); }
+          75% { transform: scale(1.2) rotate(-8deg); }
+        }
+
+        @keyframes sad-bounce {
+          0%, 100% { transform: translateY(0); }
+          25% { transform: translateY(4px); }
+          50% { transform: translateY(2px); }
+          75% { transform: translateY(6px); }
+        }
+
+        @keyframes angry-shake {
+          0%, 100% { transform: translateX(0) rotate(0deg) scale(1); }
+          10%, 30%, 50%, 70%, 90% { transform: translateX(-4px) rotate(-10deg) scale(1.05); }
+          20%, 40%, 60%, 80% { transform: translateX(4px) rotate(10deg) scale(1.05); }
+        }
+
+        .animate-scale-in {
+          animation: scale-in 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .animate-reaction-bounce {
+          animation: reaction-bounce 0.4s ease-in-out;
+        }
+
+        .animate-bounce-small {
+          animation: bounce-small 0.3s ease-in-out;
         }
       `}</style>
     </div>

@@ -98,11 +98,25 @@ function Movies() {
       {/* Featured Movies Section */}
       {!isFeaturedLoading && featuredMovies && featuredMovies.length > 0 && (
         <div className="mb-8">
-          <div className="flex items-center gap-2 mb-4">
-            <Star className="h-6 w-6 text-yellow-500 fill-yellow-500" />
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('movies.featured')}</h2>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Star className="h-6 w-6 text-yellow-500 fill-yellow-500" />
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('movies.featured')}</h2>
+            </div>
+            {/* Botón "Ver todas" solo en móvil */}
+            <button
+              onClick={() => {
+                // Scroll hasta la sección de todas las películas
+                document.getElementById('all-movies')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              }}
+              className="lg:hidden text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
+            >
+              {t('common.viewAll') || 'Ver todas →'}
+            </button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+
+          {/* Desktop: Grid normal */}
+          <div className="hidden lg:grid grid-cols-3 xl:grid-cols-5 gap-4">
             {featuredMovies.slice(0, 5).map((movie) => (
               <FeaturedMovieCard
                 key={movie.id}
@@ -110,6 +124,21 @@ function Movies() {
                 onClick={() => setSelectedMovie(movie)}
               />
             ))}
+          </div>
+
+          {/* Mobile: Carrusel horizontal con 3 películas */}
+          <div className="lg:hidden overflow-x-auto scrollbar-hide -mx-4 px-4">
+            <div className="flex gap-3 pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
+              {featuredMovies.slice(0, 3).map((movie) => (
+                <div key={movie.id} className="flex-shrink-0 w-[45%] min-w-[160px]">
+                  <FeaturedMovieCard
+                    movie={movie}
+                    onClick={() => setSelectedMovie(movie)}
+                    compact
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -189,24 +218,25 @@ function Movies() {
       </div>
 
       {/* Movies Grid */}
-      {isLoading ? (
-        <div className="flex justify-center py-12">
-          <LoadingSpinner />
-        </div>
-      ) : movies && movies.length > 0 ? (
-        <VirtualizedGrid
-          items={movies}
-          renderItem={renderMovie}
-          getItemKey={getMovieKey}
-          columns={4}
-          estimatedRowHeight={380}
-          hasNextPage={hasNextPage}
-          isFetchingNextPage={isFetchingNextPage}
-          fetchNextPage={fetchNextPage}
-          className="h-[calc(100vh-350px)] min-h-[500px]"
-          gap={24}
-          overscan={2}
-        />
+      <div id="all-movies">
+        {isLoading ? (
+          <div className="flex justify-center py-12">
+            <LoadingSpinner />
+          </div>
+        ) : movies && movies.length > 0 ? (
+          <VirtualizedGrid
+            items={movies}
+            renderItem={renderMovie}
+            getItemKey={getMovieKey}
+            columns={4}
+            estimatedRowHeight={380}
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+            fetchNextPage={fetchNextPage}
+            className="h-[calc(100vh-350px)] min-h-[500px]"
+            gap={24}
+            overscan={2}
+          />
       ) : (
         <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
           <Film className="h-16 w-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
@@ -226,6 +256,7 @@ function Movies() {
           </button>
         </div>
       )}
+      </div>
 
       {/* Upload Modal */}
       {showUploadModal && (
@@ -249,7 +280,7 @@ function MovieCard({ movie, onClick }) {
   return (
     <div
       onClick={onClick}
-      className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-shadow group cursor-pointer"
+      className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-shadow group cursor-pointer h-full flex flex-col"
     >
       {/* Thumbnail */}
       <div className="relative aspect-video bg-gray-900">
@@ -281,7 +312,7 @@ function MovieCard({ movie, onClick }) {
       </div>
 
       {/* Info */}
-      <div className="p-4">
+      <div className="p-4 flex-1 flex flex-col">
         <h3 className="font-bold text-gray-900 dark:text-white mb-1 line-clamp-2">{movie.title}</h3>
 
         {/* Creator */}
@@ -300,24 +331,21 @@ function MovieCard({ movie, onClick }) {
           <p className="text-sm text-gray-600 dark:text-gray-400">{movie.profiles?.full_name}</p>
         </div>
 
-        {/* Description */}
-        {movie.description && (
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">{movie.description}</p>
-        )}
-
         {/* Rating */}
-        {movie.ratings_count > 0 && (
-          <div className="mb-2">
-            <MovieReactionDisplay
-              averageRating={movie.average_rating || 0}
-              count={movie.ratings_count}
-              size="sm"
-            />
-          </div>
-        )}
+        <div className="flex-1">
+          {movie.ratings_count > 0 && (
+            <div className="mb-2">
+              <MovieReactionDisplay
+                averageRating={movie.average_rating || 0}
+                count={movie.ratings_count}
+                size="sm"
+              />
+            </div>
+          )}
+        </div>
 
         {/* Metadata */}
-        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mt-auto">
           <div className="flex items-center space-x-3">
             {movie.genre && (
               <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">{getTranslatedGenre(movie.genre, t)}</span>

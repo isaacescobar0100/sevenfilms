@@ -12,7 +12,7 @@ function useResponsiveColumns(defaultColumns = 4) {
     const updateColumns = () => {
       const width = window.innerWidth
       if (width < 640) {
-        setColumns(1) // Mobile: 1 columna
+        setColumns(2) // Mobile: 2 columnas
       } else if (width < 768) {
         setColumns(2) // Small tablet: 2 columnas
       } else if (width < 1024) {

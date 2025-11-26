@@ -13,7 +13,7 @@ import EmojiGifPicker from '../common/EmojiGifPicker'
 import ConfirmDialog from '../common/ConfirmDialog'
 import MediaLightbox from '../common/MediaLightbox'
 import PostVideoPlayer from '../common/PostVideoPlayer'
-import ReactionPicker, { ReactionIcons } from '../common/ReactionPicker'
+import ReactionPicker from '../common/ReactionPicker'
 import MentionInput from '../common/MentionInput'
 import CommentItem from './CommentItem'
 
@@ -393,14 +393,10 @@ function PostDetailPanel({ post, isOpen, onClose, initialTab = 'comments' }) {
                           className="flex items-center space-x-2 px-3 py-1.5 rounded-full"
                           style={{ backgroundColor: `${reactionInfo?.color}20` }}
                         >
-                          {ReactionIcons[reaction.reaction_type] && (
-                            <div className="w-5 h-5" style={{ color: reactionInfo?.color }}>
-                              {ReactionIcons[reaction.reaction_type]({
-                                className: "w-5 h-5",
-                                isActive: true,
-                                isHovered: false
-                              })}
-                            </div>
+                          {reactionInfo && (
+                            <span className="text-lg">
+                              {reactionInfo.emoji}
+                            </span>
                           )}
                           <span className="text-sm font-medium" style={{ color: reactionInfo?.color }}>
                             {reactionInfo?.label}

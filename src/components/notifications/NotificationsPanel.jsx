@@ -4,8 +4,7 @@ import { Heart, MessageCircle, UserPlus, Film, X, Trash2 } from 'lucide-react'
 import { useNotifications, useMarkNotificationAsRead, useMarkAllNotificationsAsRead, useDeleteNotification, useDeleteAllNotifications } from '../../hooks/useNotifications'
 import { formatRelativeTime } from '../../utils/formatters'
 import LoadingSpinner from '../common/LoadingSpinner'
-import { REACTIONS } from '../../hooks/usePostReactions'
-import { ReactionIcons } from '../common/ReactionIcons'
+import { REACTIONS, MOVIE_REACTIONS } from '../../hooks/usePostReactions'
 
 function NotificationsPanel({ onClose }) {
   const { t } = useTranslation()
@@ -41,14 +40,22 @@ function NotificationsPanel({ onClose }) {
   const getNotificationIcon = (notification) => {
     const { type, metadata } = notification
 
-    // Si es una reacción, mostrar el icono SVG personalizado
+    // Si es una reacción, mostrar el emoji correspondiente
     if (type === 'reaction') {
-      if (metadata?.reaction && ReactionIcons[metadata.reaction]) {
-        const IconComponent = ReactionIcons[metadata.reaction]
-        return <IconComponent className="h-6 w-6" />
+      if (metadata?.reaction) {
+        // Intentar primero con reacciones de posts
+        const postReaction = REACTIONS[metadata.reaction]
+        if (postReaction) {
+          return <span className="text-xl">{postReaction.emoji}</span>
+        }
+        // Si no, intentar con reacciones de películas
+        const movieReaction = MOVIE_REACTIONS[metadata.reaction]
+        if (movieReaction) {
+          return <span className="text-xl">{movieReaction.emoji}</span>
+        }
       }
-      // Reacción sin metadata, mostrar icono de estrella
-      return <ReactionIcons.excellent className="h-6 w-6" />
+      // Reacción sin metadata, mostrar emoji por defecto
+      return <span className="text-xl">👍</span>
     }
 
     switch (type) {
@@ -72,7 +79,12 @@ function NotificationsPanel({ onClose }) {
     // Si es una reacción
     if (type === 'reaction') {
       if (metadata?.reaction) {
-        const reactionData = REACTIONS[metadata.reaction]
+        // Intentar primero con reacciones de posts
+        let reactionData = REACTIONS[metadata.reaction]
+        // Si no, intentar con reacciones de películas
+        if (!reactionData) {
+          reactionData = MOVIE_REACTIONS[metadata.reaction]
+        }
         const reactionLabel = reactionData?.label || metadata.reaction
         return (
           <span>

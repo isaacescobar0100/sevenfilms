@@ -4,8 +4,18 @@ import { useAuthStore } from '../store/authStore'
 import { createNotification } from './useNotifications'
 import { CACHE_TIMES } from '../lib/queryConfig'
 
-// Definición de reacciones disponibles
+// Reacciones tradicionales para posts y comentarios (estilo redes sociales)
 export const REACTIONS = {
+  like: { emoji: '👍', label: 'Me gusta', color: '#3B82F6' },
+  love: { emoji: '❤️', label: 'Me encanta', color: '#EF4444' },
+  haha: { emoji: '😂', label: 'Me divierte', color: '#F59E0B' },
+  wow: { emoji: '😮', label: 'Me asombra', color: '#8B5CF6' },
+  sad: { emoji: '😢', label: 'Me entristece', color: '#6B7280' },
+  angry: { emoji: '😠', label: 'Me enoja', color: '#DC2626' },
+}
+
+// Reacciones especiales para películas (mantener las originales)
+export const MOVIE_REACTIONS = {
   masterpiece: { emoji: '🏆', label: 'Obra Maestra', value: 5, color: '#FFD700' },
   excellent: { emoji: '⭐', label: 'Excelente', value: 4, color: '#FFA500' },
   popcorn: { emoji: '🍿', label: 'Entretenido', value: 3, color: '#FF6B6B' },
