@@ -1,21 +1,28 @@
 import { useState, useRef, useEffect } from 'react'
 import { COMMENT_REACTIONS } from '../../hooks/useCommentReactions'
 
-// Componente simple para mostrar emojis
-const ReactionIcon = ({ type, size = 28, isActive = false, isHovered = false }) => {
+// Componente para mostrar reacciones con diseño refinado
+const ReactionIcon = ({ type, size = 28, isActive = false, isHovered = false, showInPicker = false }) => {
   const reaction = COMMENT_REACTIONS[type]
 
   if (!reaction) return null
 
-  const scale = isActive ? 1.1 : (isHovered ? 1.3 : 1)
+  // Tamaño base más pequeño para aspecto más elegante
+  const baseSize = showInPicker ? size * 0.85 : size
 
   return (
     <span
+      className={`inline-flex items-center justify-center transition-all duration-200 ${
+        showInPicker
+          ? 'grayscale-0'
+          : isActive
+            ? 'drop-shadow-sm'
+            : 'grayscale-[0.1] opacity-90 hover:grayscale-0 hover:opacity-100'
+      }`}
       style={{
-        fontSize: `${size}px`,
-        transform: `scale(${scale})`,
-        transition: 'transform 0.2s',
-        display: 'inline-block'
+        fontSize: `${baseSize}px`,
+        lineHeight: 1,
+        filter: showInPicker && isHovered ? 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' : undefined
       }}
     >
       {reaction.emoji}
@@ -159,13 +166,10 @@ function CommentReactionPicker({
           onMouseEnter={() => { if (hideTimer.current) clearTimeout(hideTimer.current) }}
           onMouseLeave={handleMouseLeave}
         >
-          <div className="relative bg-white dark:bg-gray-800 rounded-full shadow-2xl px-1.5 py-1.5 flex items-center gap-0.5"
-            style={{
-              boxShadow: '0 0 0 1px rgba(0,0,0,.05), 0 1px 2px rgba(0,0,0,.15), 0 2px 8px rgba(0,0,0,.15)'
-            }}>
-
+          <div className="relative bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 px-1 py-1 flex items-center gap-0.5">
             {reactionsList.map(([type]) => {
               const isHovered = hoveredReaction === type
+              const isSelected = currentReaction === type
 
               return (
                 <button
@@ -173,16 +177,16 @@ function CommentReactionPicker({
                   onClick={() => handleSelectReaction(type)}
                   onMouseEnter={() => setHoveredReaction(type)}
                   onMouseLeave={() => setHoveredReaction(null)}
-                  className={`relative transition-all duration-150 ease-out
-                    ${isHovered ? 'animate-reaction-bounce' : ''}
+                  className={`relative p-1 rounded-lg transition-all duration-200 ease-out
+                    ${isHovered ? 'bg-gray-100 dark:bg-gray-700' : ''}
+                    ${isSelected ? 'bg-primary-100 dark:bg-primary-900/30' : ''}
                   `}
                   style={{
-                    transform: isHovered ? 'scale(1.4) translateY(-6px)' : 'scale(1)',
-                    transformOrigin: 'bottom',
-                    zIndex: isHovered ? 10 : 1
+                    transform: isHovered ? 'scale(1.2) translateY(-3px)' : 'scale(1)',
+                    transformOrigin: 'bottom center'
                   }}
                 >
-                  <ReactionIcon type={type} size={28} isActive={isHovered} isHovered={isHovered} />
+                  <ReactionIcon type={type} size={22} isActive={isSelected} isHovered={isHovered} showInPicker={true} />
                 </button>
               )
             })}
