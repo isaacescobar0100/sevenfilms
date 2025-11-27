@@ -1,90 +1,11 @@
 /**
- * Servicio de moderación de contenido usando Sightengine API directamente
+ * Servicio de moderación de contenido usando Supabase Edge Function
+ * La Edge Function llama a Sightengine API de forma segura (credenciales en servidor)
  * Detecta: nudity, weapons, drugs, violence, gore, offensive gestures
  */
 
-// Configuración de Sightengine
-const SIGHTENGINE_API_USER = '1847212547'
-const SIGHTENGINE_API_SECRET = 'ykaF6xkDnNuTTH42K8KEAi8QDLtCSK48'
-
-// Umbrales de detección (0-1, menor = más estricto)
-const THRESHOLDS = {
-  nudity_raw: 0.4,
-  nudity_partial: 0.6,
-  weapon: 0.6,
-  alcohol: 0.7,
-  drugs: 0.3,  // Muy estricto para drogas
-  gore: 0.4,
-  offensive: 0.6,
-}
-
-/**
- * Analiza los resultados de Sightengine
- */
-function analyzeResults(data) {
-  const reasons = []
-  const details = {
-    nudity: data.nudity,
-    weapon: data.weapon,
-    alcohol: data.alcohol,
-    drugs: data.drugs,
-    gore: data.gore,
-    offensive: data.offensive,
-  }
-
-  // Verificar desnudez
-  const nudity = data.nudity
-  if (nudity) {
-    if ((nudity.sexual_activity ?? 0) >= THRESHOLDS.nudity_raw ||
-        (nudity.sexual_display ?? 0) >= THRESHOLDS.nudity_raw ||
-        (nudity.erotica ?? 0) >= THRESHOLDS.nudity_raw) {
-      reasons.push('Contenido sexual explícito detectado')
-    } else if ((nudity.very_suggestive ?? 0) >= THRESHOLDS.nudity_partial) {
-      reasons.push('Contenido sugestivo detectado')
-    }
-  }
-
-  // Verificar armas
-  const weapon = data.weapon
-  if (weapon?.classes) {
-    const hasWeapon = Object.values(weapon.classes).some(
-      (score) => score >= THRESHOLDS.weapon
-    )
-    if (hasWeapon) {
-      reasons.push('Armas detectadas')
-    }
-  }
-
-  // Verificar alcohol
-  const alcohol = data.alcohol
-  if (alcohol !== undefined && alcohol >= THRESHOLDS.alcohol) {
-    reasons.push('Contenido relacionado con alcohol')
-  }
-
-  // Verificar drogas - más estricto
-  const drugs = data.drugs
-  if (drugs !== undefined && drugs >= THRESHOLDS.drugs) {
-    reasons.push('Contenido relacionado con drogas')
-  }
-
-  // Verificar gore
-  const gore = data.gore
-  if (gore?.prob !== undefined && gore.prob >= THRESHOLDS.gore) {
-    reasons.push('Contenido violento o gore detectado')
-  }
-
-  // Verificar gestos ofensivos
-  const offensive = data.offensive
-  if (offensive?.prob !== undefined && offensive.prob >= THRESHOLDS.offensive) {
-    reasons.push('Gestos ofensivos detectados')
-  }
-
-  return {
-    safe: reasons.length === 0,
-    reasons,
-    details,
-  }
-}
+// URL de la Edge Function de Supabase
+const MODERATION_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/moderate-image`
 
 /**
  * Modera una imagen por URL
@@ -93,31 +14,24 @@ function analyzeResults(data) {
  */
 export async function moderateImageByUrl(imageUrl) {
   try {
-    console.log('[Moderation] Moderando URL:', imageUrl)
+    console.log('[Moderation] Moderando URL via Edge Function:', imageUrl)
 
-    const params = new URLSearchParams({
-      url: imageUrl,
-      models: 'nudity-2.1,weapon,alcohol,drugs,gore-2.0,offensive',
-      api_user: SIGHTENGINE_API_USER,
-      api_secret: SIGHTENGINE_API_SECRET,
+    const response = await fetch(MODERATION_FUNCTION_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({ imageUrl }),
     })
 
-    const response = await fetch(`https://api.sightengine.com/1.0/check.json?${params}`)
-    const data = await response.json()
-
-    console.log('[Moderation] Sightengine response:', data)
-
-    if (data.status !== 'success') {
-      console.error('[Moderation] Sightengine error:', data)
-      return { safe: false, reasons: ['Error en verificación de contenido'], details: data }
-    }
-
-    const result = analyzeResults(data)
-    console.log('[Moderation] Resultado:', result)
+    const result = await response.json()
+    console.log('[Moderation] Edge Function response:', result)
 
     return result
   } catch (error) {
-    console.error('[Moderation] Error:', error)
+    console.error('[Moderation] Error calling Edge Function:', error)
+    // FAIL-CLOSED: bloquear si hay error
     return { safe: false, reasons: ['Error de conexión al verificar contenido'], details: { error: error.message } }
   }
 }
@@ -129,34 +43,26 @@ export async function moderateImageByUrl(imageUrl) {
  */
 export async function moderateImageByFile(file) {
   try {
-    console.log('[Moderation] Moderando archivo:', file.name, file.type, file.size)
+    console.log('[Moderation] Moderando archivo via Edge Function:', file.name, file.type, file.size)
 
     const formData = new FormData()
     formData.append('media', file)
-    formData.append('models', 'nudity-2.1,weapon,alcohol,drugs,gore-2.0,offensive')
-    formData.append('api_user', SIGHTENGINE_API_USER)
-    formData.append('api_secret', SIGHTENGINE_API_SECRET)
 
-    const response = await fetch('https://api.sightengine.com/1.0/check.json', {
+    const response = await fetch(MODERATION_FUNCTION_URL, {
       method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+      },
       body: formData,
     })
 
-    const data = await response.json()
-
-    console.log('[Moderation] Sightengine response:', data)
-
-    if (data.status !== 'success') {
-      console.error('[Moderation] Sightengine error:', data)
-      return { safe: false, reasons: ['Error en verificación de contenido'], details: data }
-    }
-
-    const result = analyzeResults(data)
-    console.log('[Moderation] Resultado:', result)
+    const result = await response.json()
+    console.log('[Moderation] Edge Function response:', result)
 
     return result
   } catch (error) {
-    console.error('[Moderation] Error:', error)
+    console.error('[Moderation] Error calling Edge Function:', error)
+    // FAIL-CLOSED: bloquear si hay error
     return { safe: false, reasons: ['Error de conexión al verificar contenido'], details: { error: error.message } }
   }
 }
