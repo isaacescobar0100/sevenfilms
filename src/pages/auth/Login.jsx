@@ -7,7 +7,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '../../store/authStore'
 import { loginSchema } from '../../utils/validation'
 import ErrorMessage from '../../components/common/ErrorMessage'
-import LoadingSpinner from '../../components/common/LoadingSpinner'
+import SplashScreen from '../../components/common/SplashScreen'
 import { supabase } from '../../lib/supabase'
 
 function Login() {
@@ -17,6 +17,7 @@ function Login() {
   const { signIn } = useAuthStore()
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showSplash, setShowSplash] = useState(false)
 
   const {
     register,
@@ -33,6 +34,10 @@ function Login() {
     try {
       await signIn(data.email, data.password)
 
+      // Mostrar splash screen
+      setShowSplash(true)
+
+      // Prefetch del feed
       queryClient.prefetchQuery({
         queryKey: ['posts', 'feed'],
         queryFn: async () => {
@@ -45,13 +50,20 @@ function Login() {
         },
       })
 
-      navigate('/feed')
+      // Esperar un momento para mostrar la animación
+      setTimeout(() => {
+        navigate('/feed')
+      }, 1800)
     } catch (err) {
       console.error('Login error:', err)
       setError(t('auth.errors.invalidCredentials'))
-    } finally {
       setLoading(false)
     }
+  }
+
+  // Mostrar splash screen durante la carga
+  if (showSplash) {
+    return <SplashScreen />
   }
 
   return (
@@ -104,6 +116,7 @@ function Login() {
                     id="email"
                     autoComplete="email"
                     className="mt-1 input"
+                    disabled={loading}
                   />
                   {errors.email && (
                     <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.email.message}</p>
@@ -120,6 +133,7 @@ function Login() {
                     id="password"
                     autoComplete="current-password"
                     className="mt-1 input"
+                    disabled={loading}
                   />
                   {errors.password && (
                     <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.password.message}</p>
@@ -131,7 +145,14 @@ function Login() {
                   disabled={loading}
                   className="w-full btn btn-primary flex justify-center items-center"
                 >
-                  {loading ? <LoadingSpinner size="sm" /> : t('auth.login.submit')}
+                  {loading ? (
+                    <div className="flex items-center space-x-2">
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Entrando...</span>
+                    </div>
+                  ) : (
+                    t('auth.login.submit')
+                  )}
                 </button>
               </form>
 
