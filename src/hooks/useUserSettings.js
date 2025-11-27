@@ -77,6 +77,37 @@ export function useUpdateUserSettings() {
   })
 }
 
+// Obtener configuraciones de privacidad de cualquier usuario (para verificar acceso a perfiles)
+export function useUserPrivacySettings(userId) {
+  return useQuery({
+    queryKey: ['user-privacy-settings', userId],
+    queryFn: async () => {
+      if (!userId) return DEFAULT_SETTINGS
+
+      const { data, error } = await supabase
+        .from('user_settings')
+        .select('public_profile, show_activity')
+        .eq('user_id', userId)
+        .maybeSingle()
+
+      if (error) {
+        console.error('Error fetching user privacy settings:', error)
+        return { public_profile: true, show_activity: true }
+      }
+
+      if (!data) {
+        return { public_profile: true, show_activity: true }
+      }
+
+      return {
+        public_profile: data.public_profile ?? true,
+        show_activity: data.show_activity ?? true,
+      }
+    },
+    enabled: !!userId,
+  })
+}
+
 // Hook para actualizar una sola configuración
 export function useToggleSetting() {
   const queryClient = useQueryClient()
@@ -134,6 +165,8 @@ export function useToggleSetting() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['user-settings', user?.id] })
+      // También invalidar el cache de privacidad para que otros usuarios vean el cambio
+      queryClient.invalidateQueries({ queryKey: ['user-privacy-settings', user?.id] })
     },
   })
 }
