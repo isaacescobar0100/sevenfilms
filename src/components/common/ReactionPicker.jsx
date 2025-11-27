@@ -158,7 +158,25 @@ function ReactionPicker({
           onMouseEnter={() => { if (hideTimer.current) clearTimeout(hideTimer.current) }}
           onMouseLeave={handleMouseLeave}
         >
-          <div className="relative bg-white dark:bg-gray-800 rounded-full shadow-xl px-3 py-2 flex items-center gap-1 border border-gray-100 dark:border-gray-700">
+          {/* Tooltip flotante - fuera del contenedor para que no se esconda */}
+          {hoveredReaction && (
+            <div
+              className="absolute -top-10 left-0 right-0 flex justify-center pointer-events-none z-20"
+            >
+              <div
+                className="px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap animate-fade-in"
+                style={{
+                  backgroundColor: REACTIONS[hoveredReaction].color,
+                  color: 'white',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.25)'
+                }}
+              >
+                {REACTIONS[hoveredReaction].label}
+              </div>
+            </div>
+          )}
+
+          <div className="relative bg-white dark:bg-gray-800 rounded-full shadow-xl px-2 py-1.5 flex items-center gap-0 border border-gray-200 dark:border-gray-700">
             {reactionsList.map(([type, data]) => {
               const isHovered = hoveredReaction === type
               const isSelected = currentReaction === type
@@ -169,38 +187,37 @@ function ReactionPicker({
                   onClick={() => handleSelectReaction(type)}
                   onMouseEnter={() => setHoveredReaction(type)}
                   onMouseLeave={() => setHoveredReaction(null)}
-                  className="relative group"
+                  className="relative"
                 >
-                  {/* Tooltip con nombre */}
+                  {/* Contenedor del emoji con efecto de elevación */}
                   <div
-                    className={`absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-all duration-200 pointer-events-none
-                      ${isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}
+                    className={`relative transition-all duration-200 ease-out rounded-full
+                      ${isSelected ? 'bg-gray-100 dark:bg-gray-700' : ''}
+                      ${isHovered ? 'z-10' : 'z-0'}
                     `}
                     style={{
-                      backgroundColor: data.color,
-                      color: 'white',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                      transform: isHovered ? 'scale(1.5) translateY(-12px)' : 'scale(1)',
+                      transformOrigin: 'bottom center',
+                      padding: '6px'
                     }}
                   >
-                    {data.label}
-                    {/* Flecha del tooltip */}
+                    {/* Círculo de fondo con color de la reacción al hover */}
                     <div
-                      className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent"
-                      style={{ borderTopColor: data.color }}
+                      className={`absolute inset-0 rounded-full transition-all duration-200 ${
+                        isHovered ? 'opacity-20' : 'opacity-0'
+                      }`}
+                      style={{ backgroundColor: data.color }}
                     />
-                  </div>
-
-                  {/* Emoji con animación */}
-                  <div
-                    className={`transition-all duration-200 ease-out p-1
-                      ${isSelected ? 'bg-gray-100 dark:bg-gray-700 rounded-full' : ''}
-                    `}
-                    style={{
-                      transform: isHovered ? 'scale(1.4) translateY(-8px)' : 'scale(1)',
-                      transformOrigin: 'bottom center'
-                    }}
-                  >
-                    <ReactionIcon type={type} size={28} isActive={isSelected} />
+                    <span
+                      className="relative block transition-all duration-150"
+                      style={{
+                        fontSize: '24px',
+                        lineHeight: 1,
+                        filter: isHovered ? `drop-shadow(0 2px 4px ${data.color}50)` : 'none'
+                      }}
+                    >
+                      {data.emoji}
+                    </span>
                   </div>
                 </button>
               )
@@ -222,9 +239,15 @@ function ReactionPicker({
           }
         }
 
-        @keyframes reaction-bounce {
-          0%, 100% { transform: scale(1) translateY(0); }
-          50% { transform: scale(1.6) translateY(-10px); }
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(4px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
 
         @keyframes bounce-small {
@@ -236,8 +259,8 @@ function ReactionPicker({
           animation: scale-in 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        .animate-reaction-bounce {
-          animation: reaction-bounce 0.4s ease-in-out;
+        .animate-fade-in {
+          animation: fade-in 0.15s ease-out;
         }
 
         .animate-bounce-small {

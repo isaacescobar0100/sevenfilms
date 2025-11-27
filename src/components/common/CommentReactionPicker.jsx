@@ -158,7 +158,23 @@ function CommentReactionPicker({
           onMouseEnter={() => { if (hideTimer.current) clearTimeout(hideTimer.current) }}
           onMouseLeave={handleMouseLeave}
         >
-          <div className="relative bg-white dark:bg-gray-800 rounded-full shadow-xl px-2 py-1.5 flex items-center gap-0.5 border border-gray-100 dark:border-gray-700">
+          {/* Tooltip flotante */}
+          {hoveredReaction && (
+            <div className="absolute -top-8 left-0 right-0 flex justify-center pointer-events-none z-20">
+              <div
+                className="px-2 py-0.5 rounded-md text-[10px] font-semibold whitespace-nowrap animate-fade-in"
+                style={{
+                  backgroundColor: COMMENT_REACTIONS[hoveredReaction].color,
+                  color: 'white',
+                  boxShadow: '0 3px 10px rgba(0,0,0,0.2)'
+                }}
+              >
+                {COMMENT_REACTIONS[hoveredReaction].label}
+              </div>
+            </div>
+          )}
+
+          <div className="relative bg-white dark:bg-gray-800 rounded-full shadow-xl px-1.5 py-1 flex items-center gap-0 border border-gray-200 dark:border-gray-700">
             {reactionsList.map(([type, data]) => {
               const isHovered = hoveredReaction === type
               const isSelected = currentReaction === type
@@ -169,37 +185,35 @@ function CommentReactionPicker({
                   onClick={() => handleSelectReaction(type)}
                   onMouseEnter={() => setHoveredReaction(type)}
                   onMouseLeave={() => setHoveredReaction(null)}
-                  className="relative group"
+                  className="relative"
                 >
-                  {/* Tooltip con nombre */}
                   <div
-                    className={`absolute -top-7 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded text-[10px] font-medium whitespace-nowrap transition-all duration-200 pointer-events-none
-                      ${isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}
+                    className={`relative transition-all duration-200 ease-out rounded-full
+                      ${isSelected ? 'bg-gray-100 dark:bg-gray-700' : ''}
+                      ${isHovered ? 'z-10' : 'z-0'}
                     `}
                     style={{
-                      backgroundColor: data.color,
-                      color: 'white',
-                      boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
+                      transform: isHovered ? 'scale(1.4) translateY(-10px)' : 'scale(1)',
+                      transformOrigin: 'bottom center',
+                      padding: '4px'
                     }}
                   >
-                    {data.label}
                     <div
-                      className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-[3px] border-r-[3px] border-t-[3px] border-transparent"
-                      style={{ borderTopColor: data.color }}
+                      className={`absolute inset-0 rounded-full transition-all duration-200 ${
+                        isHovered ? 'opacity-20' : 'opacity-0'
+                      }`}
+                      style={{ backgroundColor: data.color }}
                     />
-                  </div>
-
-                  {/* Emoji con animación */}
-                  <div
-                    className={`transition-all duration-200 ease-out p-0.5
-                      ${isSelected ? 'bg-gray-100 dark:bg-gray-700 rounded-full' : ''}
-                    `}
-                    style={{
-                      transform: isHovered ? 'scale(1.35) translateY(-6px)' : 'scale(1)',
-                      transformOrigin: 'bottom center'
-                    }}
-                  >
-                    <ReactionIcon type={type} size={22} isActive={isSelected} />
+                    <span
+                      className="relative block transition-all duration-150"
+                      style={{
+                        fontSize: '20px',
+                        lineHeight: 1,
+                        filter: isHovered ? `drop-shadow(0 2px 3px ${data.color}50)` : 'none'
+                      }}
+                    >
+                      {data.emoji}
+                    </span>
                   </div>
                 </button>
               )
@@ -221,9 +235,15 @@ function CommentReactionPicker({
           }
         }
 
-        @keyframes reaction-bounce {
-          0%, 100% { transform: scale(1.4) translateY(-6px); }
-          50% { transform: scale(1.5) translateY(-8px); }
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(4px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
 
         @keyframes bounce-small {
@@ -235,8 +255,8 @@ function CommentReactionPicker({
           animation: scale-in 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        .animate-reaction-bounce {
-          animation: reaction-bounce 0.4s ease-in-out;
+        .animate-fade-in {
+          animation: fade-in 0.15s ease-out;
         }
 
         .animate-bounce-small {
