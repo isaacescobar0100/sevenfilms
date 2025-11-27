@@ -125,13 +125,16 @@ function ReactionPicker({
   useEffect(() => {
     const handleTouchMove = (e) => {
       if (e.touches.length > 0) {
+        // Prevenir scroll mientras se arrastra
+        e.preventDefault()
         handleDragMove(e.touches[0].clientX, e.touches[0].clientY)
       }
     }
     const handleTouchEnd = () => handleDragEnd()
 
     if (isDragging) {
-      document.addEventListener('touchmove', handleTouchMove, { passive: true })
+      // passive: false para poder usar preventDefault()
+      document.addEventListener('touchmove', handleTouchMove, { passive: false })
       document.addEventListener('touchend', handleTouchEnd)
       document.addEventListener('touchcancel', handleTouchEnd)
     }
@@ -161,6 +164,10 @@ function ReactionPicker({
   // Long press para móvil - inicia drag mode
   const handleTouchStart = (e) => {
     if (disabled) return
+    // Guardar la posición inicial del touch
+    const touch = e.touches[0]
+    const startY = touch.clientY
+
     longPressTimer.current = setTimeout(() => {
       setShowPicker(true)
       setIsDragging(true)
@@ -174,6 +181,13 @@ function ReactionPicker({
   const handleTouchEndButton = () => {
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current)
+    }
+  }
+
+  // Prevenir scroll cuando se está en modo drag
+  const handleTouchMoveButton = (e) => {
+    if (isDragging) {
+      e.preventDefault()
     }
   }
 
@@ -223,9 +237,10 @@ function ReactionPicker({
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
         onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMoveButton}
         onTouchEnd={handleTouchEndButton}
         disabled={disabled}
-        className={`flex items-center space-x-1.5 px-2 py-1 rounded transition-all duration-200 select-none group
+        className={`flex items-center space-x-1.5 px-2 py-1 rounded transition-all duration-200 select-none group touch-none
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
           ${animateButton ? 'scale-110' : ''}
           ${isDragging ? 'scale-105' : ''}
