@@ -37,7 +37,10 @@
       "Bash(del /q \"src\\hooks\\useFFmpeg.js\" 2)",
       "Bash(echo:*)",
       "Bash(vercel.json)",
-      "Bash(timeout /t 3 /nobreak)"
+      "Bash(timeout /t 3 /nobreak)",
+      "Bash(mkdir:*)",
+      "Bash(move \"logo seven_Mesa de trabajo 1.svg\" \"logo-full.svg\")",
+      "Bash(move \"logo seven-02.svg\" \"logo-icon.svg\")"
     ],
     "deny": [],
     "ask": []

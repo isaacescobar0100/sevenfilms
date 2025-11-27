@@ -55,7 +55,7 @@ function Register() {
           backgroundColor: '#1a1a2e'
         }}
       >
-        <div className="absolute inset-0 bg-black/60 lg:bg-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/60 lg:bg-transparent" />
 
         <div className="relative z-10 min-h-screen flex">
           <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 flex-col justify-end relative">
@@ -149,7 +149,7 @@ function Register() {
         backgroundColor: '#1a1a2e'
       }}
     >
-      <div className="absolute inset-0 bg-black/60 lg:bg-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/60 lg:bg-transparent" />
 
       <div className="relative z-10 min-h-screen flex">
         <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 flex-col justify-end relative">
@@ -179,12 +179,12 @@ function Register() {
           </div>
         </div>
 
-        <div className="w-full lg:w-1/2 xl:w-2/5 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 lg:bg-gray-50 lg:dark:bg-gray-900">
+        <div className="w-full lg:w-1/2 xl:w-2/5 flex flex-col justify-between py-8 px-4 sm:px-6 lg:px-8 lg:bg-gray-50 lg:dark:bg-gray-900 lg:justify-center">
           <div className="sm:mx-auto sm:w-full sm:max-w-md">
-            <div className="flex justify-center lg:hidden mb-4">
-              <img src="/images/logo-full.svg" alt="Seven Art" className="h-20 w-20" />
+            <div className="flex justify-center lg:hidden mb-2">
+              <img src="/images/logo-full.svg" alt="Seven Art" className="h-14 w-14" />
             </div>
-            <h2 className="text-center text-3xl font-bold text-white lg:text-gray-900 lg:dark:text-white">
+            <h2 className="text-center text-2xl lg:text-3xl font-bold text-white lg:text-gray-900 lg:dark:text-white">
               {t('auth.register.title')}
             </h2>
           </div>
@@ -274,6 +274,27 @@ function Register() {
                     {t('auth.register.loginLink')}
                   </Link>
                 </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer móvil con info */}
+          <div className="lg:hidden mt-6 text-center">
+            <p className="text-white/80 text-sm mb-3">
+              Únete a la comunidad de amantes del cine
+            </p>
+            <div className="flex justify-center gap-4">
+              <div className="flex items-center gap-1.5">
+                <span className="text-base">🎬</span>
+                <span className="text-white/60 text-xs">Películas</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-base">💬</span>
+                <span className="text-white/60 text-xs">Conecta</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-base">⭐</span>
+                <span className="text-white/60 text-xs">Reacciona</span>
               </div>
             </div>
           </div>
