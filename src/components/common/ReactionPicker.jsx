@@ -2,27 +2,19 @@ import { useState, useRef, useEffect } from 'react'
 import { REACTIONS } from '../../hooks/usePostReactions'
 
 // Componente para mostrar reacciones con diseño refinado
-const ReactionIcon = ({ type, size = 38, isActive = false, isHovered = false, showInPicker = false }) => {
+const ReactionIcon = ({ type, size = 38, isActive = false }) => {
   const reaction = REACTIONS[type]
 
   if (!reaction) return null
 
-  // Tamaño base más pequeño para aspecto más elegante
-  const baseSize = showInPicker ? size * 0.85 : size
-
   return (
     <span
-      className={`inline-flex items-center justify-center transition-all duration-200 ${
-        showInPicker
-          ? 'grayscale-0'
-          : isActive
-            ? 'drop-shadow-sm'
-            : 'grayscale-[0.1] opacity-90 hover:grayscale-0 hover:opacity-100'
+      className={`inline-flex items-center justify-center transition-all duration-150 ${
+        isActive ? 'drop-shadow-sm' : ''
       }`}
       style={{
-        fontSize: `${baseSize}px`,
-        lineHeight: 1,
-        filter: showInPicker && isHovered ? 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' : undefined
+        fontSize: `${size}px`,
+        lineHeight: 1
       }}
     >
       {reaction.emoji}
@@ -166,8 +158,8 @@ function ReactionPicker({
           onMouseEnter={() => { if (hideTimer.current) clearTimeout(hideTimer.current) }}
           onMouseLeave={handleMouseLeave}
         >
-          <div className="relative bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 dark:border-gray-700/50 px-1.5 py-1.5 flex items-center gap-0.5">
-            {reactionsList.map(([type]) => {
+          <div className="relative bg-white dark:bg-gray-800 rounded-full shadow-xl px-3 py-2 flex items-center gap-1 border border-gray-100 dark:border-gray-700">
+            {reactionsList.map(([type, data]) => {
               const isHovered = hoveredReaction === type
               const isSelected = currentReaction === type
 
@@ -177,16 +169,39 @@ function ReactionPicker({
                   onClick={() => handleSelectReaction(type)}
                   onMouseEnter={() => setHoveredReaction(type)}
                   onMouseLeave={() => setHoveredReaction(null)}
-                  className={`relative p-1.5 rounded-xl transition-all duration-200 ease-out
-                    ${isHovered ? 'bg-gray-100 dark:bg-gray-700' : ''}
-                    ${isSelected ? 'bg-primary-100 dark:bg-primary-900/30' : ''}
-                  `}
-                  style={{
-                    transform: isHovered ? 'scale(1.25) translateY(-4px)' : 'scale(1)',
-                    transformOrigin: 'bottom center'
-                  }}
+                  className="relative group"
                 >
-                  <ReactionIcon type={type} size={28} isActive={isSelected} isHovered={isHovered} showInPicker={true} />
+                  {/* Tooltip con nombre */}
+                  <div
+                    className={`absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-all duration-200 pointer-events-none
+                      ${isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'}
+                    `}
+                    style={{
+                      backgroundColor: data.color,
+                      color: 'white',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                    }}
+                  >
+                    {data.label}
+                    {/* Flecha del tooltip */}
+                    <div
+                      className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent"
+                      style={{ borderTopColor: data.color }}
+                    />
+                  </div>
+
+                  {/* Emoji con animación */}
+                  <div
+                    className={`transition-all duration-200 ease-out p-1
+                      ${isSelected ? 'bg-gray-100 dark:bg-gray-700 rounded-full' : ''}
+                    `}
+                    style={{
+                      transform: isHovered ? 'scale(1.4) translateY(-8px)' : 'scale(1)',
+                      transformOrigin: 'bottom center'
+                    }}
+                  >
+                    <ReactionIcon type={type} size={28} isActive={isSelected} />
+                  </div>
                 </button>
               )
             })}
