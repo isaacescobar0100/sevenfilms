@@ -1,14 +1,93 @@
 /**
- * Servicio de moderación de contenido usando Supabase Edge Function
- * Las credenciales de Sightengine están seguras en el servidor
+ * Servicio de moderación de contenido usando Sightengine API directamente
  * Detecta: nudity, weapons, drugs, violence, gore, offensive gestures
  */
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
+// Configuración de Sightengine
+const SIGHTENGINE_API_USER = '1847212547'
+const SIGHTENGINE_API_SECRET = 'ykaF6xkDnNuTTH42K8KEAi8QDLtCSK48'
+
+// Umbrales de detección (0-1, menor = más estricto)
+const THRESHOLDS = {
+  nudity_raw: 0.4,
+  nudity_partial: 0.6,
+  weapon: 0.6,
+  alcohol: 0.7,
+  drugs: 0.3,  // Muy estricto para drogas
+  gore: 0.4,
+  offensive: 0.6,
+}
 
 /**
- * Modera una imagen por URL usando Edge Function
+ * Analiza los resultados de Sightengine
+ */
+function analyzeResults(data) {
+  const reasons = []
+  const details = {
+    nudity: data.nudity,
+    weapon: data.weapon,
+    alcohol: data.alcohol,
+    drugs: data.drugs,
+    gore: data.gore,
+    offensive: data.offensive,
+  }
+
+  // Verificar desnudez
+  const nudity = data.nudity
+  if (nudity) {
+    if ((nudity.sexual_activity ?? 0) >= THRESHOLDS.nudity_raw ||
+        (nudity.sexual_display ?? 0) >= THRESHOLDS.nudity_raw ||
+        (nudity.erotica ?? 0) >= THRESHOLDS.nudity_raw) {
+      reasons.push('Contenido sexual explícito detectado')
+    } else if ((nudity.very_suggestive ?? 0) >= THRESHOLDS.nudity_partial) {
+      reasons.push('Contenido sugestivo detectado')
+    }
+  }
+
+  // Verificar armas
+  const weapon = data.weapon
+  if (weapon?.classes) {
+    const hasWeapon = Object.values(weapon.classes).some(
+      (score) => score >= THRESHOLDS.weapon
+    )
+    if (hasWeapon) {
+      reasons.push('Armas detectadas')
+    }
+  }
+
+  // Verificar alcohol
+  const alcohol = data.alcohol
+  if (alcohol !== undefined && alcohol >= THRESHOLDS.alcohol) {
+    reasons.push('Contenido relacionado con alcohol')
+  }
+
+  // Verificar drogas - más estricto
+  const drugs = data.drugs
+  if (drugs !== undefined && drugs >= THRESHOLDS.drugs) {
+    reasons.push('Contenido relacionado con drogas')
+  }
+
+  // Verificar gore
+  const gore = data.gore
+  if (gore?.prob !== undefined && gore.prob >= THRESHOLDS.gore) {
+    reasons.push('Contenido violento o gore detectado')
+  }
+
+  // Verificar gestos ofensivos
+  const offensive = data.offensive
+  if (offensive?.prob !== undefined && offensive.prob >= THRESHOLDS.offensive) {
+    reasons.push('Gestos ofensivos detectados')
+  }
+
+  return {
+    safe: reasons.length === 0,
+    reasons,
+    details,
+  }
+}
+
+/**
+ * Modera una imagen por URL
  * @param {string} imageUrl - URL de la imagen a moderar
  * @returns {Promise<{safe: boolean, reasons: string[], details: object}>}
  */
@@ -16,73 +95,68 @@ export async function moderateImageByUrl(imageUrl) {
   try {
     console.log('[Moderation] Moderando URL:', imageUrl)
 
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/moderate-image`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-      },
-      body: JSON.stringify({ imageUrl }),
+    const params = new URLSearchParams({
+      url: imageUrl,
+      models: 'nudity-2.1,weapon,alcohol,drugs,gore-2.0,offensive',
+      api_user: SIGHTENGINE_API_USER,
+      api_secret: SIGHTENGINE_API_SECRET,
     })
 
-    console.log('[Moderation] Response status:', response.status)
+    const response = await fetch(`https://api.sightengine.com/1.0/check.json?${params}`)
+    const data = await response.json()
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('[Moderation] Edge Function error:', response.status, errorText)
-      // CAMBIADO: Fail-closed para mayor seguridad
-      return { safe: false, reasons: ['Error en verificación de contenido'], details: { error: 'Edge function error', status: response.status } }
+    console.log('[Moderation] Sightengine response:', data)
+
+    if (data.status !== 'success') {
+      console.error('[Moderation] Sightengine error:', data)
+      return { safe: false, reasons: ['Error en verificación de contenido'], details: data }
     }
 
-    const result = await response.json()
-    console.log('[Moderation] Resultado:', JSON.stringify(result, null, 2))
+    const result = analyzeResults(data)
+    console.log('[Moderation] Resultado:', result)
 
     return result
   } catch (error) {
-    console.error('[Moderation] Error de red:', error)
-    // CAMBIADO: Fail-closed - bloquear si hay error
+    console.error('[Moderation] Error:', error)
     return { safe: false, reasons: ['Error de conexión al verificar contenido'], details: { error: error.message } }
   }
 }
 
 /**
- * Modera una imagen por archivo (File o Blob) usando Edge Function
+ * Modera una imagen por archivo (File o Blob)
  * @param {File|Blob} file - Archivo de imagen
  * @returns {Promise<{safe: boolean, reasons: string[], details: object}>}
  */
 export async function moderateImageByFile(file) {
   try {
-    console.log('[Moderation] Iniciando moderación de archivo:', file.name, file.type, file.size)
+    console.log('[Moderation] Moderando archivo:', file.name, file.type, file.size)
 
     const formData = new FormData()
     formData.append('media', file)
+    formData.append('models', 'nudity-2.1,weapon,alcohol,drugs,gore-2.0,offensive')
+    formData.append('api_user', SIGHTENGINE_API_USER)
+    formData.append('api_secret', SIGHTENGINE_API_SECRET)
 
-    console.log('[Moderation] Llamando Edge Function:', `${SUPABASE_URL}/functions/v1/moderate-image`)
-
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/moderate-image`, {
+    const response = await fetch('https://api.sightengine.com/1.0/check.json', {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-      },
       body: formData,
     })
 
-    console.log('[Moderation] Response status:', response.status)
+    const data = await response.json()
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('[Moderation] Edge Function error:', response.status, errorText)
-      // CAMBIADO: Fail-closed en lugar de fail-open para seguridad
-      return { safe: false, reasons: ['Error en verificación de contenido'], details: { error: 'Edge function error', status: response.status } }
+    console.log('[Moderation] Sightengine response:', data)
+
+    if (data.status !== 'success') {
+      console.error('[Moderation] Sightengine error:', data)
+      return { safe: false, reasons: ['Error en verificación de contenido'], details: data }
     }
 
-    const result = await response.json()
-    console.log('[Moderation] Resultado:', JSON.stringify(result, null, 2))
+    const result = analyzeResults(data)
+    console.log('[Moderation] Resultado:', result)
 
     return result
   } catch (error) {
-    console.error('[Moderation] Error de red:', error)
-    // CAMBIADO: Fail-closed - bloquear si hay error para mayor seguridad
+    console.error('[Moderation] Error:', error)
     return { safe: false, reasons: ['Error de conexión al verificar contenido'], details: { error: error.message } }
   }
 }
