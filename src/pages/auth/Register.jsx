@@ -48,72 +48,73 @@ function Register() {
   // Show success message after registration
   if (registrationSuccess) {
     return (
-      <div className="min-h-screen flex">
-        {/* Lado izquierdo - Imagen de fondo (solo desktop) */}
-        <div
-          className="hidden lg:flex lg:w-1/2 xl:w-3/5 bg-cover bg-center bg-no-repeat relative"
-          style={{
-            backgroundImage: 'url(/images/bg-login-old.webp)',
-            backgroundColor: '#1a1a2e'
-          }}
-        >
-          <div className="absolute inset-0 bg-black/50" />
-          <div className="relative z-10 flex flex-col items-center w-full p-12 pt-20 text-white">
-            <img src="/images/logo-full.svg" alt="Seven Art" className="h-24 w-24 mb-4" />
-            <h1 className="text-3xl font-bold mb-2 text-center">Seven Art</h1>
-            <p className="text-lg text-center text-gray-200 max-w-md">
-              Únete a la comunidad de amantes del cine
-            </p>
-          </div>
-        </div>
+      <div
+        className="min-h-screen bg-cover bg-center bg-no-repeat relative"
+        style={{
+          backgroundImage: 'url(/images/bg-login-old.webp)',
+          backgroundColor: '#1a1a2e'
+        }}
+      >
+        <div className="absolute inset-0 bg-black/60 lg:bg-transparent" />
 
-        {/* Lado derecho - Mensaje de éxito */}
-        <div className="w-full lg:w-1/2 xl:w-2/5 bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
-          <div className="sm:mx-auto sm:w-full sm:max-w-md">
-            <div className="flex justify-center lg:hidden">
-              <img src="/images/logo-full.svg" alt="Seven Art" className="h-16 w-16" />
+        <div className="relative z-10 min-h-screen flex">
+          <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 items-start pt-20 justify-center">
+            <div className="text-white text-center p-12">
+              <img src="/images/logo-full.svg" alt="Seven Art" className="h-24 w-24 mx-auto mb-4" />
+              <h1 className="text-3xl font-bold mb-2">Seven Art</h1>
+              <p className="text-lg text-gray-200 max-w-md">
+                Únete a la comunidad de amantes del cine
+              </p>
             </div>
-            <h2 className="mt-6 text-center text-3xl font-bold text-gray-900 dark:text-white">
-              ¡Registro Exitoso!
-            </h2>
           </div>
 
-          <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-            <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow sm:rounded-lg sm:px-10">
-              <div className="text-center">
-                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30 mb-4">
-                  <svg className="h-6 w-6 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
+          <div className="w-full lg:w-1/2 xl:w-2/5 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 lg:bg-gray-50 lg:dark:bg-gray-900">
+            <div className="sm:mx-auto sm:w-full sm:max-w-md">
+              <div className="flex justify-center lg:hidden mb-4">
+                <img src="/images/logo-full.svg" alt="Seven Art" className="h-20 w-20" />
+              </div>
+              <h2 className="text-center text-3xl font-bold text-white lg:text-gray-900 lg:dark:text-white">
+                ¡Registro Exitoso!
+              </h2>
+            </div>
 
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                  Revisa tu bandeja de entrada
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                  Hemos enviado un correo de confirmación a:
-                </p>
-                <p className="text-sm font-medium text-primary-600 dark:text-primary-400 mb-6">
-                  {userEmail}
-                </p>
+            <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+              <div className="bg-white/95 dark:bg-gray-800/95 lg:bg-white lg:dark:bg-gray-800 py-8 px-4 shadow-xl sm:rounded-lg sm:px-10 backdrop-blur-sm lg:backdrop-blur-none">
+                <div className="text-center">
+                  <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30 mb-4">
+                    <svg className="h-6 w-6 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
 
-                <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
-                  <p className="text-sm text-blue-800 dark:text-blue-300">
-                    <strong>Importante:</strong> Debes confirmar tu correo electrónico antes de poder iniciar sesión.
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    Revisa tu bandeja de entrada
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Hemos enviado un correo de confirmación a:
                   </p>
-                </div>
-
-                <div className="space-y-3">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    ¿No recibiste el correo? Revisa tu carpeta de spam o correo no deseado.
+                  <p className="text-sm font-medium text-primary-600 dark:text-primary-400 mb-6">
+                    {userEmail}
                   </p>
 
-                  <Link
-                    to="/login"
-                    className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                  >
-                    Ir al Login
-                  </Link>
+                  <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+                    <p className="text-sm text-blue-800 dark:text-blue-300">
+                      <strong>Importante:</strong> Debes confirmar tu correo electrónico antes de poder iniciar sesión.
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      ¿No recibiste el correo? Revisa tu carpeta de spam o correo no deseado.
+                    </p>
+
+                    <Link
+                      to="/login"
+                      className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                    >
+                      Ir al Login
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>
@@ -124,121 +125,122 @@ function Register() {
   }
 
   return (
-    <div className="min-h-screen flex">
-      {/* Lado izquierdo - Imagen de fondo (solo desktop) */}
-      <div
-        className="hidden lg:flex lg:w-1/2 xl:w-3/5 bg-cover bg-center bg-no-repeat relative"
-        style={{
-          backgroundImage: 'url(/images/bg-login-old.webp)',
-          backgroundColor: '#1a1a2e'
-        }}
-      >
-        <div className="absolute inset-0 bg-black/50" />
-        <div className="relative z-10 flex flex-col items-center w-full p-12 pt-20 text-white">
-          <img src="/images/logo-full.svg" alt="Seven Art" className="h-24 w-24 mb-4" />
-          <h1 className="text-3xl font-bold mb-2 text-center">Seven Art</h1>
-          <p className="text-lg text-center text-gray-200 max-w-md">
-            Únete a la comunidad de amantes del cine
-          </p>
-        </div>
-      </div>
+    <div
+      className="min-h-screen bg-cover bg-center bg-no-repeat relative"
+      style={{
+        backgroundImage: 'url(/images/bg-login-old.webp)',
+        backgroundColor: '#1a1a2e'
+      }}
+    >
+      <div className="absolute inset-0 bg-black/60 lg:bg-transparent" />
 
-      {/* Lado derecho - Formulario */}
-      <div className="w-full lg:w-1/2 xl:w-2/5 bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="flex justify-center lg:hidden">
-            <img src="/images/logo-full.svg" alt="Seven Art" className="h-16 w-16" />
+      <div className="relative z-10 min-h-screen flex">
+        <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 items-start pt-20 justify-center">
+          <div className="text-white text-center p-12">
+            <img src="/images/logo-full.svg" alt="Seven Art" className="h-24 w-24 mx-auto mb-4" />
+            <h1 className="text-3xl font-bold mb-2">Seven Art</h1>
+            <p className="text-lg text-gray-200 max-w-md">
+              Únete a la comunidad de amantes del cine
+            </p>
           </div>
-          <h2 className="mt-6 text-center text-3xl font-bold text-gray-900 dark:text-white">
-            {t('auth.register.title')}
-          </h2>
         </div>
 
-        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow sm:rounded-lg sm:px-10">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              {error && <ErrorMessage message={error} />}
+        <div className="w-full lg:w-1/2 xl:w-2/5 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 lg:bg-gray-50 lg:dark:bg-gray-900">
+          <div className="sm:mx-auto sm:w-full sm:max-w-md">
+            <div className="flex justify-center lg:hidden mb-4">
+              <img src="/images/logo-full.svg" alt="Seven Art" className="h-20 w-20" />
+            </div>
+            <h2 className="text-center text-3xl font-bold text-white lg:text-gray-900 lg:dark:text-white">
+              {t('auth.register.title')}
+            </h2>
+          </div>
 
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t('auth.register.name')}
-                </label>
-                <input
-                  {...register('name')}
-                  type="text"
-                  id="name"
-                  autoComplete="name"
-                  className="mt-1 input"
-                />
-                {errors.name && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.name.message}</p>
-                )}
+          <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+            <div className="bg-white/95 dark:bg-gray-800/95 lg:bg-white lg:dark:bg-gray-800 py-8 px-4 shadow-xl sm:rounded-lg sm:px-10 backdrop-blur-sm lg:backdrop-blur-none">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+                {error && <ErrorMessage message={error} />}
+
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {t('auth.register.name')}
+                  </label>
+                  <input
+                    {...register('name')}
+                    type="text"
+                    id="name"
+                    autoComplete="name"
+                    className="mt-1 input"
+                  />
+                  {errors.name && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.name.message}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {t('auth.register.email')}
+                  </label>
+                  <input
+                    {...register('email')}
+                    type="email"
+                    id="email"
+                    autoComplete="email"
+                    className="mt-1 input"
+                  />
+                  {errors.email && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.email.message}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {t('auth.register.password')}
+                  </label>
+                  <input
+                    {...register('password')}
+                    type="password"
+                    id="password"
+                    autoComplete="new-password"
+                    className="mt-1 input"
+                  />
+                  {errors.password && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.password.message}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {t('auth.register.confirmPassword')}
+                  </label>
+                  <input
+                    {...register('confirmPassword')}
+                    type="password"
+                    id="confirmPassword"
+                    autoComplete="new-password"
+                    className="mt-1 input"
+                  />
+                  {errors.confirmPassword && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.confirmPassword.message}</p>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full btn btn-primary flex justify-center items-center"
+                >
+                  {loading ? <LoadingSpinner size="sm" /> : t('auth.register.submit')}
+                </button>
+              </form>
+
+              <div className="mt-6 text-center">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {t('auth.register.hasAccount')}{' '}
+                  <Link to="/login" className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium">
+                    {t('auth.register.loginLink')}
+                  </Link>
+                </p>
               </div>
-
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t('auth.register.email')}
-                </label>
-                <input
-                  {...register('email')}
-                  type="email"
-                  id="email"
-                  autoComplete="email"
-                  className="mt-1 input"
-                />
-                {errors.email && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.email.message}</p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t('auth.register.password')}
-                </label>
-                <input
-                  {...register('password')}
-                  type="password"
-                  id="password"
-                  autoComplete="new-password"
-                  className="mt-1 input"
-                />
-                {errors.password && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.password.message}</p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t('auth.register.confirmPassword')}
-                </label>
-                <input
-                  {...register('confirmPassword')}
-                  type="password"
-                  id="confirmPassword"
-                  autoComplete="new-password"
-                  className="mt-1 input"
-                />
-                {errors.confirmPassword && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.confirmPassword.message}</p>
-                )}
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full btn btn-primary flex justify-center items-center"
-              >
-                {loading ? <LoadingSpinner size="sm" /> : t('auth.register.submit')}
-              </button>
-            </form>
-
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {t('auth.register.hasAccount')}{' '}
-                <Link to="/login" className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium">
-                  {t('auth.register.loginLink')}
-                </Link>
-              </p>
             </div>
           </div>
         </div>

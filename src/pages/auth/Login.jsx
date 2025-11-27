@@ -33,7 +33,6 @@ function Login() {
     try {
       await signIn(data.email, data.password)
 
-      // Prefetch del feed para mejorar la experiencia
       queryClient.prefetchQuery({
         queryKey: ['posts', 'feed'],
         queryFn: async () => {
@@ -56,93 +55,94 @@ function Login() {
   }
 
   return (
-    <div className="min-h-screen flex">
-      {/* Lado izquierdo - Imagen de fondo (solo desktop) */}
-      <div
-        className="hidden lg:flex lg:w-1/2 xl:w-3/5 bg-cover bg-center bg-no-repeat relative"
-        style={{
-          backgroundImage: 'url(/images/bg-login.webp)',
-          backgroundColor: '#1a1a2e'
-        }}
-      >
-        {/* Overlay oscuro */}
-        <div className="absolute inset-0 bg-black/40" />
+    <div
+      className="min-h-screen bg-cover bg-center bg-no-repeat relative"
+      style={{
+        backgroundImage: 'url(/images/bg-login.webp)',
+        backgroundColor: '#1a1a2e'
+      }}
+    >
+      {/* Overlay oscuro */}
+      <div className="absolute inset-0 bg-black/60 lg:bg-transparent" />
 
-        {/* Contenido sobre la imagen - posicionado arriba */}
-        <div className="relative z-10 flex flex-col items-center w-full p-12 pt-20 text-white">
-          <img src="/images/logo-full.svg" alt="Seven Art" className="h-24 w-24 mb-4" />
-          <h1 className="text-3xl font-bold mb-2 text-center">Seven Art</h1>
-          <p className="text-lg text-center text-gray-200 max-w-md">
-            Comparte tu pasión por el cine y conecta con otros amantes del séptimo arte
-          </p>
-        </div>
-      </div>
-
-      {/* Lado derecho - Formulario */}
-      <div className="w-full lg:w-1/2 xl:w-2/5 bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          {/* Logo para móvil */}
-          <div className="flex justify-center lg:hidden">
-            <img src="/images/logo-full.svg" alt="Seven Art" className="h-16 w-16" />
+      <div className="relative z-10 min-h-screen flex">
+        {/* Lado izquierdo - Contenido sobre imagen (solo desktop) */}
+        <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 items-start pt-20 justify-center">
+          <div className="text-white text-center p-12">
+            <img src="/images/logo-full.svg" alt="Seven Art" className="h-24 w-24 mx-auto mb-4" />
+            <h1 className="text-3xl font-bold mb-2">Seven Art</h1>
+            <p className="text-lg text-gray-200 max-w-md">
+              Comparte tu pasión por el cine y conecta con otros amantes del séptimo arte
+            </p>
           </div>
-          <h2 className="mt-6 text-center text-3xl font-bold text-gray-900 dark:text-white">
-            {t('auth.login.title')}
-          </h2>
         </div>
 
-        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow sm:rounded-lg sm:px-10">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              {error && <ErrorMessage message={error} />}
+        {/* Lado derecho - Formulario */}
+        <div className="w-full lg:w-1/2 xl:w-2/5 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 lg:bg-gray-50 lg:dark:bg-gray-900">
+          <div className="sm:mx-auto sm:w-full sm:max-w-md">
+            {/* Logo para móvil */}
+            <div className="flex justify-center lg:hidden mb-4">
+              <img src="/images/logo-full.svg" alt="Seven Art" className="h-20 w-20" />
+            </div>
+            <h2 className="text-center text-3xl font-bold text-white lg:text-gray-900 lg:dark:text-white">
+              {t('auth.login.title')}
+            </h2>
+          </div>
 
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t('auth.login.email')}
-                </label>
-                <input
-                  {...register('email')}
-                  type="email"
-                  id="email"
-                  autoComplete="email"
-                  className="mt-1 input"
-                />
-                {errors.email && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.email.message}</p>
-                )}
+          <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+            <div className="bg-white/95 dark:bg-gray-800/95 lg:bg-white lg:dark:bg-gray-800 py-8 px-4 shadow-xl sm:rounded-lg sm:px-10 backdrop-blur-sm lg:backdrop-blur-none">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                {error && <ErrorMessage message={error} />}
+
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {t('auth.login.email')}
+                  </label>
+                  <input
+                    {...register('email')}
+                    type="email"
+                    id="email"
+                    autoComplete="email"
+                    className="mt-1 input"
+                  />
+                  {errors.email && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.email.message}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {t('auth.login.password')}
+                  </label>
+                  <input
+                    {...register('password')}
+                    type="password"
+                    id="password"
+                    autoComplete="current-password"
+                    className="mt-1 input"
+                  />
+                  {errors.password && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.password.message}</p>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full btn btn-primary flex justify-center items-center"
+                >
+                  {loading ? <LoadingSpinner size="sm" /> : t('auth.login.submit')}
+                </button>
+              </form>
+
+              <div className="mt-6 text-center">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {t('auth.login.noAccount')}{' '}
+                  <Link to="/register" className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium">
+                    {t('auth.login.registerLink')}
+                  </Link>
+                </p>
               </div>
-
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t('auth.login.password')}
-                </label>
-                <input
-                  {...register('password')}
-                  type="password"
-                  id="password"
-                  autoComplete="current-password"
-                  className="mt-1 input"
-                />
-                {errors.password && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.password.message}</p>
-                )}
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full btn btn-primary flex justify-center items-center"
-              >
-                {loading ? <LoadingSpinner size="sm" /> : t('auth.login.submit')}
-              </button>
-            </form>
-
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {t('auth.login.noAccount')}{' '}
-                <Link to="/register" className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium">
-                  {t('auth.login.registerLink')}
-                </Link>
-              </p>
             </div>
           </div>
         </div>
