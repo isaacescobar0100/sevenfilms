@@ -1,6 +1,6 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Home, Search, Film, User, LogOut, Bell, Mail, Clapperboard, Globe, Moon, Sun, Bookmark, Settings, Plus, PenSquare, Video, X, Clock } from 'lucide-react'
+import { Home, Search, Film, User, LogOut, Bell, Mail, Globe, Moon, Sun, Bookmark, Settings, Plus, PenSquare, Video, X, Clock } from 'lucide-react'
 import { useState } from 'react'
 import { useAuthStore } from '../../store/authStore'
 import { useProfile } from '../../hooks/useProfiles'
@@ -47,8 +47,8 @@ function Navbar() {
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <Link to="/" className="flex items-center space-x-2" aria-label="Seven Art - Ir al inicio">
-                <Clapperboard className="h-8 w-8 text-primary-600" aria-hidden="true" />
-                <span className="text-xl font-bold text-gray-900 dark:text-white">Seven Art</span>
+                <img src="/images/logo-full.svg" alt="Seven Art" className="h-10 w-10" />
+                <span className="text-xl font-bold text-gray-900 dark:text-white hidden sm:block">Seven Art</span>
               </Link>
             </div>
             <div className="flex items-center space-x-4">
@@ -88,8 +88,8 @@ function Navbar() {
           {/* Logo */}
           <div className="flex items-center">
             <Link to="/feed" className="flex items-center space-x-2" aria-label="Seven Art - Ir al feed">
-              <Clapperboard className="h-8 w-8 text-primary-600" aria-hidden="true" />
-              <span className="text-xl font-bold text-gray-900 dark:text-white">Seven Art</span>
+              <img src="/images/logo-full.svg" alt="Seven Art" className="h-10 w-10" />
+              <span className="text-xl font-bold text-gray-900 dark:text-white hidden sm:block">Seven Art</span>
             </Link>
           </div>
 
