@@ -78,8 +78,8 @@ function Register() {
               </h2>
             </div>
 
-            <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-              <div className="bg-white/95 dark:bg-gray-800/95 lg:bg-white lg:dark:bg-gray-800 py-8 px-4 shadow-xl sm:rounded-lg sm:px-10 backdrop-blur-sm lg:backdrop-blur-none">
+            <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
+              <div className="bg-white/90 dark:bg-gray-800/90 lg:bg-white lg:dark:bg-gray-800 py-8 px-6 shadow-2xl rounded-2xl sm:rounded-xl sm:px-10 backdrop-blur-md lg:backdrop-blur-none border border-white/20 lg:border-gray-200 lg:dark:border-gray-700">
                 <div className="text-center">
                   <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30 mb-4">
                     <svg className="h-6 w-6 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -155,8 +155,8 @@ function Register() {
             </h2>
           </div>
 
-          <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-            <div className="bg-white/95 dark:bg-gray-800/95 lg:bg-white lg:dark:bg-gray-800 py-8 px-4 shadow-xl sm:rounded-lg sm:px-10 backdrop-blur-sm lg:backdrop-blur-none">
+          <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
+            <div className="bg-white/90 dark:bg-gray-800/90 lg:bg-white lg:dark:bg-gray-800 py-8 px-6 shadow-2xl rounded-2xl sm:rounded-xl sm:px-10 backdrop-blur-md lg:backdrop-blur-none border border-white/20 lg:border-gray-200 lg:dark:border-gray-700">
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                 {error && <ErrorMessage message={error} />}
 
