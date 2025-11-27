@@ -1,29 +1,8 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { REACTIONS } from '../../hooks/usePostReactions'
 
-// Componente para mostrar reacciones con diseño refinado
-const ReactionIcon = ({ type, size = 38, isActive = false }) => {
-  const reaction = REACTIONS[type]
-
-  if (!reaction) return null
-
-  return (
-    <span
-      className={`inline-flex items-center justify-center transition-all duration-150 ${
-        isActive ? 'drop-shadow-sm' : ''
-      }`}
-      style={{
-        fontSize: `${size}px`,
-        lineHeight: 1
-      }}
-    >
-      {reaction.emoji}
-    </span>
-  )
-}
-
 /**
- * Selector de reacciones
+ * Selector de reacciones con soporte para deslizar (drag) tipo Facebook
  */
 function ReactionPicker({
   currentReaction,
@@ -35,9 +14,12 @@ function ReactionPicker({
   const [showPicker, setShowPicker] = useState(false)
   const [hoveredReaction, setHoveredReaction] = useState(null)
   const [animateButton, setAnimateButton] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
   const containerRef = useRef(null)
   const pickerRef = useRef(null)
   const hideTimer = useRef(null)
+  const longPressTimer = useRef(null)
+  const reactionButtonsRef = useRef([])
 
   const currentReactionData = currentReaction ? REACTIONS[currentReaction] : null
   const reactionsList = Object.entries(REACTIONS)
@@ -46,6 +28,7 @@ function ReactionPicker({
   useEffect(() => {
     return () => {
       if (hideTimer.current) clearTimeout(hideTimer.current)
+      if (longPressTimer.current) clearTimeout(longPressTimer.current)
     }
   }, [])
 
@@ -55,15 +38,18 @@ function ReactionPicker({
       if (containerRef.current && !containerRef.current.contains(e.target)) {
         setShowPicker(false)
         setHoveredReaction(null)
+        setIsDragging(false)
       }
     }
 
     if (showPicker) {
       document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener('touchstart', handleClickOutside)
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchstart', handleClickOutside)
     }
   }, [showPicker])
 
@@ -76,6 +62,87 @@ function ReactionPicker({
     }
   }, [currentReaction])
 
+  // Detectar qué reacción está bajo el cursor/dedo
+  const getReactionFromPosition = useCallback((clientX, clientY) => {
+    for (let i = 0; i < reactionButtonsRef.current.length; i++) {
+      const button = reactionButtonsRef.current[i]
+      if (button) {
+        const rect = button.getBoundingClientRect()
+        // Expandir el área de detección verticalmente para mejor UX
+        const expandedRect = {
+          left: rect.left - 5,
+          right: rect.right + 5,
+          top: rect.top - 30,
+          bottom: rect.bottom + 10
+        }
+        if (
+          clientX >= expandedRect.left &&
+          clientX <= expandedRect.right &&
+          clientY >= expandedRect.top &&
+          clientY <= expandedRect.bottom
+        ) {
+          return reactionsList[i][0]
+        }
+      }
+    }
+    return null
+  }, [reactionsList])
+
+  // Manejar movimiento durante drag
+  const handleDragMove = useCallback((clientX, clientY) => {
+    if (!isDragging || !showPicker) return
+    const reaction = getReactionFromPosition(clientX, clientY)
+    setHoveredReaction(reaction)
+  }, [isDragging, showPicker, getReactionFromPosition])
+
+  // Manejar fin de drag
+  const handleDragEnd = useCallback(() => {
+    if (isDragging && hoveredReaction) {
+      onReact(hoveredReaction)
+      setShowPicker(false)
+    }
+    setIsDragging(false)
+    setHoveredReaction(null)
+  }, [isDragging, hoveredReaction, onReact])
+
+  // Event listeners para mouse
+  useEffect(() => {
+    const handleMouseMove = (e) => handleDragMove(e.clientX, e.clientY)
+    const handleMouseUp = () => handleDragEnd()
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [isDragging, handleDragMove, handleDragEnd])
+
+  // Event listeners para touch
+  useEffect(() => {
+    const handleTouchMove = (e) => {
+      if (e.touches.length > 0) {
+        handleDragMove(e.touches[0].clientX, e.touches[0].clientY)
+      }
+    }
+    const handleTouchEnd = () => handleDragEnd()
+
+    if (isDragging) {
+      document.addEventListener('touchmove', handleTouchMove, { passive: true })
+      document.addEventListener('touchend', handleTouchEnd)
+      document.addEventListener('touchcancel', handleTouchEnd)
+    }
+
+    return () => {
+      document.removeEventListener('touchmove', handleTouchMove)
+      document.removeEventListener('touchend', handleTouchEnd)
+      document.removeEventListener('touchcancel', handleTouchEnd)
+    }
+  }, [isDragging, handleDragMove, handleDragEnd])
+
   const handleMouseEnter = () => {
     if (disabled) return
     if (hideTimer.current) clearTimeout(hideTimer.current)
@@ -83,6 +150,7 @@ function ReactionPicker({
   }
 
   const handleMouseLeave = () => {
+    if (isDragging) return // No cerrar mientras se arrastra
     if (hideTimer.current) clearTimeout(hideTimer.current)
     hideTimer.current = setTimeout(() => {
       setShowPicker(false)
@@ -90,18 +158,53 @@ function ReactionPicker({
     }, 300)
   }
 
+  // Long press para móvil - inicia drag mode
+  const handleTouchStart = (e) => {
+    if (disabled) return
+    longPressTimer.current = setTimeout(() => {
+      setShowPicker(true)
+      setIsDragging(true)
+      // Vibración haptic feedback si está disponible
+      if (navigator.vibrate) {
+        navigator.vibrate(50)
+      }
+    }, 300)
+  }
+
+  const handleTouchEndButton = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+    }
+  }
+
+  // Mouse down para PC - inicia drag mode
+  const handleMouseDown = (e) => {
+    if (disabled) return
+    longPressTimer.current = setTimeout(() => {
+      setShowPicker(true)
+      setIsDragging(true)
+    }, 300)
+  }
+
+  const handleMouseUp = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+    }
+  }
+
   const handleClick = (e) => {
     e.stopPropagation()
-    if (disabled) return
+    if (disabled || isDragging) return
 
     if (currentReaction) {
       onReact(currentReaction)
     } else {
-      onReact('star') // Primera reacción por defecto
+      onReact('star')
     }
   }
 
   const handleSelectReaction = (reactionType) => {
+    if (isDragging) return // En modo drag, solo se selecciona al soltar
     onReact(reactionType)
     setShowPicker(false)
     setHoveredReaction(null)
@@ -117,18 +220,23 @@ function ReactionPicker({
       {/* Botón principal */}
       <button
         onClick={handleClick}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEndButton}
         disabled={disabled}
         className={`flex items-center space-x-1.5 px-2 py-1 rounded transition-all duration-200 select-none group
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
           ${animateButton ? 'scale-110' : ''}
+          ${isDragging ? 'scale-105' : ''}
         `}
       >
         {/* Icono actual */}
         <div className={`transition-transform duration-200 ${animateButton ? 'animate-bounce-small' : ''}`}>
           {currentReactionData ? (
-            <div className="flex items-center">
-              <ReactionIcon type={currentReaction} size={20} isActive={true} />
-            </div>
+            <span style={{ fontSize: '20px', lineHeight: 1 }}>
+              {currentReactionData.emoji}
+            </span>
           ) : (
             <svg width="20" height="20" viewBox="0 0 20 20" className="text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-300">
               <path fill="currentColor" d="M10 3c-3.866 0-7 3.134-7 7s3.134 7 7 7 7-3.134 7-7-3.134-7-7-7zm0 12.5c-3.038 0-5.5-2.462-5.5-5.5S6.962 4.5 10 4.5s5.5 2.462 5.5 5.5-2.462 5.5-5.5 5.5z"/>
@@ -176,18 +284,19 @@ function ReactionPicker({
             </div>
           )}
 
-          <div className="relative bg-white dark:bg-gray-800 rounded-full shadow-xl px-2 py-1.5 flex items-center gap-0 border border-gray-200 dark:border-gray-700">
-            {reactionsList.map(([type, data]) => {
+          <div className={`relative bg-white dark:bg-gray-800 rounded-full shadow-xl px-2 py-1.5 flex items-center gap-0 border border-gray-200 dark:border-gray-700 ${isDragging ? 'ring-2 ring-primary-500/50' : ''}`}>
+            {reactionsList.map(([type, data], index) => {
               const isHovered = hoveredReaction === type
               const isSelected = currentReaction === type
 
               return (
                 <button
                   key={type}
+                  ref={el => reactionButtonsRef.current[index] = el}
                   onClick={() => handleSelectReaction(type)}
-                  onMouseEnter={() => setHoveredReaction(type)}
-                  onMouseLeave={() => setHoveredReaction(null)}
-                  className="relative"
+                  onMouseEnter={() => !isDragging && setHoveredReaction(type)}
+                  onMouseLeave={() => !isDragging && setHoveredReaction(null)}
+                  className="relative touch-none"
                 >
                   {/* Contenedor del emoji con efecto de elevación */}
                   <div
@@ -204,7 +313,7 @@ function ReactionPicker({
                     {/* Círculo de fondo con color de la reacción al hover */}
                     <div
                       className={`absolute inset-0 rounded-full transition-all duration-200 ${
-                        isHovered ? 'opacity-20' : 'opacity-0'
+                        isHovered ? 'opacity-25' : 'opacity-0'
                       }`}
                       style={{ backgroundColor: data.color }}
                     />
@@ -213,7 +322,7 @@ function ReactionPicker({
                       style={{
                         fontSize: '24px',
                         lineHeight: 1,
-                        filter: isHovered ? `drop-shadow(0 2px 4px ${data.color}50)` : 'none'
+                        filter: isHovered ? `drop-shadow(0 3px 6px ${data.color}80)` : 'none'
                       }}
                     >
                       {data.emoji}
