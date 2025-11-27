@@ -1,12 +1,13 @@
 import { useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Image, Video, X, Loader } from 'lucide-react'
+import { Image, Video, X, Loader, ShieldAlert } from 'lucide-react'
 import { useCreatePost, uploadMedia } from '../../hooks/usePosts'
 import { useAuthStore } from '../../store/authStore'
 import { useProfile } from '../../hooks/useProfiles'
 import ErrorMessage from '../common/ErrorMessage'
 import { useRateLimit } from '../../hooks/useRateLimit'
 import RateLimitMessage from '../common/RateLimitMessage'
+import { moderateImageByFile, getModerationErrorMessage } from '../../lib/contentModeration'
 
 function CreatePost({ onSuccess }) {
   const { t } = useTranslation()
@@ -17,24 +18,52 @@ function CreatePost({ onSuccess }) {
   const [mediaPreview, setMediaPreview] = useState(null)
   const [mediaType, setMediaType] = useState(null)
   const [uploading, setUploading] = useState(false)
+  const [moderating, setModerating] = useState(false)
   const [error, setError] = useState('')
+  const [moderationError, setModerationError] = useState('')
   const imageInputRef = useRef(null)
   const videoInputRef = useRef(null)
 
   const createPost = useCreatePost()
   const { canPerformAction, performAction, remaining, limit, resetTime, isLimited } = useRateLimit('postCreation')
 
-  const handleImageSelect = (e) => {
+  const handleImageSelect = async (e) => {
     const file = e.target.files?.[0]
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
         setError(t('post.imageSizeError'))
         return
       }
-      setMediaFile(file)
-      setMediaType('image')
-      setMediaPreview(URL.createObjectURL(file))
+
+      // Moderar contenido de la imagen
+      setModerating(true)
+      setModerationError('')
       setError('')
+
+      try {
+        const moderationResult = await moderateImageByFile(file)
+
+        if (!moderationResult.safe) {
+          const errorMsg = getModerationErrorMessage(moderationResult.reasons)
+          setModerationError(errorMsg || 'Esta imagen no cumple con nuestras políticas de contenido.')
+          setModerating(false)
+          // Limpiar el input
+          if (imageInputRef.current) imageInputRef.current.value = ''
+          return
+        }
+
+        // Imagen aprobada
+        setMediaFile(file)
+        setMediaType('image')
+        setMediaPreview(URL.createObjectURL(file))
+      } catch (err) {
+        console.error('Error moderating image:', err)
+        // Fail-closed: bloquear si hay error para mayor seguridad
+        setModerationError('Error al verificar el contenido. Por favor intenta de nuevo.')
+        if (imageInputRef.current) imageInputRef.current.value = ''
+      } finally {
+        setModerating(false)
+      }
     }
   }
 
@@ -163,6 +192,25 @@ function CreatePost({ onSuccess }) {
               </div>
             )}
 
+            {/* Indicador de moderación en progreso */}
+            {moderating && (
+              <div className="mt-3 flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg">
+                <Loader className="h-4 w-4 animate-spin" />
+                <span>Verificando contenido...</span>
+              </div>
+            )}
+
+            {/* Error de moderación */}
+            {moderationError && (
+              <div className="mt-3 flex items-start gap-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">
+                <ShieldAlert className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium">Contenido no permitido</p>
+                  <p className="text-xs mt-0.5 opacity-90">{moderationError}</p>
+                </div>
+              </div>
+            )}
+
             {error && <ErrorMessage message={error} className="mt-3" />}
 
             {/* Rate Limit Message */}
@@ -190,12 +238,12 @@ function CreatePost({ onSuccess }) {
                   accept="image/*"
                   onChange={handleImageSelect}
                   className="hidden"
-                  disabled={uploading || !!mediaFile}
+                  disabled={uploading || moderating || !!mediaFile}
                 />
                 <button
                   type="button"
                   onClick={() => imageInputRef.current?.click()}
-                  disabled={uploading || !!mediaFile}
+                  disabled={uploading || moderating || !!mediaFile}
                   className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full disabled:opacity-50"
                   title={t('post.attachImage')}
                 >
@@ -209,12 +257,12 @@ function CreatePost({ onSuccess }) {
                   accept="video/*"
                   onChange={handleVideoSelect}
                   className="hidden"
-                  disabled={uploading || !!mediaFile}
+                  disabled={uploading || moderating || !!mediaFile}
                 />
                 <button
                   type="button"
                   onClick={() => videoInputRef.current?.click()}
-                  disabled={uploading || !!mediaFile}
+                  disabled={uploading || moderating || !!mediaFile}
                   className="p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full disabled:opacity-50"
                   title={t('post.attachVideo')}
                 >
@@ -225,13 +273,18 @@ function CreatePost({ onSuccess }) {
               {/* Submit button */}
               <button
                 type="submit"
-                disabled={uploading || (!content.trim() && !mediaFile)}
+                disabled={uploading || moderating || (!content.trim() && !mediaFile)}
                 className="btn btn-primary flex items-center space-x-2 disabled:opacity-50"
               >
                 {uploading ? (
                   <>
                     <Loader className="h-4 w-4 animate-spin" />
                     <span>{t('post.publishing')}</span>
+                  </>
+                ) : moderating ? (
+                  <>
+                    <Loader className="h-4 w-4 animate-spin" />
+                    <span>Verificando...</span>
                   </>
                 ) : (
                   <span>{t('post.publish')}</span>

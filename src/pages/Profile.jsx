@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
-import { Camera, MapPin, Link as LinkIcon, Calendar, Settings, Film, Play, Eye, Trash2, MoreVertical, Edit, MessageCircle } from 'lucide-react'
+import { Camera, MapPin, Link as LinkIcon, Calendar, Settings, Film, Play, Eye, Trash2, MoreVertical, Edit, MessageCircle, Lock, ShieldAlert } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '../lib/supabase'
@@ -10,7 +10,9 @@ import { useUserPosts } from '../hooks/usePosts'
 import { useSharedPostsByUser, useSharedPostsToUser } from '../hooks/useSharedPosts'
 import { useIsFollowing, useToggleFollow } from '../hooks/useFollows'
 import { useDeleteMovie } from '../hooks/useMovies'
+import { useUserPrivacySettings } from '../hooks/useUserSettings'
 import { getTranslatedGenre } from '../utils/genreMapper'
+import { moderateImageByFile, getModerationErrorMessage } from '../lib/contentModeration'
 import Post from '../components/social/Post'
 import SharedPost from '../components/social/SharedPost'
 import LoadingSpinner from '../components/common/LoadingSpinner'
@@ -31,6 +33,7 @@ function Profile() {
   const [showFollowersModal, setShowFollowersModal] = useState(null) // 'followers' | 'following' | null
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [uploadingCover, setUploadingCover] = useState(false)
+  const [moderationError, setModerationError] = useState('')
 
   // Determinar si es el perfil del usuario actual o de otro usuario
   // Se determina después de cargar el perfil comparando IDs
@@ -67,12 +70,35 @@ function Profile() {
   // Determinar si es el perfil propio comparando IDs (funciona tanto con /profile como /profile/username)
   const isOwnProfile = profile?.id === user?.id
 
+  // Obtener configuraciones de privacidad del perfil que estamos viendo
+  const { data: privacySettings, isLoading: privacyLoading } = useUserPrivacySettings(profile?.id)
+
+  // Verificar si el usuario tiene acceso al perfil
+  // Acceso permitido si: es el propio perfil, el perfil es público, o el usuario sigue al dueño del perfil
+  const { data: isFollowing, isLoading: followLoading } = useIsFollowing(isOwnProfile ? null : profile?.id)
+
+  // Solo evaluar acceso cuando las configuraciones están cargadas
+  // Si public_profile es false (perfil privado), necesita ser seguidor para ver
+  const isProfilePublic = privacySettings?.public_profile !== false
+
+  // Debug log - remover después de verificar
+  console.log('Privacy Debug:', {
+    profileId: profile?.id,
+    userId: user?.id,
+    isOwnProfile,
+    privacySettings,
+    isProfilePublic,
+    isFollowing,
+    privacyLoading,
+    followLoading
+  })
+
+  const hasAccessToProfile = isOwnProfile || isProfilePublic || isFollowing === true
+
   const { data: stats } = useUserStats(profile?.id)
   const { data: posts, isLoading: postsLoading } = useUserPosts(profile?.id)
   const { data: sharedByUser = [], isLoading: sharedByLoading } = useSharedPostsByUser(profile?.id)
   const { data: sharedToUser = [], isLoading: sharedToLoading } = useSharedPostsToUser(profile?.id)
-  // Solo verificar follow si NO es el perfil propio
-  const { data: isFollowing } = useIsFollowing(isOwnProfile ? null : profile?.id)
   const toggleFollow = useToggleFollow()
   const updateProfile = useUpdateProfile()
 
@@ -90,7 +116,19 @@ function Profile() {
     if (!file) return
 
     setUploadingAvatar(true)
+    setModerationError('')
+
     try {
+      // Moderar contenido de la imagen
+      const moderationResult = await moderateImageByFile(file)
+
+      if (!moderationResult.safe) {
+        const errorMsg = getModerationErrorMessage(moderationResult.reasons)
+        setModerationError(errorMsg || 'Esta imagen no cumple con nuestras políticas de contenido.')
+        setUploadingAvatar(false)
+        return
+      }
+
       const avatarUrl = await uploadAvatar(file)
       await updateProfile.mutateAsync({ avatar_url: avatarUrl })
     } catch (error) {
@@ -105,7 +143,19 @@ function Profile() {
     if (!file) return
 
     setUploadingCover(true)
+    setModerationError('')
+
     try {
+      // Moderar contenido de la imagen
+      const moderationResult = await moderateImageByFile(file)
+
+      if (!moderationResult.safe) {
+        const errorMsg = getModerationErrorMessage(moderationResult.reasons)
+        setModerationError(errorMsg || 'Esta imagen no cumple con nuestras políticas de contenido.')
+        setUploadingCover(false)
+        return
+      }
+
       const coverUrl = await uploadCover(file)
       await updateProfile.mutateAsync({ cover_url: coverUrl })
     } catch (error) {
@@ -121,7 +171,10 @@ function Profile() {
     navigate('/messages', { state: { selectedUserId: profile.id } })
   }
 
-  if (profileLoading) {
+  // Esperar a que carguen los datos necesarios para evaluar privacidad
+  const isLoadingPrivacyCheck = profileLoading || privacyLoading || (!isOwnProfile && followLoading)
+
+  if (isLoadingPrivacyCheck) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner />
@@ -140,6 +193,114 @@ function Profile() {
     )
   }
 
+  // Mostrar vista de perfil privado si el usuario no tiene acceso
+  if (!hasAccessToProfile) {
+    return (
+      <div className="max-w-5xl mx-auto">
+        <SEO
+          title={profile.full_name || profile.username}
+          description={`Perfil de ${profile.full_name || profile.username} en Seven`}
+          type="profile"
+        />
+
+        {/* Header con Cover y Avatar (versión limitada) */}
+        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+          {/* Cover Image */}
+          <div className="h-48 bg-gradient-to-r from-primary-500 to-primary-700 relative">
+            {profile.cover_url && (
+              <img
+                src={profile.cover_url}
+                alt="Cover"
+                className="w-full h-full object-cover filter blur-sm"
+              />
+            )}
+          </div>
+
+          {/* Avatar y Info Principal */}
+          <div className="px-4 sm:px-6 lg:px-8">
+            <div className="relative -mt-16 sm:-mt-20">
+              <div className="relative inline-block">
+                {profile.avatar_url ? (
+                  <img
+                    src={profile.avatar_url}
+                    alt={profile.full_name}
+                    className="h-24 w-24 sm:h-32 sm:w-32 rounded-full border-4 border-white dark:border-gray-800 bg-white dark:bg-gray-800 object-cover"
+                  />
+                ) : (
+                  <div className="h-24 w-24 sm:h-32 sm:w-32 rounded-full border-4 border-white dark:border-gray-800 bg-primary-600 flex items-center justify-center text-white text-3xl sm:text-4xl font-bold">
+                    {profile.full_name?.[0] || profile.username?.[0] || 'U'}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Nombre, Username y Botón de Seguir */}
+            <div className="flex items-start justify-between mt-3 mb-4">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{profile.full_name}</h1>
+                <p className="text-gray-600 dark:text-gray-400">@{profile.username}</p>
+              </div>
+
+              <div className="flex space-x-2">
+                <button
+                  onClick={handleFollowToggle}
+                  disabled={toggleFollow.isPending}
+                  className="btn btn-primary min-w-[100px]"
+                >
+                  {toggleFollow.isPending ? (
+                    <LoadingSpinner size="sm" />
+                  ) : (
+                    t('profile.follow')
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Stats limitados */}
+            <div className="pb-5">
+              <div className="flex space-x-6 text-sm">
+                <div>
+                  <span className="font-bold text-gray-900 dark:text-white">{stats?.followers_count || 0}</span>{' '}
+                  <span className="text-gray-600 dark:text-gray-400">{t('profile.stats.followers')}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-gray-900 dark:text-white">{stats?.following_count || 0}</span>{' '}
+                  <span className="text-gray-600 dark:text-gray-400">{t('profile.stats.following')}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Mensaje de perfil privado */}
+        <div className="px-4 sm:px-6 lg:px-8 py-12">
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-8 text-center max-w-md mx-auto">
+            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Lock className="h-8 w-8 text-gray-500 dark:text-gray-400" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+              {t('profile.private.title', 'Cuenta privada')}
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              {t('profile.private.description', 'Sigue esta cuenta para ver sus publicaciones y películas.')}
+            </p>
+            <button
+              onClick={handleFollowToggle}
+              disabled={toggleFollow.isPending}
+              className="btn btn-primary"
+            >
+              {toggleFollow.isPending ? (
+                <LoadingSpinner size="sm" />
+              ) : (
+                t('profile.follow')
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-5xl mx-auto">
       <SEO
@@ -148,6 +309,23 @@ function Profile() {
         image={profile.avatar_url}
         type="profile"
       />
+
+      {/* Mensaje de error de moderación */}
+      {moderationError && (
+        <div className="mx-4 sm:mx-6 lg:mx-8 mt-4 flex items-start gap-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-4 py-3 rounded-lg border border-red-200 dark:border-red-800">
+          <ShieldAlert className="h-5 w-5 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium">Contenido no permitido</p>
+            <p className="text-xs mt-0.5 opacity-90">{moderationError}</p>
+          </div>
+          <button
+            onClick={() => setModerationError('')}
+            className="ml-auto text-red-500 hover:text-red-700"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {/* Header con Cover y Avatar */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
