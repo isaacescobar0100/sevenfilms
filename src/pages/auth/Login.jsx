@@ -68,11 +68,11 @@ function Login() {
         {/* Overlay oscuro */}
         <div className="absolute inset-0 bg-black/40" />
 
-        {/* Contenido sobre la imagen */}
-        <div className="relative z-10 flex flex-col justify-center items-center w-full p-12 text-white">
-          <img src="/images/logo-full.svg" alt="Seven Art" className="h-32 w-32 mb-6" />
-          <h1 className="text-4xl font-bold mb-4 text-center">Seven Art</h1>
-          <p className="text-xl text-center text-gray-200 max-w-md">
+        {/* Contenido sobre la imagen - posicionado arriba */}
+        <div className="relative z-10 flex flex-col items-center w-full p-12 pt-20 text-white">
+          <img src="/images/logo-full.svg" alt="Seven Art" className="h-24 w-24 mb-4" />
+          <h1 className="text-3xl font-bold mb-2 text-center">Seven Art</h1>
+          <p className="text-lg text-center text-gray-200 max-w-md">
             Comparte tu pasión por el cine y conecta con otros amantes del séptimo arte
           </p>
         </div>
