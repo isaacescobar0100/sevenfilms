@@ -79,13 +79,41 @@ function Login() {
 
       <div className="relative z-10 min-h-screen flex">
         {/* Lado izquierdo - Contenido sobre imagen (solo desktop) */}
-        <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 items-start pt-20 justify-center">
-          <div className="text-white text-center p-12">
-            <img src="/images/logo-full.svg" alt="Seven Art" className="h-24 w-24 mx-auto mb-4" />
-            <h1 className="text-3xl font-bold mb-2">Seven Art</h1>
-            <p className="text-lg text-gray-200 max-w-md">
+        <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 flex-col justify-end relative">
+          {/* Gradiente inferior para legibilidad */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+          {/* Contenido en la parte inferior */}
+          <div className="relative z-10 p-12 pb-16">
+            <div className="flex items-center gap-4 mb-4">
+              <img src="/images/logo-full.svg" alt="Seven Art" className="h-16 w-16" />
+              <h1 className="text-4xl font-bold text-white">Seven Art</h1>
+            </div>
+            <p className="text-xl text-gray-200 max-w-lg leading-relaxed">
               Comparte tu pasión por el cine y conecta con otros amantes del séptimo arte
             </p>
+
+            {/* Indicadores decorativos */}
+            <div className="flex items-center gap-6 mt-8">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-full bg-primary-600/20 flex items-center justify-center">
+                  <span className="text-lg">🎬</span>
+                </div>
+                <span className="text-gray-300 text-sm">Comparte películas</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-full bg-primary-600/20 flex items-center justify-center">
+                  <span className="text-lg">💬</span>
+                </div>
+                <span className="text-gray-300 text-sm">Conecta con fans</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-full bg-primary-600/20 flex items-center justify-center">
+                  <span className="text-lg">⭐</span>
+                </div>
+                <span className="text-gray-300 text-sm">Reacciona</span>
+              </div>
+            </div>
           </div>
         </div>
 
