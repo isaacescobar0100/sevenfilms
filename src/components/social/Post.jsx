@@ -1,6 +1,6 @@
 import { useState, useCallback, memo } from 'react'
 import { Link } from 'react-router-dom'
-import { MessageCircle, MoreVertical, Trash2, Link as LinkIcon, Check, Edit, Send, Bookmark, Users, Clapperboard, Flag } from 'lucide-react'
+import { MessageCircle, MoreVertical, Trash2, Link as LinkIcon, Check, Edit, Send, Bookmark, Users, Clapperboard, Flag, BadgeCheck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { formatRelativeTime } from '../../utils/formatters'
 import { useUserReaction, usePostReactions, useToggleReaction } from '../../hooks/usePostReactions'
@@ -253,9 +253,12 @@ const Post = memo(function Post({ post, isSharedView = false }) {
           <div>
             <Link
               to={`/profile/${post.username}`}
-              className="font-semibold hover:underline text-gray-900 dark:text-white"
+              className="font-semibold hover:underline text-gray-900 dark:text-white flex items-center gap-1"
             >
               {post.full_name || post.username}
+              {post.verified && (
+                <BadgeCheck className="h-4 w-4 text-blue-500" />
+              )}
             </Link>
             <p className="text-sm text-gray-500 dark:text-gray-400">@{post.username}</p>
           </div>

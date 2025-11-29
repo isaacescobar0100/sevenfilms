@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
-import { Camera, MapPin, Link as LinkIcon, Calendar, Settings, Film, Play, Eye, Trash2, MoreVertical, Edit, MessageCircle, Lock, ShieldAlert } from 'lucide-react'
+import { Camera, MapPin, Link as LinkIcon, Calendar, Settings, Film, Play, Eye, Trash2, MoreVertical, Edit, MessageCircle, Lock, ShieldAlert, BadgeCheck } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '../lib/supabase'
@@ -237,7 +237,12 @@ function Profile() {
             {/* Nombre, Username y Botón de Seguir */}
             <div className="flex items-start justify-between mt-3 mb-4">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{profile.full_name}</h1>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  {profile.full_name}
+                  {profile.verified && (
+                    <BadgeCheck className="h-6 w-6 text-blue-500" />
+                  )}
+                </h1>
                 <p className="text-gray-600 dark:text-gray-400">@{profile.username}</p>
               </div>
 
@@ -405,7 +410,12 @@ function Profile() {
           {/* Nombre, Username y Botones - debajo de la portada */}
           <div className="flex items-start justify-between mt-3 mb-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{profile.full_name}</h1>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                {profile.full_name}
+                {profile.verified && (
+                  <BadgeCheck className="h-6 w-6 text-blue-500" />
+                )}
+              </h1>
               <p className="text-gray-600 dark:text-gray-400">@{profile.username}</p>
             </div>
 

@@ -12,7 +12,7 @@ async function enrichPostsWithDetails(posts) {
   const userIds = [...new Set(posts.map(p => p.user_id))]
 
   const [profilesResult, likesResult, commentsResult] = await Promise.all([
-    supabase.from('profiles').select('id, username, full_name, avatar_url').in('id', userIds),
+    supabase.from('profiles').select('id, username, full_name, avatar_url, verified').in('id', userIds),
     supabase.from('likes').select('post_id').in('post_id', postIds),
     supabase.from('comments').select('post_id').in('post_id', postIds),
   ])
@@ -38,6 +38,7 @@ async function enrichPostsWithDetails(posts) {
       username: profile?.username || 'Usuario',
       full_name: profile?.full_name || 'Usuario Sin Nombre',
       avatar_url: profile?.avatar_url || null,
+      verified: profile?.verified || false,
       likes_count: likesCountMap.get(post.id) || 0,
       comments_count: commentsCountMap.get(post.id) || 0,
     }
