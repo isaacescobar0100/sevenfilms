@@ -13,6 +13,7 @@ import {
   MessageSquare
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import ConfirmDialog from '../../components/common/ConfirmDialog'
 
 const REPORT_REASONS = {
   spam: 'Spam',
@@ -38,6 +39,8 @@ function AdminReports() {
   const [filterType, setFilterType] = useState('all')
   const [showMenu, setShowMenu] = useState(null)
   const [previewContent, setPreviewContent] = useState(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [reportToDelete, setReportToDelete] = useState(null)
   const queryClient = useQueryClient()
 
   // Fetch reports desde content_reports
@@ -128,21 +131,35 @@ function AdminReports() {
   const deleteContentMutation = useMutation({
     mutationFn: async ({ report }) => {
       const { content_type, content_id } = report
+      console.log('Deleting content:', { content_type, content_id })
+
+      let deleteResult
 
       if (content_type === 'post') {
+        // Delete related data first
         await supabase.from('comments').delete().eq('post_id', content_id)
         await supabase.from('likes').delete().eq('post_id', content_id)
-        await supabase.from('posts').delete().eq('id', content_id)
+        await supabase.from('post_reactions').delete().eq('post_id', content_id)
+        await supabase.from('saved_posts').delete().eq('post_id', content_id)
+        // Delete the post
+        deleteResult = await supabase.from('posts').delete().eq('id', content_id)
       } else if (content_type === 'movie') {
-        await supabase.from('movies').delete().eq('id', content_id)
+        deleteResult = await supabase.from('movies').delete().eq('id', content_id)
       } else if (content_type === 'comment') {
-        await supabase.from('comments').delete().eq('id', content_id)
+        deleteResult = await supabase.from('comments').delete().eq('id', content_id)
       } else if (content_type === 'message') {
-        await supabase.from('messages').delete().eq('id', content_id)
+        deleteResult = await supabase.from('messages').delete().eq('id', content_id)
       }
 
+      if (deleteResult?.error) {
+        console.error('Error deleting content:', deleteResult.error)
+        throw deleteResult.error
+      }
+
+      console.log('Content deleted, updating report status...')
+
       // Mark report as resolved with action taken
-      await supabase
+      const { error: updateError } = await supabase
         .from('content_reports')
         .update({
           status: 'resolved',
@@ -150,26 +167,50 @@ function AdminReports() {
           action_taken: 'content_deleted'
         })
         .eq('id', report.id)
+
+      if (updateError) {
+        console.error('Error updating report:', updateError)
+        throw updateError
+      }
+
+      console.log('Report updated successfully')
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-reports'] })
       queryClient.invalidateQueries({ queryKey: ['admin-posts'] })
       queryClient.invalidateQueries({ queryKey: ['admin-movies'] })
       queryClient.invalidateQueries({ queryKey: ['messages'] })
+      queryClient.invalidateQueries({ queryKey: ['posts'] })
       setShowMenu(null)
       setPreviewContent(null)
+      setDeleteDialogOpen(false)
+      setReportToDelete(null)
     },
+    onError: (error) => {
+      console.error('Delete content mutation error:', error)
+      alert('Error al eliminar el contenido: ' + error.message)
+    }
   })
 
   const handleDeleteContent = (report) => {
-    const typeLabel = report.content_type === 'post' ? 'post' :
-                      report.content_type === 'movie' ? 'película' :
-                      report.content_type === 'comment' ? 'comentario' :
-                      report.content_type === 'message' ? 'mensaje' : 'contenido'
+    setReportToDelete(report)
+    setDeleteDialogOpen(true)
+    setShowMenu(null)
+  }
 
-    if (window.confirm(`¿Estás seguro de eliminar este ${typeLabel}? Esta acción no se puede deshacer.`)) {
-      deleteContentMutation.mutate({ report })
+  const confirmDeleteContent = () => {
+    if (reportToDelete) {
+      deleteContentMutation.mutate({ report: reportToDelete })
     }
+  }
+
+  const getDeleteDialogMessage = () => {
+    if (!reportToDelete) return ''
+    const typeLabel = reportToDelete.content_type === 'post' ? 'este post' :
+                      reportToDelete.content_type === 'movie' ? 'esta película' :
+                      reportToDelete.content_type === 'comment' ? 'este comentario' :
+                      reportToDelete.content_type === 'message' ? 'este mensaje' : 'este contenido'
+    return `¿Estás seguro de eliminar ${typeLabel}? Esta acción no se puede deshacer y el contenido será removido permanentemente.`
   }
 
   const getContentIcon = (type) => {
@@ -559,6 +600,21 @@ function AdminReports() {
           onClick={() => setShowMenu(null)}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={deleteDialogOpen}
+        onClose={() => {
+          setDeleteDialogOpen(false)
+          setReportToDelete(null)
+        }}
+        onConfirm={confirmDeleteContent}
+        title="Eliminar contenido"
+        message={getDeleteDialogMessage()}
+        confirmText={deleteContentMutation.isPending ? 'Eliminando...' : 'Eliminar'}
+        cancelText="Cancelar"
+        type="danger"
+      />
     </div>
   )
 }
