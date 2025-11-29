@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, Upload, Film, Subtitles } from 'lucide-react'
+import { X, Upload, Film, Subtitles, CheckCircle, Clock } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -39,6 +39,7 @@ function UploadMovieModal({ onClose }) {
   const [videoDuration, setVideoDuration] = useState(null)
   const [subtitleFile, setSubtitleFile] = useState(null)
   const [videoQualities, setVideoQualities] = useState(null)
+  const [uploadSuccess, setUploadSuccess] = useState(false)
 
   const uploadMovie = useUploadMovie()
   // FFmpeg deshabilitado temporalmente - se moverá a backend
@@ -181,11 +182,49 @@ function UploadMovieModal({ onClose }) {
       // Registrar acción en rate limit
       performAction()
 
-      onClose()
+      // Mostrar mensaje de éxito con información de moderación
+      setUploadSuccess(true)
     } catch (err) {
       console.error('Error uploading movie:', err)
       setError('Error al subir la película. Inténtalo de nuevo.')
     }
+  }
+
+  // Pantalla de éxito después de subir
+  if (uploadSuccess) {
+    return (
+      <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onClose}></div>
+        <div className="flex min-h-screen items-center justify-center p-4">
+          <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-8 text-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+              <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+              Película subida correctamente
+            </h2>
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Clock className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                <span className="font-medium text-yellow-800 dark:text-yellow-200">
+                  Pendiente de revisión
+                </span>
+              </div>
+              <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                Tu película será revisada por nuestro equipo antes de ser publicada.
+                Te notificaremos cuando esté disponible.
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="btn btn-primary w-full"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (

@@ -6,7 +6,7 @@ import { CACHE_TIMES, INFINITE_QUERY_CONFIG } from '../lib/queryConfig'
 
 const MOVIES_PAGE_SIZE = 12
 
-// Obtener todas las películas
+// Obtener todas las películas (solo aprobadas para usuarios normales)
 export function useMovies(filters = {}) {
   return useQuery({
     queryKey: ['movies', filters],
@@ -14,6 +14,11 @@ export function useMovies(filters = {}) {
       let query = supabase
         .from('movies')
         .select('*')
+
+      // Filtrar solo películas aprobadas (a menos que se especifique showAll para admin)
+      if (!filters.showAll) {
+        query = query.eq('status', 'approved')
+      }
 
       // Aplicar ordenamiento
       const sortBy = filters.sortBy || 'popular'
@@ -129,6 +134,11 @@ export function useInfiniteMovies(filters = {}) {
       let query = supabase
         .from('movies')
         .select('*')
+
+      // Filtrar solo películas aprobadas
+      if (!filters.showAll) {
+        query = query.eq('status', 'approved')
+      }
 
       // Aplicar ordenamiento
       const sortBy = filters.sortBy || 'popular'
@@ -352,7 +362,7 @@ export function useUploadMovie() {
         }
       }
 
-      // Crear registro en la base de datos
+      // Crear registro en la base de datos (con status 'pending' para moderación)
       const { data, error } = await supabase
         .from('movies')
         .insert([
@@ -370,6 +380,7 @@ export function useUploadMovie() {
             thumbnail_url: thumbnailUrl,
             subtitle_url: subtitleUrl,
             duration,
+            status: 'pending', // Requiere aprobación de admin
           },
         ])
         .select()
@@ -404,6 +415,78 @@ export function useUpdateMovie() {
       queryClient.invalidateQueries({ queryKey: ['movies'] })
       queryClient.invalidateQueries({ queryKey: ['movie', data.id] })
     },
+  })
+}
+
+// Actualizar status de película (aprobar/rechazar) - Solo admin
+export function useUpdateMovieStatus() {
+  const queryClient = useQueryClient()
+  const { user } = useAuthStore()
+
+  return useMutation({
+    mutationFn: async ({ movieId, status, rejectionReason = null }) => {
+      const updateData = {
+        status,
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: user.id,
+      }
+
+      if (status === 'rejected' && rejectionReason) {
+        updateData.rejection_reason = rejectionReason
+      }
+
+      const { data, error } = await supabase
+        .from('movies')
+        .update(updateData)
+        .eq('id', movieId)
+        .select()
+        .single()
+
+      if (error) throw error
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['movies'] })
+      queryClient.invalidateQueries({ queryKey: ['movies-infinite'] })
+      queryClient.invalidateQueries({ queryKey: ['pending-movies'] })
+    },
+  })
+}
+
+// Obtener películas pendientes de aprobación (solo admin)
+export function usePendingMovies() {
+  return useQuery({
+    queryKey: ['pending-movies'],
+    queryFn: async () => {
+      const { data: movies, error } = await supabase
+        .from('movies')
+        .select('*')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: true }) // Las más antiguas primero
+
+      if (error) throw error
+      if (!movies || movies.length === 0) return []
+
+      // Obtener perfiles de usuarios
+      const userIds = [...new Set(movies.map(m => m.user_id))]
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url')
+        .in('id', userIds)
+
+      const profilesMap = new Map(profiles?.map(p => [p.id, p]) || [])
+
+      return movies.map(movie => ({
+        ...movie,
+        profiles: profilesMap.get(movie.user_id) || {
+          id: movie.user_id,
+          username: 'Usuario',
+          full_name: 'Usuario Sin Nombre',
+          avatar_url: null,
+        },
+      }))
+    },
+    staleTime: 30 * 1000, // 30 segundos
   })
 }
 
