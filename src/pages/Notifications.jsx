@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
-import { Heart, MessageCircle, UserPlus, Film, ArrowLeft, Trash2, Check, Bell } from 'lucide-react'
+import { Heart, MessageCircle, UserPlus, Film, ArrowLeft, Trash2, Check, Bell, CheckCircle, XCircle } from 'lucide-react'
 import { useNotifications, useMarkNotificationAsRead, useMarkAllNotificationsAsRead, useDeleteNotification, useDeleteAllNotifications } from '../hooks/useNotifications'
 import { formatRelativeTime } from '../utils/formatters'
 import LoadingSpinner from '../components/common/LoadingSpinner'
@@ -70,6 +70,10 @@ function Notifications() {
         return <UserPlus className="h-4 w-4 text-green-500" />
       case 'movie':
         return <Film className="h-4 w-4 text-purple-500" />
+      case 'movie_approved':
+        return <CheckCircle className="h-4 w-4 text-green-500" />
+      case 'movie_rejected':
+        return <XCircle className="h-4 w-4 text-red-500" />
       default:
         return null
     }
@@ -104,6 +108,11 @@ function Notifications() {
         return t('notifications.followed', { name: actorName })
       case 'movie':
         return t('notifications.uploadedMovie', { name: actorName })
+      case 'movie_approved':
+        return `¡Tu película "${metadata?.movie_title || 'sin título'}" ha sido aprobada! Ya está visible para todos.`
+      case 'movie_rejected':
+        const reason = metadata?.rejection_reason ? `: ${metadata.rejection_reason}` : ''
+        return `Tu película "${metadata?.movie_title || 'sin título'}" fue rechazada${reason}`
       default:
         return ''
     }
