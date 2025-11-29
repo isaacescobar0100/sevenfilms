@@ -8,17 +8,23 @@ import {
   LogOut,
   Menu,
   X,
-  ChevronLeft
+  ChevronLeft,
+  BarChart3,
+  Megaphone,
+  Settings
 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuthStore } from '../../store/authStore'
 
 const navItems = [
   { to: '/admin', icon: LayoutDashboard, label: 'Dashboard', end: true },
+  { to: '/admin/analytics', icon: BarChart3, label: 'Analytics' },
   { to: '/admin/users', icon: Users, label: 'Usuarios' },
   { to: '/admin/posts', icon: FileText, label: 'Posts' },
   { to: '/admin/movies', icon: Film, label: 'Películas' },
   { to: '/admin/reports', icon: AlertTriangle, label: 'Reportes' },
+  { to: '/admin/announcements', icon: Megaphone, label: 'Anuncios' },
+  { to: '/admin/settings', icon: Settings, label: 'Configuración' },
 ]
 
 function AdminLayout() {

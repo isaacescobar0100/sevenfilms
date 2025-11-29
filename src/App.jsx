@@ -36,6 +36,9 @@ const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'))
 const AdminPosts = lazy(() => import('./pages/admin/AdminPosts'))
 const AdminMovies = lazy(() => import('./pages/admin/AdminMovies'))
 const AdminReports = lazy(() => import('./pages/admin/AdminReports'))
+const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'))
+const AdminAnnouncements = lazy(() => import('./pages/admin/AdminAnnouncements'))
+const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'))
 
 function App() {
   const { user, role, loading, roleLoading } = useAuthStore()
@@ -107,10 +110,13 @@ function App() {
         <Route element={<ProtectedAdminRoute />}>
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
+            <Route path="analytics" element={<AdminAnalytics />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="posts" element={<AdminPosts />} />
             <Route path="movies" element={<AdminMovies />} />
             <Route path="reports" element={<AdminReports />} />
+            <Route path="announcements" element={<AdminAnnouncements />} />
+            <Route path="settings" element={<AdminSettings />} />
           </Route>
         </Route>
       </Routes>
