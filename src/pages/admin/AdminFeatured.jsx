@@ -115,31 +115,45 @@ function AdminFeatured() {
             content,
             image_url,
             created_at,
-            profiles:user_id (username, full_name, avatar_url)
+            user_id
           `)
-          .ilike('content', `%${searchQuery}%`)
+          .or(`content.ilike.%${searchQuery}%`)
           .limit(10)
 
-        results = (data || []).map(post => ({
-          id: post.id,
-          title: post.profiles?.full_name || post.profiles?.username,
-          description: post.content?.substring(0, 100) + '...',
-          image_url: post.image_url || post.profiles?.avatar_url,
-          type: 'post'
-        }))
+        // Obtener perfiles de los posts encontrados
+        if (data && data.length > 0) {
+          const userIds = [...new Set(data.map(p => p.user_id))]
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, username, full_name, avatar_url')
+            .in('id', userIds)
+
+          const profilesMap = new Map(profiles?.map(p => [p.id, p]) || [])
+
+          results = data.map(post => {
+            const profile = profilesMap.get(post.user_id)
+            return {
+              id: post.id,
+              title: profile?.full_name || profile?.username || 'Usuario',
+              description: post.content?.substring(0, 100) + '...',
+              image_url: post.image_url || profile?.avatar_url,
+              type: 'post'
+            }
+          })
+        }
       } else {
         const { data } = await supabase
           .from('movies')
-          .select('id, title, overview, poster_path, release_date, vote_average')
-          .or(`title.ilike.%${searchQuery}%,original_title.ilike.%${searchQuery}%`)
+          .select('id, title, description, thumbnail_url, year, average_rating')
+          .or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`)
           .limit(10)
 
         results = (data || []).map(movie => ({
           id: movie.id,
           title: movie.title,
-          description: movie.overview?.substring(0, 100) + '...',
-          image_url: movie.poster_path ? `https://image.tmdb.org/t/p/w200${movie.poster_path}` : null,
-          extra: `${movie.release_date?.split('-')[0] || 'N/A'} • ${movie.vote_average?.toFixed(1) || 'N/A'}`,
+          description: movie.description?.substring(0, 100) + '...',
+          image_url: movie.thumbnail_url,
+          extra: `${movie.year || 'N/A'} • ${movie.average_rating?.toFixed(1) || 'N/A'}`,
           type: 'movie'
         }))
       }
