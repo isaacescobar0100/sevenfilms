@@ -103,7 +103,7 @@ function AdminExport() {
       case 'users':
         query = supabase
           .from('profiles')
-          .select('id, username, full_name, email, role, verified, is_suspended, created_at, bio, website')
+          .select('id, username, full_name, role, verified, is_suspended, created_at, bio, website')
           .order('created_at', { ascending: false })
         if (dateFilter) query = query.gte('created_at', dateFilter)
         break
@@ -135,7 +135,7 @@ function AdminExport() {
             description,
             status,
             created_at,
-            reporter:profiles!reports_reporter_id_fkey (username)
+            reporter_id
           `)
           .order('created_at', { ascending: false })
         if (dateFilter) query = query.gte('created_at', dateFilter)
@@ -144,8 +144,8 @@ function AdminExport() {
       case 'movies':
         query = supabase
           .from('movies')
-          .select('id, title, original_title, overview, release_date, vote_average, vote_count, popularity, poster_path')
-          .order('popularity', { ascending: false })
+          .select('id, title, description, genre, year, views, average_rating, ratings_count, created_at, thumbnail_url')
+          .order('views', { ascending: false })
         break
 
       case 'comments':
@@ -181,12 +181,11 @@ function AdminExport() {
 
     switch (type) {
       case 'users':
-        headers = ['ID', 'Username', 'Nombre', 'Email', 'Rol', 'Verificado', 'Suspendido', 'Fecha Registro', 'Bio', 'Website']
+        headers = ['ID', 'Username', 'Nombre', 'Rol', 'Verificado', 'Suspendido', 'Fecha Registro', 'Bio', 'Website']
         rows = data.map(u => [
           u.id,
           u.username,
           u.full_name || '',
-          u.email || '',
           u.role,
           u.verified ? 'Sí' : 'No',
           u.is_suspended ? 'Sí' : 'No',
@@ -210,7 +209,7 @@ function AdminExport() {
         break
 
       case 'reports':
-        headers = ['ID', 'Tipo', 'Contenido ID', 'Razón', 'Descripción', 'Estado', 'Reportador', 'Fecha']
+        headers = ['ID', 'Tipo', 'Contenido ID', 'Razón', 'Descripción', 'Estado', 'Reporter ID', 'Fecha']
         rows = data.map(r => [
           r.id,
           r.content_type,
@@ -218,22 +217,23 @@ function AdminExport() {
           r.reason,
           (r.description || '').replace(/[\n\r,]/g, ' '),
           r.status,
-          r.reporter?.username || '',
+          r.reporter_id || '',
           new Date(r.created_at).toLocaleDateString('es-ES')
         ])
         break
 
       case 'movies':
-        headers = ['ID', 'Título', 'Título Original', 'Sinopsis', 'Fecha Estreno', 'Rating', 'Votos', 'Popularidad']
+        headers = ['ID', 'Título', 'Descripción', 'Género', 'Año', 'Vistas', 'Rating', 'Votos', 'Fecha Subida']
         rows = data.map(m => [
           m.id,
           m.title,
-          m.original_title || '',
-          (m.overview || '').replace(/[\n\r,]/g, ' ').substring(0, 200),
-          m.release_date || '',
-          m.vote_average || 0,
-          m.vote_count || 0,
-          m.popularity || 0
+          (m.description || '').replace(/[\n\r,]/g, ' ').substring(0, 200),
+          m.genre || '',
+          m.year || '',
+          m.views || 0,
+          m.average_rating || 0,
+          m.ratings_count || 0,
+          new Date(m.created_at).toLocaleDateString('es-ES')
         ])
         break
 

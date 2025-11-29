@@ -27,7 +27,7 @@ function AdminFeatured() {
   const [searching, setSearching] = useState(false)
 
   // Obtener contenido destacado
-  const { data: featuredContent, isLoading } = useQuery({
+  const { data: featuredContent, isLoading, error: featuredError } = useQuery({
     queryKey: ['featured-content'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -38,9 +38,13 @@ function AdminFeatured() {
         `)
         .order('position', { ascending: true })
 
-      if (error && error.code !== 'PGRST116') throw error
+      // PGRST116 = no rows, 42P01 = table doesn't exist
+      if (error && error.code !== 'PGRST116' && error.code !== '42P01') {
+        console.error('Featured content error:', error)
+      }
       return data || []
-    }
+    },
+    retry: false
   })
 
   // Agregar a destacados

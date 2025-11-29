@@ -234,13 +234,13 @@ function AdminAnalytics() {
     queryFn: async () => {
       const { data } = await supabase
         .from('movies')
-        .select('id, title, poster_url, views')
+        .select('id, title, thumbnail_url, views')
         .order('views', { ascending: false })
         .limit(5)
 
       return data?.map(m => ({
         name: m.title,
-        avatar: m.poster_url,
+        avatar: m.thumbnail_url,
         value: m.views || 0,
       })) || []
     },
