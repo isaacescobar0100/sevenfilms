@@ -55,7 +55,7 @@ export function useConversations() {
       // OPTIMIZADO: Obtener todos los perfiles en batch (1 query en lugar de N)
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, username, full_name, avatar_url')
+        .select('id, username, full_name, avatar_url, verified')
         .in('id', otherUserIds)
 
       const profilesMap = new Map(profiles?.map(p => [p.id, p]) || [])
@@ -114,7 +114,7 @@ export function useMessages(otherUserId) {
       const senderIds = [...new Set(messages.map(m => m.sender_id))]
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, username, full_name, avatar_url')
+        .select('id, username, full_name, avatar_url, verified')
         .in('id', senderIds)
 
       const profilesMap = new Map(profiles?.map(p => [p.id, p]) || [])

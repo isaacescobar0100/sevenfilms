@@ -1,6 +1,6 @@
 import { useState, memo } from 'react'
 import { Link } from 'react-router-dom'
-import { MoreVertical, Edit, Trash2, MessageCircle, Send, X } from 'lucide-react'
+import { MoreVertical, Edit, Trash2, MessageCircle, Send, X, BadgeCheck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { formatRelativeTime } from '../../utils/formatters'
 import { useAuthStore } from '../../store/authStore'
@@ -139,9 +139,12 @@ const CommentItem = memo(function CommentItem({
                   <Link
                     to={`/profile/${comment.profiles?.username}`}
                     onClick={onClose}
-                    className="font-semibold text-sm text-gray-900 dark:text-white hover:underline"
+                    className="font-semibold text-sm text-gray-900 dark:text-white hover:underline flex items-center gap-1"
                   >
                     {comment.profiles?.full_name || comment.profiles?.username}
+                    {comment.profiles?.verified && (
+                      <BadgeCheck className="h-3.5 w-3.5 text-blue-500 flex-shrink-0" />
+                    )}
                   </Link>
 
                   {/* Menú de opciones (solo para comentarios propios) */}

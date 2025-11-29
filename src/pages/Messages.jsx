@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Send, MessageCircle, ArrowLeft, Trash2, MoreVertical, Edit, Trash, Loader2, X, Play } from 'lucide-react'
+import { Send, MessageCircle, ArrowLeft, Trash2, MoreVertical, Edit, Trash, Loader2, X, Play, BadgeCheck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
@@ -61,7 +61,7 @@ function Messages() {
 
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, username, full_name, avatar_url')
+        .select('id, username, full_name, avatar_url, verified')
         .eq('id', location.state.selectedUserId)
         .single()
 
@@ -324,8 +324,11 @@ function Messages() {
 
                       {/* Info */}
                       <div className="flex-1 min-w-0 text-left overflow-hidden">
-                        <p className="font-semibold text-gray-900 dark:text-white truncate mb-0.5">
+                        <p className="font-semibold text-gray-900 dark:text-white truncate mb-0.5 flex items-center gap-1">
                           {conv.otherUser.full_name}
+                          {conv.otherUser.verified && (
+                            <BadgeCheck className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                          )}
                         </p>
                         <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
                           {conv.sender_id === user?.id ? t('messages.you') + ' ' : ''}
@@ -420,7 +423,12 @@ function Messages() {
                   </div>
                 )}
                 <div>
-                  <p className="font-semibold text-gray-900 dark:text-white">{selectedUser.full_name}</p>
+                  <p className="font-semibold text-gray-900 dark:text-white flex items-center gap-1">
+                    {selectedUser.full_name}
+                    {selectedUser.verified && (
+                      <BadgeCheck className="h-4 w-4 text-blue-500" />
+                    )}
+                  </p>
                   <p className="text-sm text-gray-600 dark:text-gray-400">@{selectedUser.username}</p>
                 </div>
               </div>
