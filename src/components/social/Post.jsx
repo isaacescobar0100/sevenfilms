@@ -1,6 +1,6 @@
 import { useState, useCallback, memo } from 'react'
 import { Link } from 'react-router-dom'
-import { MessageCircle, MoreVertical, Trash2, Link as LinkIcon, Check, Edit, Send, Bookmark, Users, Clapperboard } from 'lucide-react'
+import { MessageCircle, MoreVertical, Trash2, Link as LinkIcon, Check, Edit, Send, Bookmark, Users, Clapperboard, Flag } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { formatRelativeTime } from '../../utils/formatters'
 import { useUserReaction, usePostReactions, useToggleReaction } from '../../hooks/usePostReactions'
@@ -16,6 +16,7 @@ import EmojiGifPicker from '../common/EmojiGifPicker'
 import SharePostModal from './SharePostModal'
 import PostVideoPlayer from '../common/PostVideoPlayer'
 import ReactionPicker from '../common/ReactionPicker'
+import ReportContentModal from '../common/ReportContentModal'
 
 const Post = memo(function Post({ post, isSharedView = false }) {
   const { t } = useTranslation()
@@ -38,6 +39,7 @@ const Post = memo(function Post({ post, isSharedView = false }) {
   const [showDeleteCommentDialog, setShowDeleteCommentDialog] = useState(false)
   const [commentToDelete, setCommentToDelete] = useState(null)
   const [showShareModal, setShowShareModal] = useState(false)
+  const [showReportModal, setShowReportModal] = useState(false)
 
   const { data: currentReaction, isLoading: reactionLoading } = useUserReaction(post.id)
   const { data: reactionsData } = usePostReactions(post.id)
@@ -260,43 +262,56 @@ const Post = memo(function Post({ post, isSharedView = false }) {
         </div>
 
         {/* Menu */}
-        {isOwnPost && (
-          <div className="relative">
-            <button
-              onClick={() => setShowMenu(!showMenu)}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
-            >
-              <MoreVertical className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-            </button>
-            {showMenu && (
-              <>
-                <div
-                  className="fixed inset-0 z-0"
-                  onClick={() => setShowMenu(false)}
-                ></div>
-                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 z-10 border border-gray-200 dark:border-gray-700">
-                  <button
-                    onClick={handleEditPost}
-                    className="w-full px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
-                  >
-                    <Edit className="h-4 w-4" />
-                    <span>{t('common.edit')}</span>
-                  </button>
+        <div className="relative">
+          <button
+            onClick={() => setShowMenu(!showMenu)}
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
+          >
+            <MoreVertical className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+          </button>
+          {showMenu && (
+            <>
+              <div
+                className="fixed inset-0 z-0"
+                onClick={() => setShowMenu(false)}
+              ></div>
+              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 z-10 border border-gray-200 dark:border-gray-700">
+                {isOwnPost ? (
+                  <>
+                    <button
+                      onClick={handleEditPost}
+                      className="w-full px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
+                    >
+                      <Edit className="h-4 w-4" />
+                      <span>{t('common.edit')}</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowDeleteDialog(true)
+                        setShowMenu(false)
+                      }}
+                      className="w-full px-4 py-2 text-left text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span>{t('post.delete')}</span>
+                    </button>
+                  </>
+                ) : (
                   <button
                     onClick={() => {
-                      setShowDeleteDialog(true)
+                      setShowReportModal(true)
                       setShowMenu(false)
                     }}
                     className="w-full px-4 py-2 text-left text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"
                   >
-                    <Trash2 className="h-4 w-4" />
-                    <span>{t('post.delete')}</span>
+                    <Flag className="h-4 w-4" />
+                    <span>Reportar</span>
                   </button>
-                </div>
-              </>
-            )}
-          </div>
-        )}
+                )}
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Content */}
@@ -667,6 +682,15 @@ const Post = memo(function Post({ post, isSharedView = false }) {
         post={post}
         isOpen={showShareModal}
         onClose={() => setShowShareModal(false)}
+      />
+
+      {/* Report Content Modal */}
+      <ReportContentModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        contentType="post"
+        contentId={post.id}
+        contentPreview={post.content?.substring(0, 150)}
       />
     </div>
   )

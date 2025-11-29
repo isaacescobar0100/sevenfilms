@@ -10,9 +10,7 @@ import {
   MoreVertical,
   FileText,
   Film,
-  MessageSquare,
-  User,
-  ExternalLink
+  MessageSquare
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
@@ -42,12 +40,12 @@ function AdminReports() {
   const [previewContent, setPreviewContent] = useState(null)
   const queryClient = useQueryClient()
 
-  // Fetch reports
+  // Fetch reports desde content_reports
   const { data: reports, isLoading, error } = useQuery({
     queryKey: ['admin-reports', searchQuery, filterStatus, filterType],
     queryFn: async () => {
       let query = supabase
-        .from('reports')
+        .from('content_reports')
         .select('*')
         .order('created_at', { ascending: false })
 
@@ -75,19 +73,19 @@ function AdminReports() {
       const postIds = reportsData.filter(r => r.content_type === 'post').map(r => r.content_id)
       const movieIds = reportsData.filter(r => r.content_type === 'movie').map(r => r.content_id)
       const commentIds = reportsData.filter(r => r.content_type === 'comment').map(r => r.content_id)
-      const userIds = reportsData.filter(r => r.content_type === 'user').map(r => r.content_id)
+      const messageIds = reportsData.filter(r => r.content_type === 'message').map(r => r.content_id)
 
-      const [postsResult, moviesResult, commentsResult, usersResult] = await Promise.all([
+      const [postsResult, moviesResult, commentsResult, messagesResult] = await Promise.all([
         postIds.length > 0 ? supabase.from('posts').select('id, content, media_url, media_type, user_id').in('id', postIds) : { data: [] },
         movieIds.length > 0 ? supabase.from('movies').select('id, title, thumbnail_url, user_id').in('id', movieIds) : { data: [] },
         commentIds.length > 0 ? supabase.from('comments').select('id, content, user_id, post_id').in('id', commentIds) : { data: [] },
-        userIds.length > 0 ? supabase.from('profiles').select('id, username, avatar_url, full_name').in('id', userIds) : { data: [] },
+        messageIds.length > 0 ? supabase.from('messages').select('id, content, sender_id, receiver_id').in('id', messageIds) : { data: [] },
       ])
 
       const postsMap = new Map(postsResult.data?.map(p => [p.id, p]) || [])
       const moviesMap = new Map(moviesResult.data?.map(m => [m.id, m]) || [])
       const commentsMap = new Map(commentsResult.data?.map(c => [c.id, c]) || [])
-      const usersMap = new Map(usersResult.data?.map(u => [u.id, u]) || [])
+      const messagesMap = new Map(messagesResult.data?.map(m => [m.id, m]) || [])
 
       return reportsData.map(report => ({
         ...report,
@@ -96,7 +94,7 @@ function AdminReports() {
           report.content_type === 'post' ? postsMap.get(report.content_id) :
           report.content_type === 'movie' ? moviesMap.get(report.content_id) :
           report.content_type === 'comment' ? commentsMap.get(report.content_id) :
-          report.content_type === 'user' ? usersMap.get(report.content_id) : null,
+          report.content_type === 'message' ? messagesMap.get(report.content_id) : null,
       }))
     },
     staleTime: 30 * 1000,
@@ -104,10 +102,18 @@ function AdminReports() {
 
   // Update report status
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ reportId, status }) => {
+    mutationFn: async ({ reportId, status, actionTaken = null }) => {
+      const updateData = {
+        status,
+        reviewed_at: new Date().toISOString()
+      }
+      if (actionTaken) {
+        updateData.action_taken = actionTaken
+      }
+
       const { error } = await supabase
-        .from('reports')
-        .update({ status, reviewed_at: new Date().toISOString() })
+        .from('content_reports')
+        .update(updateData)
         .eq('id', reportId)
 
       if (error) throw error
@@ -131,18 +137,25 @@ function AdminReports() {
         await supabase.from('movies').delete().eq('id', content_id)
       } else if (content_type === 'comment') {
         await supabase.from('comments').delete().eq('id', content_id)
+      } else if (content_type === 'message') {
+        await supabase.from('messages').delete().eq('id', content_id)
       }
 
-      // Mark report as resolved
+      // Mark report as resolved with action taken
       await supabase
-        .from('reports')
-        .update({ status: 'resolved', reviewed_at: new Date().toISOString() })
+        .from('content_reports')
+        .update({
+          status: 'resolved',
+          reviewed_at: new Date().toISOString(),
+          action_taken: 'content_deleted'
+        })
         .eq('id', report.id)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-reports'] })
       queryClient.invalidateQueries({ queryKey: ['admin-posts'] })
       queryClient.invalidateQueries({ queryKey: ['admin-movies'] })
+      queryClient.invalidateQueries({ queryKey: ['messages'] })
       setShowMenu(null)
       setPreviewContent(null)
     },
@@ -151,7 +164,8 @@ function AdminReports() {
   const handleDeleteContent = (report) => {
     const typeLabel = report.content_type === 'post' ? 'post' :
                       report.content_type === 'movie' ? 'película' :
-                      report.content_type === 'comment' ? 'comentario' : 'contenido'
+                      report.content_type === 'comment' ? 'comentario' :
+                      report.content_type === 'message' ? 'mensaje' : 'contenido'
 
     if (window.confirm(`¿Estás seguro de eliminar este ${typeLabel}? Esta acción no se puede deshacer.`)) {
       deleteContentMutation.mutate({ report })
@@ -163,7 +177,7 @@ function AdminReports() {
       case 'post': return <FileText className="h-4 w-4" />
       case 'movie': return <Film className="h-4 w-4" />
       case 'comment': return <MessageSquare className="h-4 w-4" />
-      case 'user': return <User className="h-4 w-4" />
+      case 'message': return <MessageSquare className="h-4 w-4" />
       default: return <AlertTriangle className="h-4 w-4" />
     }
   }
@@ -178,8 +192,8 @@ function AdminReports() {
         return report.content.title
       case 'comment':
         return report.content.content?.substring(0, 100)
-      case 'user':
-        return `@${report.content.username}`
+      case 'message':
+        return report.content.content?.substring(0, 100) || '(Mensaje sin texto)'
       default:
         return 'N/A'
     }
@@ -225,7 +239,7 @@ function AdminReports() {
             <option value="post">Posts</option>
             <option value="movie">Películas</option>
             <option value="comment">Comentarios</option>
-            <option value="user">Usuarios</option>
+            <option value="message">Mensajes</option>
           </select>
 
           {/* Search */}
@@ -402,7 +416,7 @@ function AdminReports() {
                                 <XCircle className="h-4 w-4 mr-2" />
                                 Descartar reporte
                               </button>
-                              {report.content && report.content_type !== 'user' && (
+                              {report.content && (
                                 <button
                                   onClick={() => handleDeleteContent(report)}
                                   className="flex items-center w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -496,23 +510,12 @@ function AdminReports() {
                   </div>
                 )}
 
-                {previewContent.content_type === 'user' && previewContent.content && (
-                  <div className="flex items-center gap-4">
-                    <div className="h-16 w-16 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
-                      {previewContent.content.avatar_url ? (
-                        <img src={previewContent.content.avatar_url} alt="" className="h-full w-full object-cover" />
-                      ) : (
-                        <div className="h-full w-full flex items-center justify-center text-gray-500 text-2xl">?</div>
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-900 dark:text-white">
-                        {previewContent.content.full_name || 'Sin nombre'}
-                      </p>
-                      <p className="text-gray-500 dark:text-gray-400">
-                        @{previewContent.content.username}
-                      </p>
-                    </div>
+                {previewContent.content_type === 'message' && previewContent.content && (
+                  <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-4">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Mensaje privado</p>
+                    <p className="text-gray-900 dark:text-white">
+                      {previewContent.content.content}
+                    </p>
                   </div>
                 )}
 
@@ -535,7 +538,7 @@ function AdminReports() {
                 >
                   Descartar
                 </button>
-                {previewContent.content && previewContent.content_type !== 'user' && (
+                {previewContent.content && (
                   <button
                     onClick={() => handleDeleteContent(previewContent)}
                     className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
