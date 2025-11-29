@@ -54,29 +54,27 @@ export function useMovies(filters = {}) {
       const { data: movies, error } = await query
 
       if (error) throw error
+      if (!movies || movies.length === 0) return []
 
-      // Obtener perfiles de los usuarios
-      const moviesWithProfiles = await Promise.all(
-        movies.map(async (movie) => {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('id, username, full_name, avatar_url')
-            .eq('id', movie.user_id)
-            .maybeSingle()
+      // OPTIMIZADO: Obtener todos los perfiles en batch (1 query en lugar de N)
+      const userIds = [...new Set(movies.map(m => m.user_id))]
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url')
+        .in('id', userIds)
 
-          return {
-            ...movie,
-            profiles: profile || {
-              id: movie.user_id,
-              username: 'Usuario',
-              full_name: 'Usuario Sin Nombre',
-              avatar_url: null,
-            },
-          }
-        })
-      )
+      const profilesMap = new Map(profiles?.map(p => [p.id, p]) || [])
 
-      return moviesWithProfiles
+      // Combinar películas con perfiles
+      return movies.map(movie => ({
+        ...movie,
+        profiles: profilesMap.get(movie.user_id) || {
+          id: movie.user_id,
+          username: 'Usuario',
+          full_name: 'Usuario Sin Nombre',
+          avatar_url: null,
+        },
+      }))
     },
     ...CACHE_TIMES.MOVIES,
   })
@@ -174,31 +172,33 @@ export function useInfiniteMovies(filters = {}) {
       const { data: movies, error, count } = await query
 
       if (error) throw error
+      if (!movies || movies.length === 0) {
+        return { data: [], nextCursor: undefined }
+      }
 
-      // Obtener perfiles de los usuarios
-      const moviesWithProfiles = await Promise.all(
-        (movies || []).map(async (movie) => {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('id, username, full_name, avatar_url')
-            .eq('id', movie.user_id)
-            .maybeSingle()
+      // OPTIMIZADO: Obtener todos los perfiles en batch (1 query en lugar de N)
+      const userIds = [...new Set(movies.map(m => m.user_id))]
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url')
+        .in('id', userIds)
 
-          return {
-            ...movie,
-            profiles: profile || {
-              id: movie.user_id,
-              username: 'Usuario',
-              full_name: 'Usuario Sin Nombre',
-              avatar_url: null,
-            },
-          }
-        })
-      )
+      const profilesMap = new Map(profiles?.map(p => [p.id, p]) || [])
+
+      // Combinar películas con perfiles
+      const moviesWithProfiles = movies.map(movie => ({
+        ...movie,
+        profiles: profilesMap.get(movie.user_id) || {
+          id: movie.user_id,
+          username: 'Usuario',
+          full_name: 'Usuario Sin Nombre',
+          avatar_url: null,
+        },
+      }))
 
       return {
         data: moviesWithProfiles,
-        nextCursor: movies && movies.length === MOVIES_PAGE_SIZE ? pageParam + MOVIES_PAGE_SIZE : undefined,
+        nextCursor: movies.length === MOVIES_PAGE_SIZE ? pageParam + MOVIES_PAGE_SIZE : undefined,
       }
     },
     getNextPageParam: (lastPage) => lastPage.nextCursor,

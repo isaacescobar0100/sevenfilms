@@ -15,27 +15,30 @@ export function useComments(postId) {
         .order('created_at', { ascending: true })
 
       if (error) throw error
+      if (!comments || comments.length === 0) return []
 
-      // Obtener perfiles de los usuarios que comentaron
-      const commentsWithProfiles = await Promise.all(
-        comments.map(async (comment) => {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('username, full_name, avatar_url')
-            .eq('id', comment.user_id)
-            .maybeSingle()
+      // OPTIMIZADO: Obtener todos los perfiles en batch (1 query en lugar de N)
+      const userIds = [...new Set(comments.map(c => c.user_id))]
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url')
+        .in('id', userIds)
 
-          return {
-            ...comment,
-            profiles: profile || {
-              username: 'Usuario',
-              full_name: 'Usuario Sin Nombre',
-              avatar_url: null,
-            },
-            replies: [], // Inicializar array de respuestas
-          }
-        })
-      )
+      const profilesMap = new Map(profiles?.map(p => [p.id, p]) || [])
+
+      // Combinar comentarios con perfiles
+      const commentsWithProfiles = comments.map(comment => {
+        const profile = profilesMap.get(comment.user_id)
+        return {
+          ...comment,
+          profiles: profile || {
+            username: 'Usuario',
+            full_name: 'Usuario Sin Nombre',
+            avatar_url: null,
+          },
+          replies: [],
+        }
+      })
 
       // Organizar comentarios en estructura jerárquica
       const commentMap = {}
@@ -49,10 +52,8 @@ export function useComments(postId) {
       // Luego, organizar en jerarquía
       commentsWithProfiles.forEach(comment => {
         if (comment.parent_id && commentMap[comment.parent_id]) {
-          // Es una respuesta, agregarla al padre
           commentMap[comment.parent_id].replies.push(comment)
         } else {
-          // Es un comentario raíz
           rootComments.push(comment)
         }
       })

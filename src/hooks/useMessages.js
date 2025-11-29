@@ -45,8 +45,22 @@ export function useConversations() {
         .order('created_at', { ascending: false })
 
       if (error) throw error
+      if (!messages || messages.length === 0) return []
 
-      // Agrupar por conversación y obtener perfiles
+      // Identificar IDs únicos de otros usuarios
+      const otherUserIds = [...new Set(messages.map(m =>
+        m.sender_id === user.id ? m.receiver_id : m.sender_id
+      ))]
+
+      // OPTIMIZADO: Obtener todos los perfiles en batch (1 query en lugar de N)
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url')
+        .in('id', otherUserIds)
+
+      const profilesMap = new Map(profiles?.map(p => [p.id, p]) || [])
+
+      // Agrupar por conversación
       const conversations = new Map()
 
       for (const message of messages) {
@@ -55,16 +69,9 @@ export function useConversations() {
           : message.sender_id
 
         if (!conversations.has(otherUserId)) {
-          // Obtener perfil del otro usuario
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('id, username, full_name, avatar_url')
-            .eq('id', otherUserId)
-            .maybeSingle()
-
           conversations.set(otherUserId, {
             ...message,
-            otherUser: profile || {
+            otherUser: profilesMap.get(otherUserId) || {
               id: otherUserId,
               username: 'Usuario',
               full_name: 'Usuario Sin Nombre',
@@ -101,29 +108,27 @@ export function useMessages(otherUserId) {
         .order('created_at', { ascending: true })
 
       if (error) throw error
+      if (!messages || messages.length === 0) return []
 
-      // Obtener perfil del sender para cada mensaje
-      const messagesWithProfiles = await Promise.all(
-        messages.map(async (message) => {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('id, username, full_name, avatar_url')
-            .eq('id', message.sender_id)
-            .maybeSingle()
+      // OPTIMIZADO: Obtener perfiles de ambos usuarios en batch (1 query en lugar de N)
+      const senderIds = [...new Set(messages.map(m => m.sender_id))]
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url')
+        .in('id', senderIds)
 
-          return {
-            ...message,
-            sender: profile || {
-              id: message.sender_id,
-              username: 'Usuario',
-              full_name: 'Usuario Sin Nombre',
-              avatar_url: null,
-            },
-          }
-        })
-      )
+      const profilesMap = new Map(profiles?.map(p => [p.id, p]) || [])
 
-      return messagesWithProfiles
+      // Combinar mensajes con perfiles
+      return messages.map(message => ({
+        ...message,
+        sender: profilesMap.get(message.sender_id) || {
+          id: message.sender_id,
+          username: 'Usuario',
+          full_name: 'Usuario Sin Nombre',
+          avatar_url: null,
+        },
+      }))
     },
     enabled: !!user && !!otherUserId,
   })

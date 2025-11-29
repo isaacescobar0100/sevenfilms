@@ -61,14 +61,16 @@ export const CACHE_TIMES: Record<CacheType, CacheConfig> = {
   },
 }
 
-// Configuración por defecto global (más agresiva)
+// Configuración por defecto global - robusta para recuperación
 export const DEFAULT_QUERY_CONFIG = {
   staleTime: 5 * 60 * 1000,    // 5 minutos por defecto
   gcTime: 30 * 60 * 1000,      // 30 minutos de garbage collection
-  retry: 1,
-  refetchOnWindowFocus: false,
-  refetchOnMount: false,        // No refetch si datos están frescos
-  refetchOnReconnect: false,    // No refetch al reconectar si hay datos
+  retry: 3,                     // 3 reintentos para conexiones fallidas
+  retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 10000),
+  networkMode: 'always' as const, // No pausar queries por estado de red
+  refetchOnWindowFocus: true,   // Refrescar al volver a la app/pestaña
+  refetchOnMount: 'always' as const, // Siempre verificar datos frescos
+  refetchOnReconnect: true,     // Refrescar al reconectar
 } as const
 
 // Helper para crear opciones de query con caché específico
@@ -87,6 +89,8 @@ export function createQueryOptions<T extends object>(
 export const INFINITE_QUERY_CONFIG = {
   staleTime: 5 * 60 * 1000,
   gcTime: 30 * 60 * 1000,
-  refetchOnWindowFocus: false,
-  refetchOnMount: false,
+  refetchOnWindowFocus: true,
+  refetchOnMount: 'always' as const,
+  refetchOnReconnect: true,
+  retry: 3,
 } as const

@@ -47,42 +47,28 @@ export function useSavedPosts() {
       const postIds = savedData.map(s => s.post_id).filter(Boolean)
       if (postIds.length === 0) return []
 
-      // Obtener los posts uno por uno
-      const postsPromises = postIds.map(async (postId) => {
-        const { data: post, error: postError } = await supabase
-          .from('posts')
-          .select('*')
-          .eq('id', postId)
-          .maybeSingle()
+      // OPTIMIZADO: Obtener todos los posts y perfiles en batch (2 queries en lugar de N*2)
+      const [postsResult, profilesResult] = await Promise.all([
+        supabase.from('posts').select('*').in('id', postIds),
+        supabase.from('profiles').select('id, username, full_name, avatar_url')
+      ])
 
-        if (postError || !post) {
-          console.error('Error fetching post:', postId, postError)
-          return null
-        }
+      if (postsResult.error) throw postsResult.error
 
-        // Obtener el perfil del usuario del post
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('id, username, full_name, avatar_url')
-          .eq('id', post.user_id)
-          .maybeSingle()
+      const posts = postsResult.data || []
+      const profiles = profilesResult.data || []
+      const profilesMap = new Map(profiles.map(p => [p.id, p]))
 
+      // Combinar los datos
+      return savedData.map(saved => {
+        const post = posts.find(p => p.id === saved.post_id)
+        if (!post) return null
+        const profile = profilesMap.get(post.user_id)
         return {
           ...post,
           username: profile?.username,
           full_name: profile?.full_name,
           avatar_url: profile?.avatar_url,
-        }
-      })
-
-      const postsData = (await Promise.all(postsPromises)).filter(Boolean)
-
-      // Combinar los datos y transformar
-      return savedData.map(saved => {
-        const post = postsData?.find(p => p.id === saved.post_id)
-        if (!post) return null
-        return {
-          ...post,
           saved_at: saved.created_at,
           saved_id: saved.id,
         }
@@ -170,39 +156,25 @@ export function useSavedMovies() {
       const movieIds = savedData.map(s => s.movie_id).filter(Boolean)
       if (movieIds.length === 0) return []
 
-      // Obtener las películas una por una
-      const moviesPromises = movieIds.map(async (movieId) => {
-        const { data: movie, error: movieError } = await supabase
-          .from('movies')
-          .select('*')
-          .eq('id', movieId)
-          .maybeSingle()
+      // OPTIMIZADO: Obtener todas las películas y perfiles en batch (2 queries en lugar de N*2)
+      const [moviesResult, profilesResult] = await Promise.all([
+        supabase.from('movies').select('*').in('id', movieIds),
+        supabase.from('profiles').select('id, username, full_name, avatar_url')
+      ])
 
-        if (movieError || !movie) {
-          console.error('Error fetching movie:', movieId, movieError)
-          return null
-        }
+      if (moviesResult.error) throw moviesResult.error
 
-        // Obtener el perfil del usuario de la película
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('id, username, full_name, avatar_url')
-          .eq('id', movie.user_id)
-          .maybeSingle()
+      const movies = moviesResult.data || []
+      const profiles = profilesResult.data || []
+      const profilesMap = new Map(profiles.map(p => [p.id, p]))
 
-        return {
-          ...movie,
-          profiles: profile,
-        }
-      })
-
-      const moviesData = (await Promise.all(moviesPromises)).filter(Boolean)
-
+      // Combinar los datos
       return savedData.map(saved => {
-        const movie = moviesData?.find(m => m.id === saved.movie_id)
+        const movie = movies.find(m => m.id === saved.movie_id)
         if (!movie) return null
         return {
           ...movie,
+          profiles: profilesMap.get(movie.user_id),
           saved_at: saved.created_at,
           saved_id: saved.id,
         }
