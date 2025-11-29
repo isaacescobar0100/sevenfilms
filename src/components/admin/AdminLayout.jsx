@@ -4,6 +4,7 @@ import {
   Users,
   FileText,
   Film,
+  AlertTriangle,
   LogOut,
   Menu,
   X,
@@ -17,6 +18,7 @@ const navItems = [
   { to: '/admin/users', icon: Users, label: 'Usuarios' },
   { to: '/admin/posts', icon: FileText, label: 'Posts' },
   { to: '/admin/movies', icon: Film, label: 'Películas' },
+  { to: '/admin/reports', icon: AlertTriangle, label: 'Reportes' },
 ]
 
 function AdminLayout() {
