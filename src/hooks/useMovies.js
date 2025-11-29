@@ -217,7 +217,7 @@ export function useInfiniteMovies(filters = {}) {
   })
 }
 
-// Películas del usuario
+// Películas del usuario (solo aprobadas para mostrar en perfil)
 export function useUserMovies(userId) {
   return useQuery({
     queryKey: ['movies', 'user', userId],
@@ -226,6 +226,7 @@ export function useUserMovies(userId) {
         .from('movies')
         .select('*')
         .eq('user_id', userId)
+        .eq('status', 'approved') // Solo mostrar películas aprobadas
         .order('created_at', { ascending: false })
 
       if (error) throw error

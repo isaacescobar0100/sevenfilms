@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { Heart, MessageCircle, UserPlus, Film, X, Trash2 } from 'lucide-react'
+import { Heart, MessageCircle, UserPlus, Film, X, Trash2, CheckCircle, XCircle } from 'lucide-react'
 import { useNotifications, useMarkNotificationAsRead, useMarkAllNotificationsAsRead, useDeleteNotification, useDeleteAllNotifications } from '../../hooks/useNotifications'
 import { formatRelativeTime } from '../../utils/formatters'
 import LoadingSpinner from '../common/LoadingSpinner'
@@ -67,6 +67,10 @@ function NotificationsPanel({ onClose }) {
         return <UserPlus className="h-5 w-5 text-green-500" />
       case 'movie':
         return <Film className="h-5 w-5 text-purple-500" />
+      case 'movie_approved':
+        return <CheckCircle className="h-5 w-5 text-green-500" />
+      case 'movie_rejected':
+        return <XCircle className="h-5 w-5 text-red-500" />
       default:
         return <Heart className="h-5 w-5 text-gray-400" />
     }
@@ -131,6 +135,19 @@ function NotificationsPanel({ onClose }) {
           <span>
             <span className="font-semibold">{actorName}</span>
             {' subió una nueva película'}
+          </span>
+        )
+      case 'movie_approved':
+        return (
+          <span>
+            ¡Tu película "<span className="font-semibold">{metadata?.movie_title || 'sin título'}</span>" ha sido aprobada!
+          </span>
+        )
+      case 'movie_rejected':
+        const reason = metadata?.rejection_reason ? `: ${metadata.rejection_reason}` : ''
+        return (
+          <span>
+            Tu película "<span className="font-semibold">{metadata?.movie_title || 'sin título'}</span>" fue rechazada{reason}
           </span>
         )
       default:
