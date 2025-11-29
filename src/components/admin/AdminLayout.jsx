@@ -11,7 +11,10 @@ import {
   ChevronLeft,
   BarChart3,
   Megaphone,
-  Settings
+  Settings,
+  Download,
+  Star,
+  Database
 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuthStore } from '../../store/authStore'
@@ -24,6 +27,9 @@ const navItems = [
   { to: '/admin/movies', icon: Film, label: 'Películas' },
   { to: '/admin/reports', icon: AlertTriangle, label: 'Reportes' },
   { to: '/admin/announcements', icon: Megaphone, label: 'Anuncios' },
+  { to: '/admin/featured', icon: Star, label: 'Destacados' },
+  { to: '/admin/export', icon: Download, label: 'Exportar' },
+  { to: '/admin/backups', icon: Database, label: 'Backups' },
   { to: '/admin/settings', icon: Settings, label: 'Configuración' },
 ]
 

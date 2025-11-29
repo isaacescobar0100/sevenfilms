@@ -5,7 +5,10 @@
 
 -- 1. TABLA DE ANUNCIOS
 -- =============================================
-CREATE TABLE IF NOT EXISTS announcements (
+-- Eliminar tabla si existe para recrearla limpia
+DROP TABLE IF EXISTS announcements CASCADE;
+
+CREATE TABLE announcements (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   title TEXT NOT NULL,
   content TEXT NOT NULL,
@@ -17,9 +20,9 @@ CREATE TABLE IF NOT EXISTS announcements (
 );
 
 -- Índices para optimizar consultas
-CREATE INDEX IF NOT EXISTS idx_announcements_active ON announcements(is_active);
-CREATE INDEX IF NOT EXISTS idx_announcements_expires ON announcements(expires_at);
-CREATE INDEX IF NOT EXISTS idx_announcements_created ON announcements(created_at DESC);
+CREATE INDEX idx_announcements_active ON announcements(is_active);
+CREATE INDEX idx_announcements_expires ON announcements(expires_at);
+CREATE INDEX idx_announcements_created ON announcements(created_at DESC);
 
 -- Habilitar RLS
 ALTER TABLE announcements ENABLE ROW LEVEL SECURITY;
@@ -75,14 +78,17 @@ CREATE POLICY "Admins can view all announcements"
 
 -- 2. TABLA DE CONFIGURACIÓN DEL SITIO
 -- =============================================
-CREATE TABLE IF NOT EXISTS site_settings (
-  id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1), -- Solo un registro
+-- Eliminar tabla si existe para recrearla limpia
+DROP TABLE IF EXISTS site_settings CASCADE;
+
+CREATE TABLE site_settings (
+  id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
   settings JSONB NOT NULL DEFAULT '{}',
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   updated_by UUID REFERENCES profiles(id)
 );
 
--- Insertar registro inicial si no existe
+-- Insertar registro inicial
 INSERT INTO site_settings (id, settings)
 VALUES (1, '{
   "siteName": "Seven Art",
@@ -103,8 +109,7 @@ VALUES (1, '{
   "storyDuration": 24,
   "defaultProfilePrivacy": "public",
   "allowSearchEngineIndexing": true
-}'::jsonb)
-ON CONFLICT (id) DO NOTHING;
+}'::jsonb);
 
 -- Habilitar RLS
 ALTER TABLE site_settings ENABLE ROW LEVEL SECURITY;
@@ -147,14 +152,12 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Trigger para announcements
-DROP TRIGGER IF EXISTS update_announcements_updated_at ON announcements;
 CREATE TRIGGER update_announcements_updated_at
   BEFORE UPDATE ON announcements
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
 -- Trigger para site_settings
-DROP TRIGGER IF EXISTS update_site_settings_updated_at ON site_settings;
 CREATE TRIGGER update_site_settings_updated_at
   BEFORE UPDATE ON site_settings
   FOR EACH ROW
@@ -164,6 +167,6 @@ CREATE TRIGGER update_site_settings_updated_at
 -- =============================================
 -- VERIFICACIÓN
 -- =============================================
--- Verificar que las tablas se crearon correctamente:
--- SELECT * FROM announcements;
--- SELECT * FROM site_settings;
+SELECT 'Tablas creadas correctamente' as status;
+SELECT * FROM announcements;
+SELECT * FROM site_settings;

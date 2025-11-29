@@ -39,6 +39,9 @@ const AdminReports = lazy(() => import('./pages/admin/AdminReports'))
 const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'))
 const AdminAnnouncements = lazy(() => import('./pages/admin/AdminAnnouncements'))
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'))
+const AdminFeatured = lazy(() => import('./pages/admin/AdminFeatured'))
+const AdminExport = lazy(() => import('./pages/admin/AdminExport'))
+const AdminBackups = lazy(() => import('./pages/admin/AdminBackups'))
 
 function App() {
   const { user, role, loading, roleLoading } = useAuthStore()
@@ -116,6 +119,9 @@ function App() {
             <Route path="movies" element={<AdminMovies />} />
             <Route path="reports" element={<AdminReports />} />
             <Route path="announcements" element={<AdminAnnouncements />} />
+            <Route path="featured" element={<AdminFeatured />} />
+            <Route path="export" element={<AdminExport />} />
+            <Route path="backups" element={<AdminBackups />} />
             <Route path="settings" element={<AdminSettings />} />
           </Route>
         </Route>
