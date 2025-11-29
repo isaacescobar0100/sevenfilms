@@ -3,6 +3,7 @@ import { lazy, Suspense } from 'react'
 import { useAuthStore } from './store/authStore'
 import Layout from './components/layout/Layout'
 import ProtectedRoute from './components/auth/ProtectedRoute'
+import ProtectedAdminRoute from './components/auth/ProtectedAdminRoute'
 import ToastContainer from './components/notifications/ToastContainer'
 import ErrorBoundary from './components/common/ErrorBoundary'
 
@@ -28,15 +29,29 @@ const MissionVision = lazy(() => import('./pages/legal/MissionVision'))
 const CreateStory = lazy(() => import('./pages/CreateStory'))
 const Notifications = lazy(() => import('./pages/Notifications'))
 
-function App() {
-  const { user, loading } = useAuthStore()
+// Admin pages
+const AdminLayout = lazy(() => import('./components/admin/AdminLayout'))
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
+const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'))
+const AdminPosts = lazy(() => import('./pages/admin/AdminPosts'))
+const AdminMovies = lazy(() => import('./pages/admin/AdminMovies'))
 
-  if (loading) {
+function App() {
+  const { user, role, loading, roleLoading } = useAuthStore()
+
+  // Esperar a que cargue tanto la sesión como el rol
+  if (loading || roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
       </div>
     )
+  }
+
+  // Determinar la ruta de redirección basada en el rol
+  const getDefaultRoute = () => {
+    if (!user) return '/'
+    return role === 'admin' ? '/admin' : '/feed'
   }
 
   return (
@@ -52,14 +67,14 @@ function App() {
         <Routes>
         <Route path="/" element={<Layout />}>
           {/* Public routes */}
-          <Route index element={user ? <Navigate to="/feed" /> : <Home />} />
+          <Route index element={user ? <Navigate to={getDefaultRoute()} /> : <Home />} />
           <Route
             path="login"
-            element={user ? <Navigate to="/feed" replace /> : <Login />}
+            element={user ? <Navigate to={getDefaultRoute()} replace /> : <Login />}
           />
           <Route
             path="register"
-            element={user ? <Navigate to="/feed" replace /> : <Register />}
+            element={user ? <Navigate to={getDefaultRoute()} replace /> : <Register />}
           />
 
           {/* Legal pages - Public */}
@@ -85,6 +100,16 @@ function App() {
 
           {/* 404 */}
           <Route path="*" element={<NotFound />} />
+        </Route>
+
+        {/* Admin routes - fuera del Layout principal */}
+        <Route element={<ProtectedAdminRoute />}>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="posts" element={<AdminPosts />} />
+            <Route path="movies" element={<AdminMovies />} />
+          </Route>
         </Route>
       </Routes>
       </Suspense>

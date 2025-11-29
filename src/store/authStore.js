@@ -1,34 +1,97 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
 
+// Helper para obtener el rol del usuario desde profiles
+async function fetchUserRole(userId) {
+  if (!userId) return null
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .single()
+
+    if (error) {
+      console.error('Error fetching user role:', error)
+      return 'user' // Default role
+    }
+    return data?.role || 'user'
+  } catch {
+    return 'user'
+  }
+}
+
 export const useAuthStore = create((set) => ({
   user: null,
   session: null,
+  role: null,
   loading: true,
+  roleLoading: true,
 
   initialize: async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession()
-      set({ session, user: session?.user ?? null, loading: false })
+
+      if (session?.user) {
+        const role = await fetchUserRole(session.user.id)
+        set({
+          session,
+          user: session.user,
+          role,
+          loading: false,
+          roleLoading: false
+        })
+      } else {
+        set({
+          session: null,
+          user: null,
+          role: null,
+          loading: false,
+          roleLoading: false
+        })
+      }
 
       // Listen for auth changes
-      supabase.auth.onAuthStateChange((_event, session) => {
-        set({ session, user: session?.user ?? null })
+      supabase.auth.onAuthStateChange(async (_event, session) => {
+        if (session?.user) {
+          set({ roleLoading: true })
+          const role = await fetchUserRole(session.user.id)
+          set({
+            session,
+            user: session.user,
+            role,
+            roleLoading: false
+          })
+        } else {
+          set({
+            session: null,
+            user: null,
+            role: null,
+            roleLoading: false
+          })
+        }
       })
     } catch (error) {
       console.error('Error initializing auth:', error)
-      set({ loading: false })
+      set({ loading: false, roleLoading: false })
     }
   },
 
   signIn: async (email, password) => {
+    set({ roleLoading: true })
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
-    if (error) throw error
-    set({ session: data.session, user: data.user })
-    return data
+    if (error) {
+      set({ roleLoading: false })
+      throw error
+    }
+
+    // Cargar rol inmediatamente después del login
+    const role = await fetchUserRole(data.user.id)
+    set({ session: data.session, user: data.user, role, roleLoading: false })
+    return { ...data, role }
   },
 
   signUp: async (email, password, metadata = {}) => {
@@ -54,7 +117,7 @@ export const useAuthStore = create((set) => ({
   signOut: async () => {
     const { error } = await supabase.auth.signOut()
     if (error) throw error
-    set({ session: null, user: null })
+    set({ session: null, user: null, role: null })
   },
 
   resetPassword: async (email) => {
@@ -69,6 +132,12 @@ export const useAuthStore = create((set) => ({
     if (error) throw error
     set({ user: data.user })
     return data
+  },
+
+  // Helper para verificar si es admin
+  isAdmin: () => {
+    const state = useAuthStore.getState()
+    return state.role === 'admin'
   },
 }))
 
