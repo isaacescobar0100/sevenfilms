@@ -32,27 +32,32 @@ function Login() {
     setError('')
 
     try {
-      await signIn(data.email, data.password)
+      const result = await signIn(data.email, data.password)
 
       // Mostrar splash screen
       setShowSplash(true)
 
-      // Prefetch del feed
-      queryClient.prefetchQuery({
-        queryKey: ['posts', 'feed'],
-        queryFn: async () => {
-          const { data: posts } = await supabase
-            .from('posts')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(10)
-          return posts
-        },
-      })
+      // Determinar ruta según el rol
+      const redirectTo = result.role === 'admin' ? '/admin' : '/feed'
+
+      // Prefetch del feed solo si no es admin
+      if (result.role !== 'admin') {
+        queryClient.prefetchQuery({
+          queryKey: ['posts', 'feed'],
+          queryFn: async () => {
+            const { data: posts } = await supabase
+              .from('posts')
+              .select('*')
+              .order('created_at', { ascending: false })
+              .limit(10)
+            return posts
+          },
+        })
+      }
 
       // Esperar un momento para mostrar la animación
       setTimeout(() => {
-        navigate('/feed')
+        navigate(redirectTo)
       }, 1800)
     } catch (err) {
       console.error('Login error:', err)
