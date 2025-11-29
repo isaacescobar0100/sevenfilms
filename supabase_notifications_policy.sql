@@ -1,13 +1,32 @@
 -- =============================================
--- POLÍTICA RLS PARA NOTIFICACIONES DE PELÍCULAS
+-- POLÍTICA RLS Y CONSTRAINT PARA NOTIFICACIONES
 -- Ejecutar en Supabase SQL Editor
 -- =============================================
 
--- Permitir que los admins puedan crear notificaciones para cualquier usuario
--- (necesario para notificar aprobación/rechazo de películas)
+-- =============================================
+-- PASO 1: ACTUALIZAR CONSTRAINT DE TIPO
+-- =============================================
+-- El constraint actual solo permite: like, comment, follow, movie_upload, reaction
+-- Necesitamos agregar: movie_approved, movie_rejected
 
--- Primero, ver las políticas actuales
--- SELECT * FROM pg_policies WHERE tablename = 'notifications';
+-- Primero eliminar el constraint existente
+ALTER TABLE notifications DROP CONSTRAINT IF EXISTS notifications_type_check;
+
+-- Crear nuevo constraint con todos los tipos necesarios
+ALTER TABLE notifications ADD CONSTRAINT notifications_type_check
+CHECK (type::text = ANY (ARRAY[
+  'like'::text,
+  'comment'::text,
+  'follow'::text,
+  'movie_upload'::text,
+  'reaction'::text,
+  'movie_approved'::text,
+  'movie_rejected'::text
+]));
+
+-- =============================================
+-- PASO 2: POLÍTICAS RLS
+-- =============================================
 
 -- Eliminar política de INSERT existente si hay problemas
 DROP POLICY IF EXISTS "Users can create notifications" ON notifications;
