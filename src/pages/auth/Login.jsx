@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
+import { Ban } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 import { loginSchema } from '../../utils/validation'
 import ErrorMessage from '../../components/common/ErrorMessage'
@@ -14,10 +15,23 @@ function Login() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { signIn } = useAuthStore()
+  const { signIn, suspended, suspendedMessage, clearSuspendedMessage } = useAuthStore()
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [showSplash, setShowSplash] = useState(false)
+  const [showSuspendedAlert, setShowSuspendedAlert] = useState(false)
+
+  // Mostrar alerta si el usuario fue suspendido
+  useEffect(() => {
+    if (suspended && suspendedMessage) {
+      setShowSuspendedAlert(true)
+    }
+  }, [suspended, suspendedMessage])
+
+  const handleCloseSuspendedAlert = () => {
+    setShowSuspendedAlert(false)
+    clearSuspendedMessage()
+  }
 
   const {
     register,
@@ -61,7 +75,11 @@ function Login() {
       }, 1800)
     } catch (err) {
       console.error('Login error:', err)
-      setError(t('auth.errors.invalidCredentials'))
+      if (err.message === 'ACCOUNT_SUSPENDED') {
+        setShowSuspendedAlert(true)
+      } else {
+        setError(t('auth.errors.invalidCredentials'))
+      }
       setLoading(false)
     }
   }
@@ -72,6 +90,32 @@ function Login() {
   }
 
   return (
+    <>
+      {/* Modal de cuenta suspendida */}
+      {showSuspendedAlert && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="p-6 text-center">
+              <div className="mx-auto w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center mb-4">
+                <Ban className="h-8 w-8 text-red-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                Cuenta Suspendida
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                {suspendedMessage || 'Tu cuenta ha sido suspendida. Contacta al administrador para más información.'}
+              </p>
+              <button
+                onClick={handleCloseSuspendedAlert}
+                className="w-full px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     <div
       className="min-h-screen bg-cover bg-center bg-no-repeat relative"
       style={{
@@ -223,6 +267,7 @@ function Login() {
         </div>
       </div>
     </div>
+    </>
   )
 }
 

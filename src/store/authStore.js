@@ -1,46 +1,72 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
 
-// Helper para obtener el rol del usuario desde profiles
-async function fetchUserRole(userId) {
-  if (!userId) return null
+// Helper para obtener el rol y estado de suspensión del usuario desde profiles
+async function fetchUserProfile(userId) {
+  if (!userId) return { role: null, suspended: false }
   try {
     const { data, error } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, suspended')
       .eq('id', userId)
       .single()
 
     if (error) {
-      console.error('Error fetching user role:', error)
-      return 'user' // Default role
+      console.error('Error fetching user profile:', error)
+      return { role: 'user', suspended: false }
     }
-    return data?.role || 'user'
+    return {
+      role: data?.role || 'user',
+      suspended: data?.suspended || false
+    }
   } catch {
-    return 'user'
+    return { role: 'user', suspended: false }
   }
 }
 
-export const useAuthStore = create((set) => ({
+export const useAuthStore = create((set, get) => ({
   user: null,
   session: null,
   role: null,
   loading: true,
   roleLoading: true,
+  suspended: false,
+  suspendedMessage: null,
+  suspensionCheckInterval: null,
 
   initialize: async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession()
 
       if (session?.user) {
-        const role = await fetchUserRole(session.user.id)
+        const { role, suspended } = await fetchUserProfile(session.user.id)
+
+        // Si está suspendido, cerrar sesión inmediatamente
+        if (suspended) {
+          await supabase.auth.signOut()
+          set({
+            session: null,
+            user: null,
+            role: null,
+            loading: false,
+            roleLoading: false,
+            suspended: true,
+            suspendedMessage: 'Tu cuenta ha sido suspendida. Contacta al administrador para más información.'
+          })
+          return
+        }
+
         set({
           session,
           user: session.user,
           role,
           loading: false,
-          roleLoading: false
+          roleLoading: false,
+          suspended: false
         })
+
+        // Iniciar verificación periódica de suspensión
+        get().startSuspensionCheck()
       } else {
         set({
           session: null,
@@ -72,16 +98,35 @@ export const useAuthStore = create((set) => ({
             return
           }
 
-          // Nuevo usuario o sin rol, cargar rol
+          // Nuevo usuario o sin rol, cargar datos
           set({ roleLoading: true })
-          const role = await fetchUserRole(session.user.id)
+          const { role, suspended } = await fetchUserProfile(session.user.id)
+
+          if (suspended) {
+            await supabase.auth.signOut()
+            set({
+              session: null,
+              user: null,
+              role: null,
+              roleLoading: false,
+              suspended: true,
+              suspendedMessage: 'Tu cuenta ha sido suspendida. Contacta al administrador para más información.'
+            })
+            return
+          }
+
           set({
             session,
             user: session.user,
             role,
-            roleLoading: false
+            roleLoading: false,
+            suspended: false
           })
+
+          // Iniciar verificación periódica
+          get().startSuspensionCheck()
         } else {
+          get().stopSuspensionCheck()
           set({
             session: null,
             user: null,
@@ -96,6 +141,44 @@ export const useAuthStore = create((set) => ({
     }
   },
 
+  // Verificar suspensión periódicamente (cada 30 segundos)
+  startSuspensionCheck: () => {
+    const currentInterval = get().suspensionCheckInterval
+    if (currentInterval) return // Ya está corriendo
+
+    const interval = setInterval(async () => {
+      const { user } = get()
+      if (!user) return
+
+      const { suspended } = await fetchUserProfile(user.id)
+      if (suspended) {
+        get().stopSuspensionCheck()
+        await supabase.auth.signOut()
+        set({
+          session: null,
+          user: null,
+          role: null,
+          suspended: true,
+          suspendedMessage: 'Tu cuenta ha sido suspendida. Contacta al administrador para más información.'
+        })
+      }
+    }, 30000) // Cada 30 segundos
+
+    set({ suspensionCheckInterval: interval })
+  },
+
+  stopSuspensionCheck: () => {
+    const interval = get().suspensionCheckInterval
+    if (interval) {
+      clearInterval(interval)
+      set({ suspensionCheckInterval: null })
+    }
+  },
+
+  clearSuspendedMessage: () => {
+    set({ suspended: false, suspendedMessage: null })
+  },
+
   signIn: async (email, password) => {
     set({ roleLoading: true })
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -107,9 +190,28 @@ export const useAuthStore = create((set) => ({
       throw error
     }
 
-    // Cargar rol inmediatamente después del login
-    const role = await fetchUserRole(data.user.id)
-    set({ session: data.session, user: data.user, role, roleLoading: false })
+    // Cargar rol y verificar suspensión inmediatamente después del login
+    const { role, suspended } = await fetchUserProfile(data.user.id)
+
+    if (suspended) {
+      // Cerrar sesión si está suspendido
+      await supabase.auth.signOut()
+      set({
+        session: null,
+        user: null,
+        role: null,
+        roleLoading: false,
+        suspended: true,
+        suspendedMessage: 'Tu cuenta ha sido suspendida. Contacta al administrador para más información.'
+      })
+      throw new Error('ACCOUNT_SUSPENDED')
+    }
+
+    set({ session: data.session, user: data.user, role, roleLoading: false, suspended: false })
+
+    // Iniciar verificación periódica
+    useAuthStore.getState().startSuspensionCheck()
+
     return { ...data, role }
   },
 
