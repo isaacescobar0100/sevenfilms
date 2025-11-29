@@ -1,12 +1,18 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, MoreVertical, Shield, ShieldOff, Trash2, Eye, Users } from 'lucide-react'
+import { Search, MoreVertical, Trash2, Users, BadgeCheck, BadgeX, Shield, ShieldOff } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import ConfirmDialog from '../../components/common/ConfirmDialog'
 
 function AdminUsers() {
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedUser, setSelectedUser] = useState(null)
   const [showMenu, setShowMenu] = useState(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [userToDelete, setUserToDelete] = useState(null)
+  const [roleDialogOpen, setRoleDialogOpen] = useState(false)
+  const [userToChangeRole, setUserToChangeRole] = useState(null)
+  const [verifyDialogOpen, setVerifyDialogOpen] = useState(false)
+  const [userToVerify, setUserToVerify] = useState(null)
   const queryClient = useQueryClient()
 
   // Fetch users
@@ -42,6 +48,26 @@ function AdminUsers() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] })
       setShowMenu(null)
+      setRoleDialogOpen(false)
+      setUserToChangeRole(null)
+    },
+  })
+
+  // Update user verification mutation
+  const updateVerificationMutation = useMutation({
+    mutationFn: async ({ userId, verified }) => {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ verified })
+        .eq('id', userId)
+
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+      setShowMenu(null)
+      setVerifyDialogOpen(false)
+      setUserToVerify(null)
     },
   })
 
@@ -64,20 +90,48 @@ function AdminUsers() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] })
-      setSelectedUser(null)
+      setDeleteDialogOpen(false)
+      setUserToDelete(null)
     },
   })
 
   const handleToggleRole = (user) => {
-    const newRole = user.role === 'admin' ? 'user' : 'admin'
-    if (window.confirm(`¿Cambiar rol de ${user.username} a ${newRole}?`)) {
-      updateRoleMutation.mutate({ userId: user.id, newRole })
+    setUserToChangeRole(user)
+    setRoleDialogOpen(true)
+    setShowMenu(null)
+  }
+
+  const confirmToggleRole = () => {
+    if (userToChangeRole) {
+      const newRole = userToChangeRole.role === 'admin' ? 'user' : 'admin'
+      updateRoleMutation.mutate({ userId: userToChangeRole.id, newRole })
+    }
+  }
+
+  const handleToggleVerification = (user) => {
+    setUserToVerify(user)
+    setVerifyDialogOpen(true)
+    setShowMenu(null)
+  }
+
+  const confirmToggleVerification = () => {
+    if (userToVerify) {
+      updateVerificationMutation.mutate({
+        userId: userToVerify.id,
+        verified: !userToVerify.verified
+      })
     }
   }
 
   const handleDeleteUser = (user) => {
-    if (window.confirm(`¿Estás seguro de eliminar a ${user.username}? Esta acción no se puede deshacer.`)) {
-      deleteUserMutation.mutate(user.id)
+    setUserToDelete(user)
+    setDeleteDialogOpen(true)
+    setShowMenu(null)
+  }
+
+  const confirmDeleteUser = () => {
+    if (userToDelete) {
+      deleteUserMutation.mutate(userToDelete.id)
     }
   }
 
@@ -134,6 +188,9 @@ function AdminUsers() {
                     Rol
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Estado
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Registro
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -156,8 +213,11 @@ function AdminUsers() {
                           )}
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900 dark:text-white">
+                          <div className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-1">
                             {user.full_name || 'Sin nombre'}
+                            {user.verified && (
+                              <BadgeCheck className="h-4 w-4 text-blue-500" />
+                            )}
                           </div>
                           <div className="text-sm text-gray-500 dark:text-gray-400">
                             @{user.username}
@@ -178,6 +238,22 @@ function AdminUsers() {
                         {user.role || 'user'}
                       </span>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        user.verified
+                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                          : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                      }`}>
+                        {user.verified ? (
+                          <>
+                            <BadgeCheck className="h-3 w-3 mr-1" />
+                            Verificado
+                          </>
+                        ) : (
+                          'Sin verificar'
+                        )}
+                      </span>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {new Date(user.created_at).toLocaleDateString()}
                     </td>
@@ -193,6 +269,7 @@ function AdminUsers() {
                         {showMenu === user.id && (
                           <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-10">
                             <div className="py-1">
+                              {/* Hacer Admin / Quitar Admin */}
                               <button
                                 onClick={() => handleToggleRole(user)}
                                 className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -209,6 +286,26 @@ function AdminUsers() {
                                   </>
                                 )}
                               </button>
+
+                              {/* Verificar / Quitar Verificación */}
+                              <button
+                                onClick={() => handleToggleVerification(user)}
+                                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                              >
+                                {user.verified ? (
+                                  <>
+                                    <BadgeX className="h-4 w-4 mr-2" />
+                                    Quitar Verificación
+                                  </>
+                                ) : (
+                                  <>
+                                    <BadgeCheck className="h-4 w-4 mr-2" />
+                                    Verificar
+                                  </>
+                                )}
+                              </button>
+
+                              {/* Eliminar Usuario */}
                               <button
                                 onClick={() => handleDeleteUser(user)}
                                 className="flex items-center w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -236,6 +333,57 @@ function AdminUsers() {
           onClick={() => setShowMenu(null)}
         />
       )}
+
+      {/* Role Change Dialog */}
+      <ConfirmDialog
+        isOpen={roleDialogOpen}
+        onClose={() => {
+          setRoleDialogOpen(false)
+          setUserToChangeRole(null)
+        }}
+        onConfirm={confirmToggleRole}
+        title={userToChangeRole?.role === 'admin' ? 'Quitar Admin' : 'Hacer Admin'}
+        message={userToChangeRole?.role === 'admin'
+          ? `¿Estás seguro de quitar los permisos de administrador a ${userToChangeRole?.username}?`
+          : `¿Estás seguro de hacer administrador a ${userToChangeRole?.username}?`
+        }
+        confirmText={updateRoleMutation.isPending ? 'Procesando...' : 'Confirmar'}
+        cancelText="Cancelar"
+        type="warning"
+      />
+
+      {/* Verification Dialog */}
+      <ConfirmDialog
+        isOpen={verifyDialogOpen}
+        onClose={() => {
+          setVerifyDialogOpen(false)
+          setUserToVerify(null)
+        }}
+        onConfirm={confirmToggleVerification}
+        title={userToVerify?.verified ? 'Quitar Verificación' : 'Verificar Usuario'}
+        message={userToVerify?.verified
+          ? `¿Estás seguro de quitar la verificación a ${userToVerify?.username}?`
+          : `¿Estás seguro de verificar a ${userToVerify?.username}? Aparecerá una insignia azul junto a su nombre.`
+        }
+        confirmText={updateVerificationMutation.isPending ? 'Procesando...' : 'Confirmar'}
+        cancelText="Cancelar"
+        type="info"
+      />
+
+      {/* Delete User Dialog */}
+      <ConfirmDialog
+        isOpen={deleteDialogOpen}
+        onClose={() => {
+          setDeleteDialogOpen(false)
+          setUserToDelete(null)
+        }}
+        onConfirm={confirmDeleteUser}
+        title="Eliminar Usuario"
+        message={`¿Estás seguro de eliminar a ${userToDelete?.username}? Esta acción eliminará todos sus posts, comentarios y datos asociados. Esta acción no se puede deshacer.`}
+        confirmText={deleteUserMutation.isPending ? 'Eliminando...' : 'Eliminar'}
+        cancelText="Cancelar"
+        type="danger"
+      />
     </div>
   )
 }
