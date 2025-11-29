@@ -52,8 +52,27 @@ export const useAuthStore = create((set) => ({
       }
 
       // Listen for auth changes
-      supabase.auth.onAuthStateChange(async (_event, session) => {
+      supabase.auth.onAuthStateChange(async (event, session) => {
+        // Solo recargar rol si es un nuevo login o cambio de usuario
+        // Ignorar TOKEN_REFRESHED para evitar loading innecesario
+        if (event === 'TOKEN_REFRESHED') {
+          // Solo actualizar session sin mostrar loading
+          if (session) {
+            set({ session, user: session.user })
+          }
+          return
+        }
+
         if (session?.user) {
+          // Verificar si es el mismo usuario para evitar loading innecesario
+          const currentState = useAuthStore.getState()
+          if (currentState.user?.id === session.user.id && currentState.role) {
+            // Mismo usuario, solo actualizar session
+            set({ session, user: session.user })
+            return
+          }
+
+          // Nuevo usuario o sin rol, cargar rol
           set({ roleLoading: true })
           const role = await fetchUserRole(session.user.id)
           set({
