@@ -445,7 +445,7 @@ export function useUpdateMovieStatus() {
       if (error) throw error
 
       // Crear notificación para el dueño de la película
-      if (data && data.user_id !== user.id) {
+      if (data && data.user_id) {
         const notificationType = status === 'approved' ? 'movie_approved' : 'movie_rejected'
         const metadata = {
           movie_title: data.title,
@@ -456,7 +456,14 @@ export function useUpdateMovieStatus() {
           metadata.rejection_reason = rejectionReason
         }
 
-        await supabase.from('notifications').insert([{
+        console.log('[Notification] Creating movie notification:', {
+          user_id: data.user_id,
+          actor_id: user.id,
+          type: notificationType,
+          entity_id: data.id,
+        })
+
+        const { error: notifError } = await supabase.from('notifications').insert([{
           user_id: data.user_id,
           actor_id: user.id,
           type: notificationType,
@@ -465,6 +472,12 @@ export function useUpdateMovieStatus() {
           is_read: false,
           metadata,
         }])
+
+        if (notifError) {
+          console.error('[Notification] Error creating notification:', notifError)
+        } else {
+          console.log('[Notification] Notification created successfully')
+        }
       }
 
       return data
