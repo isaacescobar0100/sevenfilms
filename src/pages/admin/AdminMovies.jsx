@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Search,
@@ -12,7 +12,8 @@ import {
   Clock,
   AlertTriangle,
   Play,
-  X
+  X,
+  Loader2
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { usePendingMovies, useUpdateMovieStatus } from '../../hooks/useMovies'
@@ -24,7 +25,16 @@ function AdminMovies() {
   const [previewMovie, setPreviewMovie] = useState(null)
   const [rejectModal, setRejectModal] = useState(null)
   const [rejectReason, setRejectReason] = useState('')
+  const [notification, setNotification] = useState(null) // { type: 'success' | 'error', message: string }
   const queryClient = useQueryClient()
+
+  // Auto-hide notification after 3 seconds
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(null), 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [notification])
 
   // Fetch pending movies
   const { data: pendingMovies, isLoading: pendingLoading } = usePendingMovies()
@@ -114,7 +124,17 @@ function AdminMovies() {
   })
 
   const handleApprove = (movieId) => {
-    updateStatusMutation.mutate({ movieId, status: 'approved' })
+    updateStatusMutation.mutate(
+      { movieId, status: 'approved' },
+      {
+        onSuccess: () => {
+          setNotification({ type: 'success', message: 'Película aprobada correctamente' })
+        },
+        onError: (error) => {
+          setNotification({ type: 'error', message: 'Error al aprobar: ' + error.message })
+        }
+      }
+    )
   }
 
   const handleReject = (movie) => {
@@ -124,13 +144,23 @@ function AdminMovies() {
 
   const confirmReject = () => {
     if (rejectModal) {
-      updateStatusMutation.mutate({
-        movieId: rejectModal.id,
-        status: 'rejected',
-        rejectionReason: rejectReason || null
-      })
-      setRejectModal(null)
-      setRejectReason('')
+      updateStatusMutation.mutate(
+        {
+          movieId: rejectModal.id,
+          status: 'rejected',
+          rejectionReason: rejectReason || null
+        },
+        {
+          onSuccess: () => {
+            setNotification({ type: 'success', message: 'Película rechazada' })
+            setRejectModal(null)
+            setRejectReason('')
+          },
+          onError: (error) => {
+            setNotification({ type: 'error', message: 'Error al rechazar: ' + error.message })
+          }
+        }
+      )
     }
   }
 
@@ -188,6 +218,25 @@ function AdminMovies() {
 
   return (
     <div className="space-y-6">
+      {/* Notification Toast */}
+      {notification && (
+        <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg transition-all ${
+          notification.type === 'success'
+            ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-800'
+            : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800'
+        }`}>
+          {notification.type === 'success' ? (
+            <CheckCircle className="h-5 w-5" />
+          ) : (
+            <XCircle className="h-5 w-5" />
+          )}
+          <span className="font-medium">{notification.message}</span>
+          <button onClick={() => setNotification(null)} className="ml-2 hover:opacity-70">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -400,15 +449,19 @@ function AdminMovies() {
                             <button
                               onClick={() => handleApprove(movie.id)}
                               disabled={updateStatusMutation.isPending}
-                              className="p-2 text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg transition-colors"
+                              className="p-2 text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg transition-colors disabled:opacity-50"
                               title="Aprobar"
                             >
-                              <CheckCircle className="h-5 w-5" />
+                              {updateStatusMutation.isPending && updateStatusMutation.variables?.movieId === movie.id && updateStatusMutation.variables?.status === 'approved' ? (
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                              ) : (
+                                <CheckCircle className="h-5 w-5" />
+                              )}
                             </button>
                             <button
                               onClick={() => handleReject(movie)}
                               disabled={updateStatusMutation.isPending}
-                              className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                              className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors disabled:opacity-50"
                               title="Rechazar"
                             >
                               <XCircle className="h-5 w-5" />
@@ -559,7 +612,11 @@ function AdminMovies() {
                     disabled={updateStatusMutation.isPending}
                     className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
                   >
-                    <CheckCircle className="h-5 w-5" />
+                    {updateStatusMutation.isPending ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <CheckCircle className="h-5 w-5" />
+                    )}
                     Aprobar
                   </button>
                   <button
@@ -600,15 +657,19 @@ function AdminMovies() {
             <div className="flex gap-3 mt-4">
               <button
                 onClick={() => setRejectModal(null)}
-                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                disabled={updateStatusMutation.isPending}
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
               >
                 Cancelar
               </button>
               <button
                 onClick={confirmReject}
                 disabled={updateStatusMutation.isPending}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
               >
+                {updateStatusMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : null}
                 Rechazar
               </button>
             </div>

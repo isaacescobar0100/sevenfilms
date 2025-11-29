@@ -473,6 +473,8 @@ export function useUpdateMovieStatus() {
       queryClient.invalidateQueries({ queryKey: ['movies'] })
       queryClient.invalidateQueries({ queryKey: ['movies-infinite'] })
       queryClient.invalidateQueries({ queryKey: ['pending-movies'] })
+      queryClient.invalidateQueries({ queryKey: ['admin-movies'] })
+      queryClient.invalidateQueries({ queryKey: ['admin-stats'] })
     },
   })
 }
