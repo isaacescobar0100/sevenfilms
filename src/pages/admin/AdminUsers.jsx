@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, MoreVertical, Trash2, Users, BadgeCheck, BadgeX, Shield, ShieldOff } from 'lucide-react'
+import { Search, MoreVertical, Trash2, Users, BadgeCheck, BadgeX, Shield, ShieldOff, Ban, CircleCheck } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import ConfirmDialog from '../../components/common/ConfirmDialog'
 
@@ -13,6 +13,8 @@ function AdminUsers() {
   const [userToChangeRole, setUserToChangeRole] = useState(null)
   const [verifyDialogOpen, setVerifyDialogOpen] = useState(false)
   const [userToVerify, setUserToVerify] = useState(null)
+  const [suspendDialogOpen, setSuspendDialogOpen] = useState(false)
+  const [userToSuspend, setUserToSuspend] = useState(null)
   const queryClient = useQueryClient()
 
   // Fetch users
@@ -71,6 +73,27 @@ function AdminUsers() {
     },
   })
 
+  // Suspend user mutation
+  const suspendUserMutation = useMutation({
+    mutationFn: async ({ userId, suspended }) => {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          suspended,
+          suspended_at: suspended ? new Date().toISOString() : null
+        })
+        .eq('id', userId)
+
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+      setShowMenu(null)
+      setSuspendDialogOpen(false)
+      setUserToSuspend(null)
+    },
+  })
+
   // Delete user mutation
   const deleteUserMutation = useMutation({
     mutationFn: async (userId) => {
@@ -123,6 +146,21 @@ function AdminUsers() {
     }
   }
 
+  const handleToggleSuspend = (user) => {
+    setUserToSuspend(user)
+    setSuspendDialogOpen(true)
+    setShowMenu(null)
+  }
+
+  const confirmToggleSuspend = () => {
+    if (userToSuspend) {
+      suspendUserMutation.mutate({
+        userId: userToSuspend.id,
+        suspended: !userToSuspend.suspended
+      })
+    }
+  }
+
   const handleDeleteUser = (user) => {
     setUserToDelete(user)
     setDeleteDialogOpen(true)
@@ -133,6 +171,31 @@ function AdminUsers() {
     if (userToDelete) {
       deleteUserMutation.mutate(userToDelete.id)
     }
+  }
+
+  const getStatusBadge = (user) => {
+    if (user.suspended) {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
+          <Ban className="h-3 w-3 mr-1" />
+          Suspendido
+        </span>
+      )
+    }
+    if (user.verified) {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+          <BadgeCheck className="h-3 w-3 mr-1" />
+          Verificado
+        </span>
+      )
+    }
+    return (
+      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+        <CircleCheck className="h-3 w-3 mr-1" />
+        Activo
+      </span>
+    )
   }
 
   return (
@@ -200,10 +263,10 @@ function AdminUsers() {
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {users.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                  <tr key={user.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 ${user.suspended ? 'bg-red-50/50 dark:bg-red-900/10' : ''}`}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                        <div className={`h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden ${user.suspended ? 'opacity-50' : ''}`}>
                           {user.avatar_url ? (
                             <img src={user.avatar_url} alt="" className="h-full w-full object-cover" />
                           ) : (
@@ -213,13 +276,13 @@ function AdminUsers() {
                           )}
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-1">
+                          <div className={`text-sm font-medium text-gray-900 dark:text-white flex items-center gap-1 ${user.suspended ? 'line-through opacity-70' : ''}`}>
                             {user.full_name || 'Sin nombre'}
-                            {user.verified && (
+                            {user.verified && !user.suspended && (
                               <BadgeCheck className="h-4 w-4 text-blue-500" />
                             )}
                           </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                          <div className={`text-sm text-gray-500 dark:text-gray-400 ${user.suspended ? 'line-through opacity-70' : ''}`}>
                             @{user.username}
                           </div>
                         </div>
@@ -239,20 +302,7 @@ function AdminUsers() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        user.verified
-                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
-                          : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                      }`}>
-                        {user.verified ? (
-                          <>
-                            <BadgeCheck className="h-3 w-3 mr-1" />
-                            Verificado
-                          </>
-                        ) : (
-                          'Sin verificar'
-                        )}
-                      </span>
+                      {getStatusBadge(user)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {new Date(user.created_at).toLocaleDateString()}
@@ -267,7 +317,7 @@ function AdminUsers() {
                         </button>
 
                         {showMenu === user.id && (
-                          <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-10">
+                          <div className="absolute right-0 mt-2 w-52 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-10">
                             <div className="py-1">
                               {/* Hacer Admin / Quitar Admin */}
                               <button
@@ -301,6 +351,28 @@ function AdminUsers() {
                                   <>
                                     <BadgeCheck className="h-4 w-4 mr-2" />
                                     Verificar
+                                  </>
+                                )}
+                              </button>
+
+                              {/* Suspender / Reactivar */}
+                              <button
+                                onClick={() => handleToggleSuspend(user)}
+                                className={`flex items-center w-full px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                                  user.suspended
+                                    ? 'text-green-600 dark:text-green-400'
+                                    : 'text-orange-600 dark:text-orange-400'
+                                }`}
+                              >
+                                {user.suspended ? (
+                                  <>
+                                    <CircleCheck className="h-4 w-4 mr-2" />
+                                    Reactivar Usuario
+                                  </>
+                                ) : (
+                                  <>
+                                    <Ban className="h-4 w-4 mr-2" />
+                                    Suspender Usuario
                                   </>
                                 )}
                               </button>
@@ -368,6 +440,24 @@ function AdminUsers() {
         confirmText={updateVerificationMutation.isPending ? 'Procesando...' : 'Confirmar'}
         cancelText="Cancelar"
         type="info"
+      />
+
+      {/* Suspend Dialog */}
+      <ConfirmDialog
+        isOpen={suspendDialogOpen}
+        onClose={() => {
+          setSuspendDialogOpen(false)
+          setUserToSuspend(null)
+        }}
+        onConfirm={confirmToggleSuspend}
+        title={userToSuspend?.suspended ? 'Reactivar Usuario' : 'Suspender Usuario'}
+        message={userToSuspend?.suspended
+          ? `¿Estás seguro de reactivar la cuenta de ${userToSuspend?.username}? Podrá volver a acceder a la plataforma.`
+          : `¿Estás seguro de suspender a ${userToSuspend?.username}? No podrá acceder a la plataforma hasta que sea reactivado.`
+        }
+        confirmText={suspendUserMutation.isPending ? 'Procesando...' : 'Confirmar'}
+        cancelText="Cancelar"
+        type={userToSuspend?.suspended ? 'info' : 'warning'}
       />
 
       {/* Delete User Dialog */}
