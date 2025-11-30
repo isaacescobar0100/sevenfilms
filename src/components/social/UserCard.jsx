@@ -1,5 +1,6 @@
 import { memo, useCallback } from 'react'
 import { Link } from 'react-router-dom'
+import { BadgeCheck } from 'lucide-react'
 import { useIsFollowing, useToggleFollow } from '../../hooks/useFollows'
 import { useAuthStore } from '../../store/authStore'
 import { useRateLimit } from '../../hooks/useRateLimit'
@@ -52,8 +53,11 @@ const UserCard = memo(function UserCard({ user, showFollowButton = false, compac
               {user.full_name?.[0] || user.username?.[0] || 'U'}
             </div>
           )}
-          <p className="font-medium text-xs text-gray-900 dark:text-white leading-tight mb-1 px-1" title={displayName}>
+          <p className="font-medium text-xs text-gray-900 dark:text-white leading-tight mb-1 px-1 flex items-center justify-center gap-0.5" title={displayName}>
             {truncatedName}
+            {user.is_verified && (
+              <BadgeCheck className="h-3 w-3 text-primary-500 flex-shrink-0" />
+            )}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400 truncate px-1">@{user.username}</p>
         </Link>
@@ -90,7 +94,12 @@ const UserCard = memo(function UserCard({ user, showFollowButton = false, compac
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <p className="font-semibold truncate text-gray-900 dark:text-white">{user.full_name || user.username}</p>
+          <p className="font-semibold truncate text-gray-900 dark:text-white flex items-center gap-1">
+            {user.full_name || user.username}
+            {user.is_verified && (
+              <BadgeCheck className="h-4 w-4 text-primary-500 flex-shrink-0" />
+            )}
+          </p>
           <p className="text-sm text-gray-500 dark:text-gray-400 truncate">@{user.username}</p>
         </div>
       </Link>
